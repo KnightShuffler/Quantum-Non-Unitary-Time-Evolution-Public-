@@ -45,8 +45,8 @@ def Hmat(H_):
 # Return mean and variance of H for the state psi
 def Hmoms(H_,psi_):
     phi_ = Hpsi(H_,psi_)
-    ea   = np.vdot(psi_,phi_)
-    ev   = np.vdot(phi_,phi_)
+    ea   = np.vdot(psi_,phi_) # <psi|H|psi>
+    ev   = np.vdot(phi_,phi_) # <psi|HH|psi>
     return np.real(ea),np.real(ev-ea**2)
 
 # Prints the Hamiltoninan terms
@@ -61,6 +61,9 @@ def print_Hamiltonian(H_):
             print(Opp2Str(Int2Bas(m,4,nact)),h[m])
         mu += 1
 
+# Calculate <i|H|i> where |i> is a basis state representing i as a binary integer of nbit bits, 
+# lsb is index -1
+# |i> is a state of the full system
 def Hii(H_,i):
     N     = H_[0][2].shape[1]
     nbit  = int(np.log2(N))
@@ -70,7 +73,7 @@ def Hii(H_,i):
         nact = len(A)
         for m in np.where(np.abs(h)>1e-8)[0]:
             sm   = Int2Bas(m,4,nact)
-            smx  = [ sigma_matrices[xi[A[w]],xi[A[w]],sm[w]] for w in range(nact)]
+            smx  = [ sigma_matrices[xi[A[w]], xi[A[w]], sm[w]] for w in range(nact)]
             hii += np.real(h[m]*np.prod(smx))
     return hii
 
