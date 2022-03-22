@@ -9,17 +9,22 @@ from   binary_functions import Bas2Int,Int2Bas
 from   tools            import print_state,fidelity,dump_state,read_state,dump_lanz_vecs
 from   hamiltonian      import Hmat,Hmoms,Hpsi,Hii
 
+# H is the hamiltonian
+# db is the imaginary time step size
+# bmax is the terminal imaginary time
+# psi0 is the initial state, if None, it's initialized to |i> such that H[i,i] is minimum
+# omega is ???
 def ITE_FCI(H_,db,bmax,psi0=None,omega=None):
     Hm = Hmat(H_)
     N     = Hm.shape[0]
     nbit  = int(np.log2(N))
     eps,U = SciLA.eigh(Hm) # eigenvalues (ascending), eigenvector matrix
-    m0    = np.argmin(eps) # index of the smallest eigenvalue
-    zeta  = np.exp(-db*(eps-eps[m0]))
+    m0    = np.argmin(eps) # index of the smallest eigenvalue (ground state)
+    zeta  = np.exp(-db*(eps-eps[m0])) # [exp(-db (E - E_min))], where E are the eigenvalues of H
 
     fout = open('ITE_FCI.out','w')
-    fout.write("FCI gs energy %.6f \n" % eps[m0])
-    fout.write("FCI gs wfn \n")
+    fout.write("FCI gs energy %.6f \n" % eps[m0]) #ground state energy
+    fout.write("FCI gs wfn \n") # ground state wavefunction
     print_state(U[:,m0],nbit,fout)
 
     if(psi0 is None):
@@ -29,7 +34,7 @@ def ITE_FCI(H_,db,bmax,psi0=None,omega=None):
     else:
         psi_FCI     = psi0.copy()
 
-    nbeta    = int(bmax/db)+1 # number of time steps
+    nbeta    = int(bmax/db)+1 # number of imaginary time steps
     fout.write("FCI ITE\n")
     for ib in range(nbeta):
         ea,ev    = Hmoms(H_,psi_FCI) # moments of H
@@ -39,12 +44,12 @@ def ITE_FCI(H_,db,bmax,psi0=None,omega=None):
         psi_FCI  = np.dot(U,psi_FCI) # change back to computational basis
         psi_FCI /= LA.norm(psi_FCI) # normalize the state
         if(omega is None): 
-            fide = fidelity(psi_FCI,U[:,m0])
+            fide = fidelity(psi_FCI,U[:,m0]) # measure fidelity against ground state
         else:
             fide = LA.norm(psi_FCI[omega])**2
         fout.write("%.6f %.6f %.6f %.6f \n" % (ib*db,ea,ev,fide))
 
-    fout.write("FCI ITE gs wfn \n")
+    fout.write("FCI ITE gs wfn \n") # ground state produced by the ITE
     print_state(psi_FCI,nbit,fout)
 
     fout.close()
