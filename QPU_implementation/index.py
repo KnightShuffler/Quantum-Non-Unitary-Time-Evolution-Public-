@@ -2,6 +2,8 @@ import numpy as np
 
 # To keep track of Lie algebra. Let P represent some Pauli operator. We want to know PiPj = cijPij.
 
+# idx[i,j] = sigma_i sigma_j (without the coefficient)
+# eg: sigma_1 sigma_2 = X Y = i Z, so idx[1,2] = 3 and coeff[1,2] = i
 idx = np.zeros([4,4],dtype=int)
 idx[0,0] = 0
 idx[0,1] = 1
