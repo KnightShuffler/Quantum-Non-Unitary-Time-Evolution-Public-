@@ -42,6 +42,17 @@ def qite_step(alist,shots,qc,qbits,correction_matrix,db,delta,hm_list):
 		norm = update_alist(sigma_expectation,alist,db,delta,hm_list[j])
 	return alist
 
+
+# Returns the QITE ground state energy
+# qc    	- name of the rigetti quantum computer to run on
+# qbits 	- list of qubit indices
+# shots 	- number of shots
+# db    	- imaginary time step
+# delta 	- 
+# N     	- number of imaginary time steps
+# hm_list	- list of single-qubit Hamiltonian terms each of the form 
+# 				[ [sigma_index], [amplitude] ] 
+#              eg [ [3], [1/sqrt(2)] ] is Z/sqrt(2)
 def qite(qc,qbits,shots,db,delta,N,hm_list):
 	E = np.zeros([N+1],dtype=complex)
 	alist = []
