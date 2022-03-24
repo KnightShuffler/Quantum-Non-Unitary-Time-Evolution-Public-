@@ -69,8 +69,23 @@ def measure(qc, idx, qbit, cbit, backend, num_shots=1024):
     # Divide by total shots to get the statistical expectation of the measurement
     return float(expectation)/num_shots
 
-def propogate():
-    None
+def propogate(qc, alist, qbit):
+    # Circuit to propogate the state
+    if len(alist) == 0:
+        return
+    else:
+        for t in range(len(alist)):
+            for gate in range(1,4):
+                angle = np.real(alist[t][gate])
+                if gate == 1:
+                    qc.rx(angle, qbit)
+                elif gate == 2:
+                    qc.ry(angle, qbit)
+                elif gate == 3:
+                    qc.rz(angle, qbit)
+                else:
+                    raise ValueError('gate should only take values 1,2,3')
+    
 
 def update_alist():
     None

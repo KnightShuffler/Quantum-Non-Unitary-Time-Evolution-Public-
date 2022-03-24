@@ -4,7 +4,13 @@ from pyquil.noise import estimate_bitstring_probs,correct_bitstring_probs
 from pyquil import Program,get_qc
 from index import idx,coeff
 
-
+# returns the expected measurement 
+# p					- the program
+# ro 				- the readout bits of p
+# idx 				- sigma_matrix index indicating X,Y or Z measurement?
+# qc				- rigetti qc name
+# qbits				- list of qubit indices
+# correction_matrix	- error matrix 
 def measure(p,ro,idx,qc,qbits,correction_matrix):
 	# Circuit to measure the expectation value of any Pauli string
 
