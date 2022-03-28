@@ -5,6 +5,56 @@ from qiskit import execute, Aer
 sv_sim = Aer.get_backend('statevector_simulator')
 aer_sim = Aer.get_backend('aer_simulator')
 
+def int_to_base4(x, nbit):
+    pauli = [0] * nbit
+    for i in range(nbit):
+        pauli[-(i+1)] = x % 4
+        x = x//4
+    return pauli
+
+def pauli_exp(qc, qbits, pauli, theta):
+    '''
+    adds gates to calculate exp(-i theta/2 p), where p is a Pauli string
+    '''
+    nbit = len(qbits)
+
+    pstring = int_to_base4(pauli, nbit)
+    cnots = []
+
+    # Do a change of basis
+    for i in range(nbit):
+        if pstring[i] == 1:
+            qc.h(qbits[i])
+        elif pstring[i] == 2:
+            qc.rx(np.pi/2, qbits[i])
+        elif pstring[i] == 3:
+            None
+        else: # pstring[i] == 0, don't add this to the list of cnots
+            continue
+        cnots.append(qbits[i])
+    
+    # Apply the cascading CNOTs
+    for i in range(len(cnots)-1):
+        qc.cx(cnots[i], cnots[i+1])
+    
+    qc.rz(theta,cnots[-1])
+
+    # Undo the cascading CNOTs
+    for i in range(len(cnots)-2,-1,-1):
+        qc.cx(cnots[i], cnots[i+1])
+    
+    # Undo the change of basis
+    for i in range(nbit):
+        if pstring[i] == 1:
+            qc.h(qbits[i])
+        elif pstring[i] == 2:
+            qc.rx(-np.pi/2, qbits[i])
+        else: # do nothing for 0,3
+            None
+
+
+
+
 def run_circuit(qc, backend, num_shots=1024):
     '''
     Run the circuit and return a dictionary of the measured counts
