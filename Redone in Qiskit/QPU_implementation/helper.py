@@ -87,8 +87,36 @@ def propogate(qc, alist, qbit):
                     raise ValueError('gate should only take values 1,2,3')
     
 
-def update_alist():
-    None
+def update_alist(sigma_expectation,alist,db,delta,hm):
+	# Obtain A[m]
+
+	# Step 1: Obtain S matrix
+	S = np.zeros([4,4],dtype=complex)
+	for i in range(4):
+		for j in range(4):
+			S[i,j] = sigma_expectation[idx[i,j]]*coeff[i,j]
+
+	# Step 2: Obtain b vector
+	b = np.zeros([4],dtype=complex)
+	c = 1
+	for i in range(len(hm[0][0])):
+		c -= 2*db*hm[0][1][i]*sigma_expectation[hm[0][0][i]]
+	c = np.sqrt(c)
+	for i in range(4):
+		b[i] += (sigma_expectation[i]/c-sigma_expectation[i])/(db)
+		for j in range(len(hm[0][0])):
+			b[i] -= hm[0][1][j]*coeff[i,hm[0][0][j]]*sigma_expectation[idx[i,hm[0][0][j]]]/c 
+		b[i] = 1j*b[i] - 1j*np.conj(b[i])
+
+	# Step 3: Add regularizer
+	dalpha = np.eye(4)*delta
+
+	# Step 4: Solve for linear equation, the solution is multiplied by -2 because of the definition of unitary rotation gates is exp(-i theta/2)
+	x = np.linalg.lstsq(S+np.transpose(S)+dalpha,-b,rcond=-1)[0]
+	alist.append([])
+	for i in range(len(x)):
+		alist[-1].append(-x[i]*2*db)
+	return c
 
 def estimate_assignment_probs():
     None

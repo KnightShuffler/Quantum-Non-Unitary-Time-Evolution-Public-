@@ -8,6 +8,7 @@ from helper import measure,propagate,estimate_bitstring_probs,estimate_assignmen
 def ansatz(p,qbits):
 	None
 
+# return <psi|H|psi> from the 
 def measure_energy(alist,shots,qc,qbits,hm_list,correction_matrix):
 	# Measure the energy at the end of each time step
 	Energy = 0
