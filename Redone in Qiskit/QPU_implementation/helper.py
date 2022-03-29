@@ -119,6 +119,50 @@ def measure(qc, idx, qbit, cbit, backend, num_shots=1024):
     # Divide by total shots to get the statistical expectation of the measurement
     return float(expectation)/num_shots
 
+def meaure_mult(qc, idx, qbits, cbits, backend, num_shots=1024):
+    nbits = len(qbits)
+    ids = int_to_base4(idx, nbits)
+
+    measures = []
+
+    for i in range(nbits):
+        if ids[-(i+1)] == 0:
+            # I only has +1 eigenvalues, so the measurement is +1
+            continue
+        elif ids[-(i+1)] == 1:
+            # Rotate to X-basis
+            qc.h(qbits[i])
+        elif ids[-(i+1)] == 2:
+            # Rotate to Y-basis
+            qc.rx(-np.pi/2, qbits[i])
+        elif ids[-(i+1)] == 3:
+            # Already in Z-basis
+            None
+        else:
+            raise ValueError('Only 0,1,2,3 are valid idx')
+        measures.append( [qbits[i],cbits[i]] )
+
+    # print(measures)
+    # Add measurements to the circuit
+    for m in measures:
+        qc.measure(m[0],m[1])
+
+    # Get the measurement statistics
+    counts = run_circuit(qc, backend, num_shots=num_shots)
+
+    expectation = 0
+    for key in counts.keys():
+        k = key.replace(' ','')
+        sign = 1
+        # print('key: ', k)
+        for m in measures:
+            if k[-(m[1] + 1)] == '1':
+                sign *= -1
+        expectation += sign*counts[key]
+
+    expectation /= num_shots
+    return expectation
+
 def propogate(qc, alist, qbit):
     # Circuit to propogate the state
     if len(alist) == 0:
