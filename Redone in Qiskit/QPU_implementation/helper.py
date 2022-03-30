@@ -243,7 +243,9 @@ def update_alist(sigma_expectation,alist,db,delta,hm):
 		alist[-1].append(-x[i]*2*db)
 	return c
 
-def update_alist_mult(sigma_expectation, alist, db, delta, hm, nbits):
+def update_alist_mult(sigma_expectation, alist, db, delta, hm):
+    # number of qubits the hm term acts on
+    nbits = len(hm[0][2])
     # number of pauli terms in hm
     nterms = len(hm[0][0])
     # number of pauli strings on that many qubits
