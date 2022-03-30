@@ -12,6 +12,25 @@ def int_to_base4(x, nbit):
         x = x//4
     return pauli
 
+def base4_to_int(pauli):
+    x = 0
+    for i in range(len(pauli)):
+        x += pauli[i] * 4**i
+    return x
+
+def pauli_prod(p1,p2,nbits):
+    pauli1 = int_to_base4(p1,nbits)
+    pauli2 = int_to_base4(p2,nbits)
+    
+    c = 1+0.j
+    prod = [0]*nbits
+    
+    for i in range(nbits):
+        prod[i] = idx[pauli1[i], pauli2[i]]
+        c *= coeff[pauli1[i], pauli2[i]]
+    
+    return base4_to_int(prod), c
+
 def pauli_exp(qc, qbits, pauli, theta):
     '''
     adds gates to calculate exp(-i theta/2 p), where p is a Pauli string
@@ -120,6 +139,9 @@ def measure(qc, idx, qbit, cbit, backend, num_shots=1024):
     return float(expectation)/num_shots
 
 def measure_mult(qc, idx, qbits, cbits, backend, num_shots=1024):
+    if idx == 0:
+        return 1
+
     nbits = len(qbits)
     ids = int_to_base4(idx, nbits)
 
@@ -152,11 +174,13 @@ def measure_mult(qc, idx, qbits, cbits, backend, num_shots=1024):
 
     expectation = 0
     for key in counts.keys():
-        k = key.replace(' ','')
+        k = key.replace(' ','') 
+        # reverse the key to match ordering of bits
+        k = k[::-1]
         sign = 1
         # print('key: ', k)
         for m in measures:
-            if k[-(m[1] + 1)] == '1':
+            if k[ m[1] ] == '1':
                 sign *= -1
         expectation += sign*counts[key]
 
@@ -179,7 +203,14 @@ def propogate(qc, alist, qbit):
                     qc.rz(angle, qbit)
                 else:
                     raise ValueError('gate should only take values 1,2,3')
-    
+
+def propogate_mult(qc, alist, qbits):
+    nbits = len(qbits)
+    for t in range(len(alist)):
+        for gate in range(1,4**nbits):
+            angle = np.real(alist[t][gate])
+            if np.abs(angle) > 1e-5:
+                pauli_exp(qc,qbits,gate,angle)
 
 def update_alist(sigma_expectation,alist,db,delta,hm):
 	# Obtain A[m]
@@ -211,6 +242,45 @@ def update_alist(sigma_expectation,alist,db,delta,hm):
 	for i in range(len(x)):
 		alist[-1].append(-x[i]*2*db)
 	return c
+
+def update_alist_mult(sigma_expectation, alist, db, delta, hm, nbits):
+    # number of pauli terms in hm
+    nterms = len(hm[0][0])
+    # number of pauli strings on that many qubits
+    nops = 4**nbits
+    
+    # Step 1: Obtain S matrix
+    S = np.zeros([nops,nops],dtype=complex)
+    for i in range(nops):
+        for j in range(nops):
+            p,c_ = pauli_prod(i,j)
+            S[i,j] =  sigma_expectation[p] * c_
+            
+    # Step 2: Obtain b vector
+    b = np.zeros(nops,dtype=complex)
+    c = 1
+    
+    for i in range(nterms):
+        c -= 2 * db * hm[0][1][i] * sigma_expectation[hm[0][0][i]]
+    c = np.sqrt(c)
+    
+    for i in range(nops):
+        b[i] += ( sigma_expectation[i]/c - sigma_expectation[i] ) / db
+        for j in range(nterms):
+            p,c_ = pauli_prod(i,hm[0][0][j])
+            b[i] -= hm[0][1][j] * c_ * sigma_expectation[p] / c
+    b = 1j * (b - np.conj(b))
+    
+    # Step 3: Add regularizer
+    dalpha = np.eye(nops)*delta
+    
+    # Step 4: Solve for linear equation, the solutions is multiplies by -2 because of the definition of unitary rotations is exp(-i theta/2)
+    x = np.linalg.lstsq(S + np.transpose(S) + dalpha, -b, rcond=-1)[0]
+    alist.append([])
+    for i in range(len(x)):
+        alist[-1].append(-x[i]*2*db)
+        
+    return c
 
 def estimate_assignment_probs():
     None
