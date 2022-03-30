@@ -8,7 +8,7 @@ aer_sim = Aer.get_backend('aer_simulator')
 def int_to_base4(x, nbit):
     pauli = [0] * nbit
     for i in range(nbit):
-        pauli[-(i+1)] = x % 4
+        pauli[i] = x % 4
         x = x//4
     return pauli
 
@@ -119,23 +119,23 @@ def measure(qc, idx, qbit, cbit, backend, num_shots=1024):
     # Divide by total shots to get the statistical expectation of the measurement
     return float(expectation)/num_shots
 
-def meaure_mult(qc, idx, qbits, cbits, backend, num_shots=1024):
+def measure_mult(qc, idx, qbits, cbits, backend, num_shots=1024):
     nbits = len(qbits)
     ids = int_to_base4(idx, nbits)
 
     measures = []
 
     for i in range(nbits):
-        if ids[-(i+1)] == 0:
+        if ids[i] == 0:
             # I only has +1 eigenvalues, so the measurement is +1
             continue
-        elif ids[-(i+1)] == 1:
+        elif ids[i] == 1:
             # Rotate to X-basis
             qc.h(qbits[i])
-        elif ids[-(i+1)] == 2:
+        elif ids[i] == 2:
             # Rotate to Y-basis
             qc.rx(-np.pi/2, qbits[i])
-        elif ids[-(i+1)] == 3:
+        elif ids[i] == 3:
             # Already in Z-basis
             None
         else:
