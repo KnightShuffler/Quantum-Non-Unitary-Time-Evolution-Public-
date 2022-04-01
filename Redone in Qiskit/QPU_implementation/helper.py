@@ -71,9 +71,6 @@ def pauli_exp(qc, qbits, pauli, theta):
         else: # do nothing for 0,3
             None
 
-
-
-
 def run_circuit(qc, backend, num_shots=1024):
     '''
     Run the circuit and return a dictionary of the measured counts
@@ -164,7 +161,7 @@ def measure_mult(qc, idx, qbits, cbits, backend, num_shots=1024):
             raise ValueError('Only 0,1,2,3 are valid idx')
         measures.append( [qbits[i],cbits[i]] )
 
-    # print(measures)
+    # print('measures: ',measures)
     # Add measurements to the circuit
     for m in measures:
         qc.measure(m[0],m[1])
@@ -204,10 +201,9 @@ def propogate(qc, alist, qbit):
                 else:
                     raise ValueError('gate should only take values 1,2,3')
 
-def propogate_mult(qc, alist, qbits):
-    nbits = len(qbits)
+def propogate_mult(qc, alist, Nterms, qbits):
     for t in range(len(alist)):
-        for gate in range(1,4**nbits):
+        for gate in range( 1, 4**(len(qbits[t%Nterms])) ):
             angle = np.real(alist[t][gate])
             if np.abs(angle) > 1e-5:
                 pauli_exp(qc,qbits,gate,angle)
@@ -255,7 +251,7 @@ def update_alist_mult(sigma_expectation, alist, db, delta, hm):
     S = np.zeros([nops,nops],dtype=complex)
     for i in range(nops):
         for j in range(nops):
-            p,c_ = pauli_prod(i,j)
+            p,c_ = pauli_prod(i,j,nbits)
             S[i,j] =  sigma_expectation[p] * c_
             
     # Step 2: Obtain b vector
@@ -269,7 +265,7 @@ def update_alist_mult(sigma_expectation, alist, db, delta, hm):
     for i in range(nops):
         b[i] += ( sigma_expectation[i]/c - sigma_expectation[i] ) / db
         for j in range(nterms):
-            p,c_ = pauli_prod(i,hm[0][0][j])
+            p,c_ = pauli_prod(i,hm[0][0][j],nbits)
             b[i] -= hm[0][1][j] * c_ * sigma_expectation[p] / c
     b = 1j * (b - np.conj(b))
     
@@ -283,6 +279,70 @@ def update_alist_mult(sigma_expectation, alist, db, delta, hm):
         alist[-1].append(-x[i]*2*db)
         
     return c
+
+# Function that returns all pauli strings with odd number of Y's
+def odd_y_pauli(nbits):
+    nops = 4**nbits
+    odds = []
+    for i in range(nops):
+        p = int_to_base4(i,nbits)
+        num_y = 0
+        for x in p:
+            if x == 2:
+                num_y += 1
+        if num_y % 2 == 1:
+            odds.append(i)
+    return odds
+
+# Function to update alist for the assumption of real Hamiltonian and state vectors:
+def update_alist_reals(sigma_expectation, alist, db, delta, hm, odds):
+    # number of qubits the hm term acts on
+    nbits = len(hm[0][2])
+    # number of pauli terms in hm
+    nterms = len(hm[0][0])
+    # number of pauli strings on that many qubits
+    nops = 2**(nbits - 1) * (2**nbits - 1)
+    
+    # Step 1: Obtain S matrix
+    S = np.zeros([nops,nops],dtype=complex)
+    for i in range(nops):
+        for j in range(nops):
+            p,c_ = pauli_prod(odds[i],odds[j],nbits)
+            S[i,j] =  sigma_expectation[p] * c_
+            
+    # Step 2: Obtain b vector
+    b = np.zeros(nops,dtype=complex)
+    c = 1
+    
+    for i in range(nterms):
+        c -= 2 * db * hm[0][1][i] * sigma_expectation[hm[0][0][i]]
+    c = np.sqrt(c)
+    
+    for i in range(nops):
+        b[i] += ( sigma_expectation[odds[i]]/c - sigma_expectation[odds[i]] ) / db
+        for j in range(nterms):
+            p,c_ = pauli_prod(odds[i],hm[0][0][j],nbits)
+            b[i] -= hm[0][1][j] * c_ * sigma_expectation[p] / c
+    b = 1j * (b - np.conj(b))
+    
+    # Step 3: Add regularizer
+    dalpha = np.eye(nops)*delta
+    
+    # Step 4: Solve for linear equation, the solutions is multiplies by -2 because of the definition of unitary rotations is exp(-i theta/2)
+    x = np.linalg.lstsq(S + np.transpose(S) + dalpha, -b, rcond=-1)[0]
+    alist.append([])
+    for i in range(len(x)):
+        alist[-1].append(-x[i]*2*db)
+        
+    return c
+
+def propogate_reals(qc, alist, qbits, odds):
+    nbits = len(qbits)
+    for t in range(len(alist)):
+        for gate in range(len(odds)):
+            angle = np.real(alist[t][gate])
+            if np.abs(angle) > 1e-5:
+                pauli_exp(qc,qbits,odds[gate],angle)
 
 def estimate_assignment_probs():
     None
