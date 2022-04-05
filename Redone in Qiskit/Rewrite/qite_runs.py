@@ -22,8 +22,8 @@ hm_list.append(hm)
 # For this example, the Hamiltonian is of the form: 1/sqrt(2) (Z_0 X_1) + 1/sqrt(2) (I_0 H_1)
 
 
-n_runs = 1          # Number of runs
-run_offset = 0      # So as not to overwrite previous data
+n_runs = 3          # Number of runs
+run_offset = 1      # So as not to overwrite previous data
 
 log_path = './qite_logs/'
 fig_path = './figs/energies/'
@@ -31,6 +31,8 @@ fig_path = './figs/energies/'
 for run in range(n_runs):
     print('Running iteration {} of {}:'.format(run+1, n_runs))
     E,times = qite(db, delta, N, nbits, hm_list, backend, shots, details=True, log=True, log_file=log_path+'run{:0>3}'.format(run+run_offset+1))
+
+    plt.clf()
 
     p1, = plt.plot(np.arange(0,N+1)*db, E, 'ro-')
 
