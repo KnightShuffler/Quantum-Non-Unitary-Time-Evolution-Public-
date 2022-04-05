@@ -46,4 +46,4 @@ for run in range(n_runs):
 
     plt.savefig(fig_path + 'run{:0>3}'.format(run+run_offset+1))
 
-    print('')
+    print('Run time = {:.2f}\n'.format(np.sum(times)/60))
