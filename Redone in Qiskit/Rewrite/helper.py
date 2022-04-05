@@ -1,5 +1,7 @@
 import numpy as np
 
+from qiskit import execute
+
 #-----------------#
 # General Helpers #
 #-----------------#

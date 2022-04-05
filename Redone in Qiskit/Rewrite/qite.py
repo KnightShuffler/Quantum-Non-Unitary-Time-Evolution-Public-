@@ -1,5 +1,5 @@
 import numpy as np
-from qiskit import execute, Aer
+from qiskit import Aer
 from qiskit import QuantumCircuit
 
 aer_sim = Aer.get_backend('aer_simulator')
