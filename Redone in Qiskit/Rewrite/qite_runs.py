@@ -11,7 +11,7 @@ from os import path, makedirs
 # QITE Parameters
 db = 0.05       # Size of imaginary time step
 N = 30          # Number of imaginary time steps
-shots = 5000    # Number of measurements taken for each circuit
+shots = 1000    # Number of measurements taken for each circuit
 delta = 0.1     # Regularizer value
 
 # Hamiltonian Description
@@ -26,10 +26,10 @@ hm_list.append(hm)
 
 
 n_runs = 8          # Number of runs
-run_offset = 0      # So as not to overwrite previous data
+run_offset = 10      # So as not to overwrite previous data
 
-log_path = './qite_logs/shots=5000/'
-fig_path = './figs/energies/shots=5000/'
+log_path = './qite_logs/shots=1000/'
+fig_path = './figs/energies/shots=1000/'
 run_identifier = 'run'
 
 if not(path.exists(log_path)):
