@@ -239,7 +239,8 @@ def get_h_matrix(hm_list, nbits):
             partial_pauli_str = int_to_base(hm[0][i],4,nactive)
             for j in range(len(active)):
                 full_pauli_str[active[j]] = partial_pauli_str[j]
-            
+            # reverse the string to be consistend with Qiskit's qubit ordering
+            full_pauli_str = full_pauli_str[::-1]
             # The matrix for the term is a tensor product of the corresponding Pauli matrices
             term_matrix = sigma_matrices[full_pauli_str[0]]
             for j in range(1,nbits):
