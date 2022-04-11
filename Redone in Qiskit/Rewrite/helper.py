@@ -228,28 +228,33 @@ def pauli_string_exp(qc, qbits, p, theta):
 def get_h_matrix(hm_list, nbits):
     num_basis = 2**nbits
     h_mat = np.zeros([num_basis,num_basis],dtype=complex)
-    
-    for hm in hm_list:
-        active = hm[2]
-        nactive = len(active)
-        nterms = len(hm[0])
-        # Loop through the Pauli terms in hm
-        for i in range(nterms):
-            full_pauli_str = [0] * nbits
-            partial_pauli_str = int_to_base(hm[0][i],4,nactive)
-            for j in range(len(active)):
-                full_pauli_str[active[j]] = partial_pauli_str[j]
-            # reverse the string to be consistend with Qiskit's qubit ordering
-            full_pauli_str = full_pauli_str[::-1]
-            # The matrix for the term is a tensor product of the corresponding Pauli matrices
-            term_matrix = sigma_matrices[full_pauli_str[0]]
-            for j in range(1,nbits):
-                term_matrix = np.kron(term_matrix, sigma_matrices[full_pauli_str[j]])
-            # Scale by the coefficient of the term
-            term_matrix *= hm[1][i]
-            
-            # Add the term to the final matrix
-            h_mat += term_matrix
+
+    if nbits == 1:
+        for hm in hm_list:
+            for i in range(len(hm[0])):
+                h_mat += hm[1][i] * sigma_matrices[hm[0][i]]
+    else:
+        for hm in hm_list:
+            active = hm[2]
+            nactive = len(active)
+            nterms = len(hm[0])
+            # Loop through the Pauli terms in hm
+            for i in range(nterms):
+                full_pauli_str = [0] * nbits
+                partial_pauli_str = int_to_base(hm[0][i],4,nactive)
+                for j in range(len(active)):
+                    full_pauli_str[active[j]] = partial_pauli_str[j]
+                # reverse the string to be consistend with Qiskit's qubit ordering
+                full_pauli_str = full_pauli_str[::-1]
+                # The matrix for the term is a tensor product of the corresponding Pauli matrices
+                term_matrix = sigma_matrices[full_pauli_str[0]]
+                for j in range(1,nbits):
+                    term_matrix = np.kron(term_matrix, sigma_matrices[full_pauli_str[j]])
+                # Scale by the coefficient of the term
+                term_matrix *= hm[1][i]
+                
+                # Add the term to the final matrix
+                h_mat += term_matrix
     return h_mat
 
 def get_spectrum(hm_list, nbits):
