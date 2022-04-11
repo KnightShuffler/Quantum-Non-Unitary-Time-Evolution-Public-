@@ -114,7 +114,7 @@ def measure(qc, p, qbits, backend, num_shots=1024):
     
     # <psi|I|psi> = 1 for all states
     if p == 0:
-        return 1
+        return 1, {}
     
     nbits = len(qbits)
     pstring = int_to_base(p, 4, nbits)
