@@ -271,3 +271,18 @@ def get_gs(hm_list, nbits):
     w,v = get_spectrum(hm_list,nbits)
     i = np.argmin(w)
     return w[i],v[:,i]
+
+def is_real_hamiltonian(hm_list):
+    for hm in hm_list:
+        nactive = len(hm[2])
+        odd_ys = odd_y_pauli_strings(nactive)
+        for j in range(len(hm[0])):
+            # If a term with odd Ys, the coefficient should be imaginary
+            if hm[0][j] in odd_ys:
+                if np.abs(np.real(hm[1][j])) > 1e-5:
+                    return False
+            # If a term with even Ys, the coefficient should be real
+            else:
+                if np.abs(np.imag(hm[1][j])) > 1e-5:
+                    return False
+    return True

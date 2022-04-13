@@ -2,8 +2,6 @@ import numpy as np
 from qiskit import Aer
 from qiskit import QuantumCircuit
 
-aer_sim = Aer.get_backend('aer_simulator')
-
 import time
 
 from helper import *

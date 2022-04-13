@@ -1,7 +1,8 @@
 import numpy as np
 from qite import qite
+from y_qite import y_qite
 from qite import aer_sim as backend
-from helper import get_spectrum
+from helper import get_spectrum, is_real_hamiltonian
 
 import matplotlib.pyplot as plt
 
@@ -11,7 +12,7 @@ from os import path, makedirs
 # QITE Parameters
 db = 0.05       # Size of imaginary time step
 N = 30          # Number of imaginary time steps
-shots = 5000    # Number of measurements taken for each circuit
+shots = 1000    # Number of measurements taken for each circuit
 delta = 0.1     # Regularizer value
 
 # Hamiltonian Description
@@ -26,10 +27,10 @@ hm_list.append(hm)
 
 
 n_runs = 4          # Number of runs
-run_offset = 8      # So as not to overwrite previous data
+run_offset = 0      # So as not to overwrite previous data
 
-log_path = './qite_logs/shots=5000/'
-fig_path = './figs/energies/shots=5000/'
+log_path = './qite_logs/odd_y/shots={}/'.format(shots)
+fig_path = './figs/energies/odd_y/shots={}/'.format(shots)
 run_identifier = 'run'
 
 if not(path.exists(log_path)):
@@ -37,9 +38,14 @@ if not(path.exists(log_path)):
 if not(path.exists(fig_path)):
     makedirs(fig_path)
 
+real_h_flag = is_real_hamiltonian(hm_list)
+
 for run in range(n_runs):
     print('Running iteration {} of {}:'.format(run+1, n_runs))
-    E,times = qite(db, delta, N, nbits, hm_list, backend, shots, details=True, log=True, log_file=log_path+run_identifier+'{:0>3}'.format(run+run_offset+1))
+    if real_h_flag:
+        E,times = y_qite(db, delta, N, nbits, hm_list, backend, shots, details=True, log=True, log_file=log_path+run_identifier+'{:0>3}'.format(run+run_offset+1))
+    else:
+        E,times = qite(db, delta, N, nbits, hm_list, backend, shots, details=True, log=True, log_file=log_path+run_identifier+'{:0>3}'.format(run+run_offset+1))
 
     plt.clf()
 
