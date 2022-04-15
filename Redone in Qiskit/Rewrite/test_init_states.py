@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from os import path, makedirs
 
 # QITE Parameters
-db = 0.05       # Size of imaginary time step
+db = 0.1       # Size of imaginary time step
 N = 30          # Number of imaginary time steps
 shots = 1000    # Number of measurements taken for each circuit
 delta = 0.1     # Regularizer value
@@ -25,8 +25,8 @@ hm = [ [1,3], [0.5, 0.5], [1]]
 hm_list.append(hm)
 # For this example, the Hamiltonian is of the form: 1/sqrt(2) (Z_0 X_1) + 1/sqrt(2) (I_0 H_1)
 
-log_path = './qite_logs/ideal_qite/'
-fig_path = './figs/ideal_qite/'
+log_path = './qite_logs/ideal_qite/db={:0.1f}/N={}/'.format(db,N)
+fig_path = './figs/ideal_qite/db={:0.1f}/N={}/'.format(db,N)
 
 if not(path.exists(log_path)):
     makedirs(log_path)
@@ -38,54 +38,61 @@ w,v = get_spectrum(hm_list,nbits)
 w = np.real(w)
 w_sort_i = sorted(range(len(w)), key=lambda k: w[k])
 
-for gs_prob in np.arange(0, 11)*0.1:
-    print('Iteration: gs_prob = {:0.1f}'.format(gs_prob))
-    id = 'ideal-qite-{:0.1f}_gs_prob'.format(gs_prob)
-    log_file = log_path + id
-    fig_file = fig_path + id
+for p0 in np.arange(0.3, 1.1, 0.1):
+    for p1 in np.arange(0.0, 1.0-p0+0.1, 0.1):
+        p2 = 1.0 - p0 - p1
+        print('Iteration: p0={:0.1f}, p1={:0.1f}, p2={:0.1f}'.format(p0,p1,p2))
+        id = 'ideal-qite-p0={:0.1f}p1={:0.1f}p2={:0.1f}'.format(p0,p1,p2)
 
-    init_sv = Statevector( np.sqrt(gs_prob) * v[w_sort_i[0]] + 
-                        np.sqrt(1.0-gs_prob) * v[w_sort_i[1]] )
+# for gs_prob in np.arange(0, 11)*0.1:
+#     print('Iteration: gs_prob = {:0.1f}'.format(gs_prob))
+#     id = 'ideal-qite-{:0.1f}_gs_prob'.format(gs_prob)
+        log_file = log_path + id
+        fig_file = fig_path + id
 
-    E,times,states = ideal_qite(db,delta,N,nbits,hm_list,init_sv,details=True,log=True,log_file=log_file)
-    
-    plt.clf()
+        init_sv = Statevector( np.sqrt(p0) * v[:,w_sort_i[0]] + 
+                               np.sqrt(p1) * v[:,w_sort_i[1]] +
+                               np.sqrt(np.abs(p2)) * v[:,w_sort_i[2]])
 
-    fig, axs = plt.subplots(1,2,figsize=(12,5))
+        E,times,states = ideal_qite(db,delta,N,nbits,hm_list,init_sv,details=True,log=True,log_file=log_file)
 
-    energy_state_probs = np.zeros([len(w), N+1], dtype=float)
+        plt.clf()
 
-    hmat = get_h_matrix(hm_list, nbits)
+        fig, axs = plt.subplots(1,2,figsize=(12,5))
 
-    for i in range(N+1):
-        for j in range(len(w)):
-            energy_state_probs[j][i] = np.abs( np.vdot(v[:,j], states[i].data) )**2
+        energy_state_probs = np.zeros([len(w), N+1], dtype=float)
 
-    fig.suptitle('Ideal QITE behaviour', fontsize=16)
-    plt.subplots_adjust(top=0.85)
+        hmat = get_h_matrix(hm_list, nbits)
 
-    p1, = axs[0].plot(np.arange(0,N+1)*db, E, 'ro-')
-    for ei in w:
-        p2 = axs[0].axhline(y=ei, color='k', linestyle='--')
-    axs[0].set_title('Mean Energy in QITE')
-    axs[0].set_ylabel('Energy')
-    axs[0].set_xlabel('Imaginary Time')
-    axs[0].grid()
-    axs[0].legend((p1,p2), ('Mean Energy of State', 'Hamiltonian Energy Levels'), loc='best')
+        for i in range(N+1):
+            for j in range(len(w)):
+                energy_state_probs[j][i] = np.abs( np.vdot(v[:,j], states[i].data) )**2
 
-    axs[1].plot(np.arange(0,N+1)*db, energy_state_probs[w_sort_i[0]], 'ro-', label='{:0.3f} energy eigenstate'.format(w[w_sort_i[0]]))
-    axs[1].plot(np.arange(0,N+1)*db, energy_state_probs[w_sort_i[1]], 'g.-', label='{:0.3f} energy eigenstate'.format(w[w_sort_i[1]]))
-    axs[1].plot(np.arange(0,N+1)*db, energy_state_probs[w_sort_i[2]], 'bs-', label='{:0.3f} energy eigenstate'.format(w[w_sort_i[2]]))
-    axs[1].plot(np.arange(0,N+1)*db, energy_state_probs[w_sort_i[3]], 'kP-', label='{:0.3f} energy eigenstate'.format(w[w_sort_i[3]]))
+        fig.suptitle('Ideal QITE behaviour -- p0={:0.1f}, p1={:0.1f}, p2={:0.1f}'.format(p0,p1,p2), fontsize=16)
+        plt.subplots_adjust(top=0.85)
 
-    axs[1].set_title('Energy Eigenstate Probabilities in QITE')
-    axs[1].set_ylim([0,1])
-    axs[1].set_ylabel('Probability')
-    axs[1].set_xlabel('Imaginary Time')
+        p1, = axs[0].plot(np.arange(0,N+1)*db, E, 'ro-')
+        for ei in w:
+            p2 = axs[0].axhline(y=ei, color='k', linestyle='--')
+        axs[0].set_title('Mean Energy in QITE')
+        axs[0].set_ylabel('Energy')
+        axs[0].set_xlabel('Imaginary Time')
+        axs[0].grid()
+        axs[0].legend((p1,p2), ('Mean Energy of State', 'Hamiltonian Energy Levels'), loc='best')
 
-    axs[1].grid()
-    axs[1].legend(loc='best')
+        axs[1].plot(np.arange(0,N+1)*db, energy_state_probs[w_sort_i[0]], 'ro-', label='{:0.3f} energy eigenstate'.format(w[w_sort_i[0]]))
+        axs[1].plot(np.arange(0,N+1)*db, energy_state_probs[w_sort_i[1]], 'g.-', label='{:0.3f} energy eigenstate'.format(w[w_sort_i[1]]))
+        axs[1].plot(np.arange(0,N+1)*db, energy_state_probs[w_sort_i[2]], 'bs-', label='{:0.3f} energy eigenstate'.format(w[w_sort_i[2]]))
+        axs[1].plot(np.arange(0,N+1)*db, energy_state_probs[w_sort_i[3]], 'kP-', label='{:0.3f} energy eigenstate'.format(w[w_sort_i[3]]))
 
-    fig.tight_layout()
+        axs[1].set_title('Energy Eigenstate Probabilities in QITE')
+        axs[1].set_ylim([0,1])
+        axs[1].set_ylabel('Probability')
+        axs[1].set_xlabel('Imaginary Time')
 
-    plt.savefig(fig_file+'.png')
+        axs[1].grid()
+        axs[1].legend(loc='best')
+
+        fig.tight_layout()
+
+        plt.savefig(fig_file+'.png')
