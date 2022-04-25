@@ -12,24 +12,29 @@ from os import path, makedirs
 
 # QITE Parameters
 db = 0.1       # Size of imaginary time step
-N = 30          # Number of imaginary time steps
+N = 60          # Number of imaginary time steps
 shots = 1000    # Number of measurements taken for each circuit
 delta = 0.1     # Regularizer value
 
 # Set true if using 2nd order trotterization
-_2nd_ord_flag = True
+_2nd_ord_flag = False
 
 # Hamiltonian Description
 nbits = 2       # Number of qubits in the full system
 
 hm_list = []
-hm = [ [3+1*4], [np.sqrt(0.5)], [0,1] ]
-hm_list.append(hm)
-hm = [ [1,3], [0.5, 0.5], [1]]
-hm_list.append(hm)
 
-h_name = 'Test'
-# For this example, the Hamiltonian is of the form: 1/sqrt(2) (Z_0 X_1) + 1/sqrt(2) (I_0 H_1)
+h_name = '1D AFM Transverse Ising - {} qubits, '.format(nbits)
+# Hamiltonian of the form J sum<i,j>(Z_i Z_j) + h sum_i (X_i)
+J = 1
+h = 0.5
+for i in range(nbits-1):
+    hm = [ [3+4*3], [J], [i,i+1] ]
+    hm_list.append(hm)
+for i in range(nbits):
+    hm = [ [1], [h], [i] ]
+    hm_list.append(hm)
+h_name += ' J={:0.2f}, h={:0.2f}'.format(J,h)
 
 log_path = './qite_logs/ideal_qite{}/{}/db={:0.1f}/N={}/'.format('_2nd_ord' if _2nd_ord_flag else '',h_name,db,N)
 fig_path = './figs/ideal_qite{}/{}/db={:0.1f}/N={}/'.format('_2nd_ord' if _2nd_ord_flag else '',h_name,db,N)
@@ -90,7 +95,7 @@ def plot_data(E,states, prob_string, fig_file):
 
     plt.savefig(fig_file+'.png')
 
-def multiple_runs(num_states, prob_incr, _2nd_ord_flag=True):
+def multiple_runs(num_states, prob_incr):
     b = int(np.floor(1.0/prob_incr)) + 1
     for iter in range(b**(num_states-1)):
         init_sv = np.zeros(2**nbits,dtype=complex)
@@ -121,7 +126,7 @@ def multiple_runs(num_states, prob_incr, _2nd_ord_flag=True):
 
         plot_data(E,states, prob_string, fig_file)
 
-def single_run(probs,_2nd_ord_flag=True):
+def single_run_probs(probs):
     if len(probs) > len(w):
         print('Error: The probs vector should have at most elements as the number of eigenvectors')
         return
@@ -146,5 +151,20 @@ def single_run(probs,_2nd_ord_flag=True):
 
     plot_data(E,states, prob_string, fig_file)
 
+def single_run_sv(sv, prob_string):
+    log_file = log_path + prob_string
+    fig_file = fig_path + prob_string
+
+    init_sv = Statevector(sv)
+
+    if _2nd_ord_flag:
+        E,times,states = ideal_qite_2nd_ord(db,delta,N,nbits,hm_list,init_sv,details=True,log=True,log_file=log_file)
+    else:
+        E,times,states = ideal_qite(db,delta,N,nbits,hm_list,init_sv,details=True,log=True,log_file=log_file)
+    
+    plot_data(E,states,prob_string, fig_file)
+        
+
 # multiple_runs(2,0.5,_2nd_ord_flag)
-single_run([0.0, 0.0, 1.0, 0.0], _2nd_ord_flag)
+# single_run([0.0, 0.0, 1.0, 0.0], _2nd_ord_flag)
+single_run_sv([ np.sqrt(0.5)**nbits ]*(2**nbits), 'maximally mixed state')
