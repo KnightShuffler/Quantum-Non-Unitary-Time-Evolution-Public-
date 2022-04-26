@@ -31,7 +31,7 @@ def update_alist_2nd_ord(sigma_expectation, alist, db, delta, hm, scale, odd_y_f
         c = 1
 
         for i in range(nterms):
-            c -= scale*db*sigma_expectation[hm[0][i]]
+            c -= scale * db * hm[1][i] * sigma_expectation[hm[0][i]]
         c = np.sqrt(c)
 
         for k in range(nops):

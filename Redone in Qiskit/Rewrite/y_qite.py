@@ -64,7 +64,7 @@ def y_update_alist(sigma_expectation, alist, db, delta, hm):
     c = 1
     
     for i in range(nterms):
-        c -= 2*db*sigma_expectation[hm[0][i]]
+        c -= 2 * db * hm[1][i] * sigma_expectation[hm[0][i]]
     c = np.sqrt(c)
     
     
