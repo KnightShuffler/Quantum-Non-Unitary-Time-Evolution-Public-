@@ -10,31 +10,26 @@ import matplotlib.pyplot as plt
 
 from os import path, makedirs
 
+from hamiltonians import *
+
 # QITE Parameters
 db = 0.1       # Size of imaginary time step
-N = 60          # Number of imaginary time steps
+N = 30          # Number of imaginary time steps
 shots = 1000    # Number of measurements taken for each circuit
 delta = 0.1     # Regularizer value
 
 # Set true if using 2nd order trotterization
-_2nd_ord_flag = False
+_2nd_ord_flag = True
 
 # Hamiltonian Description
 nbits = 2       # Number of qubits in the full system
 
-hm_list = []
-
 h_name = '1D AFM Transverse Ising - {} qubits, '.format(nbits)
 # Hamiltonian of the form J sum<i,j>(Z_i Z_j) + h sum_i (X_i)
-J = 1
-h = 0.5
-for i in range(nbits-1):
-    hm = [ [3+4*3], [J], [i,i+1] ]
-    hm_list.append(hm)
-for i in range(nbits):
-    hm = [ [1], [h], [i] ]
-    hm_list.append(hm)
+J = np.sqrt(0.5)
+h = np.sqrt(0.5)
 h_name += ' J={:0.2f}, h={:0.2f}'.format(J,h)
+hm_list = afm_transverse_field_ising(nbits, J, h)
 
 log_path = './qite_logs/ideal_qite{}/{}/db={:0.1f}/N={}/'.format('_2nd_ord' if _2nd_ord_flag else '',h_name,db,N)
 fig_path = './figs/ideal_qite{}/{}/db={:0.1f}/N={}/'.format('_2nd_ord' if _2nd_ord_flag else '',h_name,db,N)
