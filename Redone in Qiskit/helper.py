@@ -27,6 +27,12 @@ def base_to_int(digits, b):
         x += digits[i] * (b**i)
     return x
 
+def get_full_domain(qbits, nbits):
+    '''
+    returns the full domain of a linear topology of nbits qubits
+    '''
+    return list(range( np.min(qbits), min(np.max(qbits) + 1, nbits) ))
+
 #----------------------------#
 # Pauli/Sigma Matrix Related #
 #----------------------------#
@@ -90,6 +96,23 @@ def odd_y_pauli_strings(nbits):
         if num_y %2 == 1:
             odd_y.append(i)
     return odd_y
+
+def ext_domain_pauli(p, active, domain):
+    '''
+    returns the id of the pauli string p that acts on qubits in active, when the domain is extended to domain
+    '''
+    pstring = int_to_base(p,4,len(active))
+    new_pstring = [0] * len(domain)
+    for i in range(len(active)):
+        if active[i] not in domain:
+            print('Error Occured in ext_domain_pauli:')
+            print('active:', active)
+            print('domain:',domain)
+            print('active[{}] not in domain'.format(i))
+        ind = domain.index(active[i])
+        new_pstring[ind] = pstring[i]
+    return base_to_int(new_pstring, 4)
+
 
 #-------------------------#
 # Quantum Circuit Related #
@@ -221,68 +244,3 @@ def pauli_string_exp(qc, qbits, p, theta):
             # Apply Rx(-pi/2) to go from Z to Y basis
             elif gates[i] == 2:
                 qc.rx(-np.pi/2,active[i])
-
-# --------------------#
-# Hamiltonian Related #
-# --------------------#
-def get_h_matrix(hm_list, nbits):
-    num_basis = 2**nbits
-    h_mat = np.zeros([num_basis,num_basis],dtype=complex)
-
-    if nbits == 1:
-        for hm in hm_list:
-            for i in range(len(hm[0])):
-                h_mat += hm[1][i] * sigma_matrices[hm[0][i]]
-    else:
-        for hm in hm_list:
-            active = hm[2]
-            nactive = len(active)
-            nterms = len(hm[0])
-            # Loop through the Pauli terms in hm
-            for i in range(nterms):
-                full_pauli_str = [0] * nbits
-                partial_pauli_str = int_to_base(hm[0][i],4,nactive)
-                for j in range(len(active)):
-                    full_pauli_str[active[j]] = partial_pauli_str[j]
-                # reverse the string to be consistend with Qiskit's qubit ordering
-                full_pauli_str = full_pauli_str[::-1]
-                # The matrix for the term is a tensor product of the corresponding Pauli matrices
-                term_matrix = sigma_matrices[full_pauli_str[0]]
-                for j in range(1,nbits):
-                    term_matrix = np.kron(term_matrix, sigma_matrices[full_pauli_str[j]])
-                # Scale by the coefficient of the term
-                term_matrix *= hm[1][i]
-                
-                # Add the term to the final matrix
-                h_mat += term_matrix
-    return h_mat
-
-def get_spectrum(hm_list, nbits):
-    '''
-    returns the spectrum of the Hamiltonian
-    '''
-    h_mat = get_h_matrix(hm_list, nbits)
-    return np.linalg.eig(h_mat)
-
-def get_gs(hm_list, nbits):
-    '''
-    returns the ground state energy and the ground state vector of the Hamiltonian
-    '''
-    w,v = get_spectrum(hm_list,nbits)
-    i = np.argmin(w)
-    return w[i],v[:,i]
-
-def is_real_hamiltonian(hm_list):
-    for hm in hm_list:
-        nactive = len(hm[2])
-        odd_ys = odd_y_pauli_strings(nactive)
-        for j in range(len(hm[0])):
-            # If a term with odd Ys, the coefficient should be imaginary
-            if hm[0][j] in odd_ys:
-                if np.abs(np.real(hm[1][j])) > 1e-5:
-                    return False
-            # If a term with even Ys, the coefficient should be real
-            else:
-                if np.abs(np.imag(hm[1][j])) > 1e-5:
-                    return False
-    return True
