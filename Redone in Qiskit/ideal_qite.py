@@ -211,34 +211,29 @@ def qite_step(params, alist):
 
     return alist
 
-def qite(db, delta, N, nbits, D, hm_list, init_sv, time_flag):
-    params = qite_params()
-    params.initialize(hm_list, nbits, D)
-    params.set_run_params(db, delta, 0, sv_sim, init_sv, None)
+def qite(params, time_flag):
+    # params = qite_params()
+    # params.initialize(hm_list, nbits, D)
+    # params.set_run_params(db, delta, 0, sv_sim, init_sv, None)
 
-    E = np.zeros(N+1, dtype=complex)
-    times = np.zeros(N+1,dtype=float)
-    statevectors = np.zeros((N+1,2**nbits), dtype=complex)
+    E = np.zeros(params.N+1, dtype=complex)
+    times = np.zeros(params.N+1,dtype=float)
+    statevectors = np.zeros((params.N+1,2**params.nbits), dtype=complex)
 
     alist = []
 
-    if init_sv is None:
-        init_sv = Statevector.from_label('0'*nbits)
-    else:
-        init_sv = Statevector(init_sv)
-
-    E[0] = measure_energy(init_sv, params.hm_list)
-    statevectors[0] = init_sv.data
+    E[0] = measure_energy(params.init_sv, params.hm_list)
+    statevectors[0] = params.init_sv.data
 
     print('Starting Ideal QITE Simulation:')
-    for i in range(1,N+1):
-        print('Iteration {}:...'.format(i), end='',flush=True)
+    for i in range(1,params.N+1):
+        print('Iteration {}{}'.format(i, ': ...' if time_flag else ''), end='',flush=True)
         if time_flag:
             start = time.time()
         
         alist = qite_step(params, alist)
 
-        qc = QuantumCircuit(nbits)
+        qc = QuantumCircuit(params.nbits)
         propagate(qc, alist, params)
         psi = evolve_statevector(qc, params.init_sv)
 
@@ -253,4 +248,4 @@ def qite(db, delta, N, nbits, D, hm_list, init_sv, time_flag):
         else:
             print()
     
-    return E,times,statevectors
+    return np.real(E),times,statevectors,alist

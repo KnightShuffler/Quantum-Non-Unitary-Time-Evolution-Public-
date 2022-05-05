@@ -1,9 +1,10 @@
-from sre_parse import State
 import numpy as np
 from helper import *
 import hamiltonians
 
 from os import path, makedirs
+import matplotlib.pyplot as plt
+
 
 from qiskit import QuantumCircuit
 from qiskit.quantum_info import Statevector
@@ -54,9 +55,9 @@ class qite_params:
         # set by set_run_params
         self.db = 0.0
         self.delta = 0.0
+        self.N = 0
         self.backend = None
         self.num_shots = 0
-        self.N = 0
         self.init_sv = None
         self.init_circ = None
 
@@ -186,11 +187,11 @@ class qite_params:
                             ext_p = ext_domain_pauli(p, hm_list[i][2], self.domains[i])
                             if ext_p not in self.measurement_keys[-1]:
                                 self.measurement_keys[-1].append(ext_p)
-
-    
-    def set_run_params(self, db, delta, num_shots, backend, init_sv, init_circ):
+  
+    def set_run_params(self, db, delta, N, num_shots, backend, init_sv, init_circ):
         self.db = db
         self.delta = delta
+        self.N = N
         self.num_shots = num_shots
         self.backend = backend
 
@@ -207,22 +208,79 @@ class qite_params:
                 self.init_circ.initialize(self.init_sv, list(range(self.nbits)))
         else:
             self.init_circ = init_circ
-        
-    
+            
     def set_identifiers(self, log_path, fig_path, id):
         self.log_path = log_path
         self.fig_path = fig_path
         
         # Make sure the path name ends in /
-        if log_path[-1] not in '/':
+        if log_path[-1] != '/':
             self.log_path += '/'
-        if fig_path[-1] not in '/':
+        if fig_path[-1] != '/':
             self.fig_path += '/'
 
         self.id = id
+        if id[-1] != '-':
+            self.id += '-'
 
         if not path.exists(self.log_path):
             makedirs(self.log_path)
         if not path.exists(self.fig_path):
             makedirs(self.fig_path)
 
+def plot_data(fig_title, run_id, params, E, statevectors, eig_flag, prob_flag):
+    plt.clf()
+
+    if prob_flag:
+        fig,axs = plt.subplots(1,2, figsize=(12,5), sharex=True)
+        energy_plot = axs[0]
+        prob_plot = axs[1]
+
+        energy_plot.set_title('Mean Energy in QITE')
+        prob_plot.set_title('Ground State Probability in QITE')
+    else:
+        fig,axs = plt.subplots(1,1,figsize=(6,5))
+        energy_plot = axs
+    
+    fig.suptitle(fig_title, fontsize=16)
+    plt.subplots_adjust(top=0.85)
+    
+    energy_plot.plot(np.arange(params.N+1)*params.db, E, 'ro-', label='Mean Energy of State')
+    if eig_flag:
+        w,v = hamiltonians.get_spectrum(params.hm_list, params.nbits)
+        for eig in w:
+            eig_line = energy_plot.axhline(y=eig.real, color='k', linestyle='--')
+        eig_line.set_label('Hamiltonian Energy Levels')
+    
+    energy_plot.set_xlabel('Imaginary Time')
+    energy_plot.set_ylabel('Energy')
+    energy_plot.grid()
+    energy_plot.legend(loc='best')
+
+    if prob_flag:
+        if not eig_flag:
+            w,v = hamiltonians.get_spectrum(params.hm_list, params.nbits)
+        w_sort_i = np.argsort(w)
+
+        gs_probs = np.zeros(params.N+1, dtype=float)
+
+        for k in range(len(w)):
+            i = w_sort_i[k]
+            if k == 0:
+                prev_i = i
+            else:
+                prev_i = w_sort_i[k-1]
+            # stop looping if the energy increases from the ground state
+            if w[i] > w[prev_i]:
+                break
+            
+            vec = v[:,i]
+            for j in range(params.N+1):
+                gs_probs[j] += np.abs( np.vdot(vec, statevectors[j]) )**2
+        prob_plot.plot(np.arange(params.N+1)*params.db, gs_probs, 'bs-')
+        prob_plot.set_ylim([0.0, 1.0])
+        prob_plot.grid()
+
+    fig.tight_layout()
+
+    plt.savefig(params.fig_path+params.id+run_id+'.png')
