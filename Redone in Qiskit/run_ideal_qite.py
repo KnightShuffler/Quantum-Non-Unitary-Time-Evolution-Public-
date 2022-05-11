@@ -23,9 +23,9 @@ delta = 0.1
 N = 30
 
 # Number of qubits in the system
-nbits = 4
+nbits = 6
 # Maximum domain size for the simulated unitaries
-D = 2
+D = 4
 
 # Hamiltonian Description
 J = [0,0,1]
@@ -53,12 +53,13 @@ if gpu_simulator_flag:
 param_path = '{}/{}/D={}/N={}/db={}/delta={}/'.format(h_name, h_params,D,N,db,delta)
 log_path = './qite_logs/ideal_qite/' + param_path
 fig_path = './figs/ideal_qite/' + param_path
-run_id = 'run'
+run_name = 'run'
+run_id = '001'
 
 params = qite_params()
 params.initialize(hm_list, nbits, D)
 params.set_run_params(db, delta, N, 0, None, init_sv, init_circ, gpu_solver_flag)
-params.set_identifiers(log_path,fig_path,run_id)
+params.set_identifiers(log_path,fig_path,run_name)
 
 # Run Flags
 time_flag = True # True if you want to log the iteration times
@@ -66,7 +67,7 @@ time_flag = True # True if you want to log the iteration times
 # Plotting Flags
 #   Note: calculating the spectrum of the Hamiltonian involves converting it to a matrix
 #   of dimension 2**nbits, enable these flags accordingly
-eig_flag = True  # True if you want to plot the energy levels of the Hamiltonian
+eig_flag = False  # True if you want to plot the energy levels of the Hamiltonian
 prob_flag = True # True if you want to plot the ground state probability during the run
 
 # Logging Flags
@@ -74,4 +75,5 @@ prob_flag = True # True if you want to plot the ground state probability during 
 
 E,times,statevectors,alist = qite(params, time_flag)
 
-plot_data('{}\n{}'.format(h_name,h_params), '001', params, E, statevectors, eig_flag, prob_flag)
+plot_data('{}\n{}'.format(h_name,h_params), run_id, params, E, statevectors, eig_flag, prob_flag)
+log_data('{}-{}'.format(run_name, run_id), params, E, times, alist)

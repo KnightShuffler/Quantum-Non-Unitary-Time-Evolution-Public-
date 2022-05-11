@@ -286,3 +286,8 @@ def plot_data(fig_title, run_id, params, E, statevectors, eig_flag, prob_flag):
     fig.tight_layout()
 
     plt.savefig(params.fig_path+params.id+run_id+'.png')
+
+def log_data(title, params, E, times, alist):
+    np.savetxt(params.log_path+title+'_energy.csv', E, delimiter=',')
+    np.savetxt(params.log_path+title+'_iter_time.csv', times, delimiter=',')
+    np.save(params.log_path+'_alist.npy', alist, allow_pickle=True)
