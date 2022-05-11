@@ -155,7 +155,7 @@ def update_alist(params, sigma_expectation, alist, term, scale):
         if ndomain >= len(original_domain):
             # Calculate Norm
             for i in range(num_terms):
-                c -= scale*params.db * hm[1][i] * sigma_expectation[ ext_domain_pauli(i, hm[2], params.domains[term]) ]
+                c -= scale * params.db * hm[1][i] * sigma_expectation[ ext_domain_pauli(hm[0][i], hm[2], params.domains[term]) ]
             c = np.sqrt(c)
 
             # Populate b
