@@ -2,12 +2,13 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 
-from ideal_qite import qite
+from ideal_qite import qite, sv_sim
 from qite_helpers import qite_params, plot_data, log_data
 import hamiltonians
 
 from qiskit import QuantumCircuit
 from qiskit.quantum_info import Statevector
+from qiskit.providers.aer import AerError
 
 ###############################
 #       QITE Parameters       #
@@ -37,6 +38,17 @@ h_params = 'J=[{:0.2f},{:0.2f},{:0.2f}], B={}'.format(J[0],J[1],J[2],B)
 init_sv = Statevector.from_label('01'*(nbits//2))
 init_circ = None
 
+# GPU Usage Flags:
+gpu_solver_flag = True    # True if you want to solve the systems of linear equations with a GPU, uses cupy as a backend
+gpu_simulator_flag = True # True if you want to simulate the quantum circuits with a GPU, uses qiskit-aer-gpu
+
+if gpu_simulator_flag:
+    try:
+        sv_sim.set_options(device='GPU')
+    except AerError as e:
+        print(e)
+        print('Quantum Circuit Simulation will use the CPU')
+
 # Set the logging paths
 param_path = '{}/{}/D={}/N={}/db={}/delta={}/'.format(h_name, h_params,D,N,db,delta)
 log_path = './qite_logs/ideal_qite/' + param_path
@@ -45,7 +57,7 @@ run_id = 'run'
 
 params = qite_params()
 params.initialize(hm_list, nbits, D)
-params.set_run_params(db, delta, N, 0, None, init_sv, init_circ)
+params.set_run_params(db, delta, N, 0, None, init_sv, init_circ, gpu_solver_flag)
 params.set_identifiers(log_path,fig_path,run_id)
 
 # Run Flags
