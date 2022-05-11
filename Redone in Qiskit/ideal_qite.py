@@ -1,4 +1,5 @@
 import numpy as np
+import cupy as cp
 import time
 
 from helper import *
@@ -186,7 +187,12 @@ def update_alist(params, sigma_expectation, alist, term, scale):
     dalpha = np.eye(nops) * params.delta
 
     # Solve the system
-    x = np.linalg.lstsq(2*np.real(S) + dalpha, -b, rcond=-1)[0]
+    if not params.gpu_flag:
+        x = np.linalg.lstsq(2*np.real(S) + dalpha, -b, rcond=-1)[0]
+    else:
+        S = cp.asarray(2*np.real(S) + dalpha)
+        b = cp.asarray(-b)
+        x = cp.linalg.lstsq(S, b, rcond=-1)[0].get()
 
     # Multiply by -2*db so that the appropriate rotation is applied since the sigma
     # rotation gates are exp(-theta/2 * sigma), and we want exp(a[I]*db * sigma_I)

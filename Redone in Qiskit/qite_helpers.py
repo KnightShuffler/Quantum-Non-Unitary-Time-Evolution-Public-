@@ -60,6 +60,7 @@ class qite_params:
         self.num_shots = 0
         self.init_sv = None
         self.init_circ = None
+        self.gpu_flag = False
 
         # set by set_identifiers
         self.log_path = ''
@@ -188,12 +189,13 @@ class qite_params:
                             if ext_p not in self.measurement_keys[-1]:
                                 self.measurement_keys[-1].append(ext_p)
   
-    def set_run_params(self, db, delta, N, num_shots, backend, init_sv, init_circ):
+    def set_run_params(self, db, delta, N, num_shots, backend, init_sv, init_circ=None, gpu_flag=False):
         self.db = db
         self.delta = delta
         self.N = N
         self.num_shots = num_shots
         self.backend = backend
+        self.gpu_flag = gpu_flag
 
         if init_circ is None:
             if init_sv is None:
