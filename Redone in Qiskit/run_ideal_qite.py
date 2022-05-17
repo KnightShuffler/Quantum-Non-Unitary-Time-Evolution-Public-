@@ -28,7 +28,7 @@ nbits = 6
 D = 4
 
 # Hamiltonian Description
-J = [0,0,1]
+J = [1,1,1]
 B = 0
 hm_list = hamiltonians.short_range_heisenberg(nbits, J, B)
 h_name = 'Short Range Heisenberg - {} qubits'.format(nbits)
@@ -39,8 +39,8 @@ init_sv = Statevector.from_label('01'*(nbits//2))
 init_circ = None
 
 # GPU Usage Flags:
-gpu_solver_flag = True    # True if you want to solve the systems of linear equations with a GPU, uses cupy as a backend
-gpu_simulator_flag = True # True if you want to simulate the quantum circuits with a GPU, uses qiskit-aer-gpu
+gpu_solver_flag = False    # True if you want to solve the systems of linear equations with a GPU, uses cupy as a backend
+gpu_simulator_flag = False # True if you want to simulate the quantum circuits with a GPU, uses qiskit-aer-gpu
 
 if gpu_simulator_flag:
     try:
