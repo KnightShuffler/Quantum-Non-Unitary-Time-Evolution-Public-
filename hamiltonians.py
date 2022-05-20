@@ -1,6 +1,6 @@
 import numpy as np
 
-from helper import *
+from helpers import *
 
 # Format of the Hamiltonian:
 # hm_list is a list of terms: [hm]
@@ -122,19 +122,23 @@ def is_real_hamiltonian(hm_list):
     '''
     returns whether the described hamiltonian is a real matrix in the Z basis
     '''
-    for hm in hm_list:
+    real_flags = [True] * len(hm_list)
+    for m in range(len(hm_list)):
+        hm = hm_list[m]
         nactive = len(hm[2])
         odd_ys = odd_y_pauli_strings(nactive)
         for j in range(len(hm[0])):
             # If a term with odd Ys, the coefficient should be imaginary
             if hm[0][j] in odd_ys:
                 if np.abs(np.real(hm[1][j])) > TOLERANCE:
-                    return False
+                    real_flags[m] = False
+                    continue
             # If a term with even Ys, the coefficient should be real
             else:
                 if np.abs(np.imag(hm[1][j])) > TOLERANCE:
-                    return False
-    return True
+                    real_flags[m] = False
+                    continue
+    return real_flags
 
 ###################################
 # Hamiltonian of Different Models #
