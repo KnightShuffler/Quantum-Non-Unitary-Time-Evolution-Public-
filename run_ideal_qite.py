@@ -2,11 +2,12 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 
-from ideal_qite import qite, sv_sim
-from qite_helpers import qite_params, plot_data, log_data
+from ideal_qite import qite
+from qite_params import QITE_params
 import hamiltonians
+from log_data import log_data, plot_data
 
-from qiskit import QuantumCircuit
+from qiskit import QuantumCircuit, Aer
 from qiskit.quantum_info import Statevector
 from qiskit.providers.aer import AerError
 
@@ -42,23 +43,18 @@ init_circ = None
 gpu_solver_flag = False    # True if you want to solve the systems of linear equations with a GPU, uses cupy as a backend
 gpu_simulator_flag = False # True if you want to simulate the quantum circuits with a GPU, uses qiskit-aer-gpu
 
-if gpu_simulator_flag:
-    try:
-        sv_sim.set_options(device='GPU')
-    except AerError as e:
-        print(e)
-        print('Quantum Circuit Simulation will use the CPU')
-
 # Set the logging paths
-param_path = '{}/{}/D={}/N={}/db={}/delta={}/'.format(h_name, h_params,D,N,db,delta)
+param_path = '{}/{}/'.format(h_name, h_params)
 log_path = './qite_logs/ideal_qite/' + param_path
 fig_path = './figs/ideal_qite/' + param_path
-run_name = 'run'
+run_name = 'positive-a'
 run_id = '001'
 
-params = qite_params()
-params.initialize(hm_list, nbits, D)
-params.set_run_params(db, delta, N, 0, None, init_sv, init_circ, gpu_solver_flag)
+params = QITE_params()
+params.load_hamiltonian_params(hm_list, nbits, D)
+params.set_run_params(db, delta, N, 0, 
+Aer.get_backend('statevector_simulator'), init_circ, init_sv, 
+gpu_simulator_flag, gpu_solver_flag)
 params.set_identifiers(log_path,fig_path,run_name)
 
 # Run Flags
@@ -73,7 +69,7 @@ prob_flag = True # True if you want to plot the ground state probability during 
 # Logging Flags
 
 
-E,times,statevectors,alist = qite(params, time_flag)
+E,times,statevectors,alist = qite(params)
 
 plot_data('{}\n{}'.format(h_name,h_params), run_id, params, E, statevectors, eig_flag, prob_flag)
 log_data('{}-{}'.format(run_name, run_id), params, E, times, alist)

@@ -31,7 +31,7 @@ def get_full_domain(qbits, nbits):
     '''
     returns the full domain of a linear topology of nbits qubits
     '''
-    return list(range( np.min(qbits), min(np.max(qbits) + 1, nbits) ))
+    return list( range( min(qbits), min(max(qbits) + 1, nbits) ) )
 
 #----------------------------#
 # Pauli/Sigma Matrix Related #

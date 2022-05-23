@@ -13,6 +13,7 @@ class QITE_params:
         self.hm_list = []
         self.nterms = 0
         self.real_term_flags = []
+        self.small_domain_flags = []
         self.odd_y_strings = {}
         self.domains = []
         self.measurement_keys = {}
@@ -53,20 +54,23 @@ class QITE_params:
             D -= 1
         radius = D//2
         center = (min(active) + max(active)) // 2
-        _max = min(center + radius, nbits)
+        _max = min(center + radius + 1, nbits)
         _min = max(center + radius - D + 1, 0)
+        return list(range(_min,_max))
     
     def load_measurement_keys(self, m, domain_ops):
         hm = self.hm_list[m]
-        active = np.arange(self.domain_size(hm[2])) + min(hm[2])
+        active = get_full_domain(hm[2], self.nbits)
         domain = self.domains[m]
         ndomain = len(domain)
         nactive = len(active)
         
         if ndomain >= nactive:
             big_domain = domain
+            self.small_domain_flags[m] = False
         else:
             big_domain = active
+            self.small_domain_flags[m] = True
 
         # Measurements for c: Pauli strings in hm
         for j in hm[0]:
@@ -96,6 +100,7 @@ class QITE_params:
                     self.measurement_keys[m].append(p_)
 
     def load_hamiltonian_params(self, hm_list, nbits, D):
+        print('Loading Hamiltonian Parameters...',end=' ',flush=True)
         # Validate the passed parameters
         if not hamiltonians.is_valid_domain(hm_list, D, nbits):
             raise ValueError('The domain size D is not valid for the hamiltonian, parameters not set.')
@@ -104,17 +109,21 @@ class QITE_params:
         self.nterms = len(hm_list)
         self.nbits = nbits
         self.D = D
+        print('Done')
 
+        print('Calculating Unitary Domains...',end=' ',flush=True)
         # Calculate the domains of the unitaries simulating each term
         # If the domain size is less than the number of qubits calculate the domains
         if D != nbits:
             for hm in self.hm_list:
-                self.domains.append(self.extended_domain(hm[2], self.D, self.nbits))
+                self.domains.append(QITE_params.get_extended_domain(hm[2], self.D, self.nbits))
         # Otherwise, set the domain to be the full range of qubits
         else:
             self.domains = [list(range(0,nbits))] * self.nterms
+        print('Done')
 
         # Check if the terms are real
+        print('Calculating Required Odd-Y Pauli Strings...', end=' ', flush=True)
         self.real_term_flags = hamiltonians.is_real_hamiltonian(self.hm_list)
 
         # Initialize the keys for the odd y strings
@@ -124,8 +133,12 @@ class QITE_params:
         
         # Load the odd Y Pauli Strings
         for y_len in self.odd_y_strings.keys():
-            self.odd_y_strings = odd_y_pauli_strings(y_len)
+            self.odd_y_strings[y_len] = odd_y_pauli_strings(y_len)
+        print('Done')
         
+        print('Calculating Required Pauli Measurements...', end=' ', flush=True)
+        self.small_domain_flags = [False] * self.nterms
+
         # Calculate the strings to measure for each term:
         for m in range(self.nterms):
             # Initialize list of keys for the m-th term
@@ -134,6 +147,7 @@ class QITE_params:
             # Populate the keys
             domain_ops = self.odd_y_strings[ndomain] if self.real_term_flags[m] else list(range(4**ndomain))
             self.load_measurement_keys(m, domain_ops)
+        print('Done')
     
     def set_run_params(self, db, delta, N, num_shots, 
     backend, init_circ=None, init_sv=None,
@@ -144,7 +158,7 @@ class QITE_params:
         self.num_shots = num_shots
         self.backend = backend
         self.gpu_simulator_flag = gpu_sim_flag
-        self.gpu_calculation_flag = gpu_calc_flag
+        self.gpu_calc_flag = gpu_calc_flag
 
         # Set the initializing circuit
         if init_circ is None:
@@ -174,13 +188,16 @@ class QITE_params:
         self.fig_path = fig_path
         self.run_name = run_name
 
-        run_id_string = 'db={:0.2f}/delta={:0.2f}/D={}/'.format(self.db, self.delta, self.D)
+        run_id_string = 'db={:0.2f}/delta={:0.2f}/D={}/N={}/'.format(self.db, self.delta, self.D, self.N)
         
         # Make sure the path name ends in /
         if log_path[-1] != '/':
             self.log_path += '/'
         if fig_path[-1] != '/':
             self.fig_path += '/'
+        
+        self.log_path += run_id_string
+        self.fig_path += run_id_string
 
         if run_name[-1] != '-':
             self.run_name += '-'
