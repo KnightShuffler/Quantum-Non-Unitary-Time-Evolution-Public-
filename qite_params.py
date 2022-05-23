@@ -1,6 +1,8 @@
 import numpy as np
 from qiskit import QuantumCircuit
 from qiskit.quantum_info import Statevector
+from qiskit.providers.aer import AerError
+import os
 
 import hamiltonians
 from helpers import *
@@ -15,13 +17,16 @@ class QITE_params:
         self.domains = []
         self.measurement_keys = {}
 
+        self.nbits = 0
+        self.D = 0
+
         # QITE Run Parameters
         self.db = 0.0
         self.delta = 0.0
         self.N = 0
         self.num_shots = 0
-        self.nbits = 0
-        self.D = 0
+
+        self.backend = None
         self.init_sv = None
         self.init_circ = None
 
@@ -50,48 +55,8 @@ class QITE_params:
         center = (min(active) + max(active)) // 2
         _max = min(center + radius, nbits)
         _min = max(center + radius - D + 1, 0)
-
-    def hamiltonian_precomputations(self, hm_list, nbits, D):
-        # Validate the passed parameters
-        if not hamiltonians.is_valid_domain(hm_list, D, nbits):
-            raise ValueError('The domain size D is not valid for the hamiltonian, parameters not set.')
-
-        self.hm_list = hm_list
-        self.nterms = len(hm_list)
-        self.nbits = nbits
-        self.D = D
-
-        # Calculate the domains of the unitaries simulating each term
-        # If the domain size is less than the number of qubits calculate the domains
-        if D != nbits:
-            for hm in self.hm_list:
-                self.domains.append(self.extended_domain(hm[2], self.D, self.nbits))
-        # Otherwise, set the domain to be the full range of qubits
-        else:
-            self.domains = [list(range(0,nbits))] * self.nterms
-
-        # Check if the terms are real
-        self.real_term_flags = hamiltonians.is_real_hamiltonian(self.hm_list)
-
-        # Initialize the keys for the odd y strings
-        for m in range(self.nterms):
-            if self.real_term_flags[m]:
-                self.odd_y_strings[len(self.domains[m])] = None
-        
-        # Load the odd Y Pauli Strings
-        for y_len in self.odd_y_strings.keys():
-            self.odd_y_strings = odd_y_pauli_strings(y_len)
-        
-        # Calculate the strings to measure for each term:
-        for m in range(self.nterms):
-            # Initialize list of keys for the m-th term
-            self.measurement_keys[m] = []
-            ndomain = len(self.domains[m])
-            # Populate the keys
-            domain_ops = self.odd_y_strings[ndomain] if self.real_term_flags[m] else list(range(4**ndomain))
-            self.get_measurement_keys(m, domain_ops)
-
-    def get_measurement_keys(self, m, domain_ops):
+    
+    def load_measurement_keys(self, m, domain_ops):
         hm = self.hm_list[m]
         active = np.arange(self.domain_size(hm[2])) + min(hm[2])
         domain = self.domains[m]
@@ -129,3 +94,101 @@ class QITE_params:
                 p_,c_ = pauli_string_prod(I, J, len(big_domain))
                 if p_ not in self.measurement_keys[m]:
                     self.measurement_keys[m].append(p_)
+
+    def load_hamiltonian_params(self, hm_list, nbits, D):
+        # Validate the passed parameters
+        if not hamiltonians.is_valid_domain(hm_list, D, nbits):
+            raise ValueError('The domain size D is not valid for the hamiltonian, parameters not set.')
+
+        self.hm_list = hm_list
+        self.nterms = len(hm_list)
+        self.nbits = nbits
+        self.D = D
+
+        # Calculate the domains of the unitaries simulating each term
+        # If the domain size is less than the number of qubits calculate the domains
+        if D != nbits:
+            for hm in self.hm_list:
+                self.domains.append(self.extended_domain(hm[2], self.D, self.nbits))
+        # Otherwise, set the domain to be the full range of qubits
+        else:
+            self.domains = [list(range(0,nbits))] * self.nterms
+
+        # Check if the terms are real
+        self.real_term_flags = hamiltonians.is_real_hamiltonian(self.hm_list)
+
+        # Initialize the keys for the odd y strings
+        for m in range(self.nterms):
+            if self.real_term_flags[m]:
+                self.odd_y_strings[len(self.domains[m])] = None
+        
+        # Load the odd Y Pauli Strings
+        for y_len in self.odd_y_strings.keys():
+            self.odd_y_strings = odd_y_pauli_strings(y_len)
+        
+        # Calculate the strings to measure for each term:
+        for m in range(self.nterms):
+            # Initialize list of keys for the m-th term
+            self.measurement_keys[m] = []
+            ndomain = len(self.domains[m])
+            # Populate the keys
+            domain_ops = self.odd_y_strings[ndomain] if self.real_term_flags[m] else list(range(4**ndomain))
+            self.load_measurement_keys(m, domain_ops)
+    
+    def set_run_params(self, db, delta, N, num_shots, 
+    backend, init_circ=None, init_sv=None,
+    gpu_sim_flag=False, gpu_calc_flag=False):
+        self.db = db
+        self.delta = delta
+        self.N = N
+        self.num_shots = num_shots
+        self.backend = backend
+        self.gpu_simulator_flag = gpu_sim_flag
+        self.gpu_calculation_flag = gpu_calc_flag
+
+        # Set the initializing circuit
+        if init_circ is None:
+            if init_sv is None:
+                self.init_circ = QuantumCircuit(self.nbits)
+                self.init_sv = Statevector.from_label('0'*self.nbits)
+            else:
+                if isinstance(init_sv, Statevector):
+                    self.init_sv = init_sv
+                else:
+                    self.init_sv = Statevector(init_sv)
+                self.init_circ = QuantumCircuit(self.nbits)
+                self.init_circ.initialize(self.init_sv, list(range(self.nbits)))
+        else:
+            self.init_circ = init_circ
+        
+        if self.gpu_simulator_flag:
+            try:
+                self.backend.set_options(device='GPU')
+            except AerError as e:
+                print(e)
+                print('Unable to set simulation device to GPU, proceeding with CPU simulation')
+                self.gpu_simulator_flag = False
+
+    def set_identifiers(self, log_path, fig_path, run_name):
+        self.log_path = log_path
+        self.fig_path = fig_path
+        self.run_name = run_name
+
+        run_id_string = 'db={:0.2f}/delta={:0.2f}/D={}/'.format(self.db, self.delta, self.D)
+        
+        # Make sure the path name ends in /
+        if log_path[-1] != '/':
+            self.log_path += '/'
+        if fig_path[-1] != '/':
+            self.fig_path += '/'
+
+        if run_name[-1] != '-':
+            self.run_name += '-'
+        
+        if self.gpu_simulator_flag:
+            self.run_name += 'GPU-'
+
+        if not os.path.exists(self.log_path):
+            os.makedirs(self.log_path)
+        if not os.path.exists(self.fig_path):
+            os.makedirs(self.fig_path)
