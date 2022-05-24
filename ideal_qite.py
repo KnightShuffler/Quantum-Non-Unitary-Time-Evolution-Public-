@@ -1,7 +1,11 @@
 from hamiltonians import TOLERANCE
 import numpy as np
-# Uncomment this if cupy is installed
-# import cupy as cp
+CP_IMPORT_FLAG = True
+try:
+    import cupy as cp
+except ImportError as e:
+    print('cupy failed to import')
+    CP_IMPORT_FLAG = False
 import time
 
 from helpers import *
