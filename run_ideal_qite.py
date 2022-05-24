@@ -2,7 +2,7 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 
-from ideal_qite import qite
+from ideal_qite import qite, CP_IMPORT_FLAG
 from qite_params import QITE_params
 import hamiltonians
 from log_data import log_data, plot_data
@@ -30,7 +30,7 @@ D = 4
 
 # Hamiltonian Description
 J = [1,1,1]
-B = 0
+B = 1
 hm_list = hamiltonians.short_range_heisenberg(nbits, J, B)
 h_name = 'Short Range Heisenberg - {} qubits'.format(nbits)
 h_params = 'J=[{:0.2f},{:0.2f},{:0.2f}], B={}'.format(J[0],J[1],J[2],B)
@@ -54,7 +54,7 @@ params = QITE_params()
 params.load_hamiltonian_params(hm_list, nbits, D)
 params.set_run_params(db, delta, N, 0, 
 Aer.get_backend('statevector_simulator'), init_circ, init_sv, 
-gpu_simulator_flag, gpu_solver_flag)
+gpu_simulator_flag, gpu_solver_flag and CP_IMPORT_FLAG)
 params.set_identifiers(log_path,fig_path,run_name)
 
 # Run Flags
