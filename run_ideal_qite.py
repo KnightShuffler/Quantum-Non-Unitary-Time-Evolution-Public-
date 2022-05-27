@@ -1,7 +1,5 @@
 import numpy as np
 
-import matplotlib.pyplot as plt
-
 from ideal_qite import qite, CP_IMPORT_FLAG
 from qite_params import QITE_params
 import hamiltonians
@@ -50,6 +48,7 @@ fig_path = './figs/ideal_qite/' + param_path
 run_name = 'run'
 run_id = '001'
 
+# Load the Parameters of QITE and run the pre-computations
 params = QITE_params()
 params.load_hamiltonian_params(hm_list, nbits, D)
 params.set_run_params(db, delta, N, 0, 
@@ -66,10 +65,9 @@ time_flag = True # True if you want to log the iteration times
 gs_flag = True   # True if you want to plot the ground state energy of the Hamiltonian
 prob_flag = False # True if you want to plot the ground state probability during the run
 
-# Logging Flags
-
-
+# Run QITE
 E,times,statevectors,alist = qite(params)
 
+# Plot and Log Data
 plot_data('{}\n{}'.format(h_name,h_params), run_id, params, E, statevectors, gs_flag, prob_flag)
 log_data('{}-{}'.format(run_name, run_id), params, E, times, alist)
