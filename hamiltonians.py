@@ -160,9 +160,7 @@ def short_range_heisenberg(nbits,J,B=0):
 def long_range_heisenberg(nbits, J):
     hm_list = []
     for i in range(nbits):
-        for j in range(nbits):
-            if i==j:
-                continue
+        for j in range(i+1, nbits):
             prefactor = 1/(np.abs(i-j)+1)
             hm = [ [],[],[i,j] ]
             for k in range(3):
