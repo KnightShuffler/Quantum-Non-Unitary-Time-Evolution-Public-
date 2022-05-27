@@ -47,7 +47,7 @@ gpu_simulator_flag = False # True if you want to simulate the quantum circuits w
 param_path = '{}/{}/'.format(h_name, h_params)
 log_path = './qite_logs/ideal_qite/' + param_path
 fig_path = './figs/ideal_qite/' + param_path
-run_name = 'positive-a'
+run_name = 'run'
 run_id = '001'
 
 params = QITE_params()
@@ -63,13 +63,13 @@ time_flag = True # True if you want to log the iteration times
 # Plotting Flags
 #   Note: calculating the spectrum of the Hamiltonian involves converting it to a matrix
 #   of dimension 2**nbits, enable these flags accordingly
-eig_flag = False  # True if you want to plot the energy levels of the Hamiltonian
-prob_flag = True # True if you want to plot the ground state probability during the run
+gs_flag = True   # True if you want to plot the ground state energy of the Hamiltonian
+prob_flag = False # True if you want to plot the ground state probability during the run
 
 # Logging Flags
 
 
 E,times,statevectors,alist = qite(params)
 
-plot_data('{}\n{}'.format(h_name,h_params), run_id, params, E, statevectors, eig_flag, prob_flag)
+plot_data('{}\n{}'.format(h_name,h_params), run_id, params, E, statevectors, gs_flag, prob_flag)
 log_data('{}-{}'.format(run_name, run_id), params, E, times, alist)

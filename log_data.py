@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 import hamiltonians
 
-def plot_data(fig_title, run_id, params, E, statevectors, eig_flag, prob_flag):
+def plot_data(fig_title, run_id, params, E, statevectors, gs_flag, prob_flag):
     plt.clf()
 
     if prob_flag:
@@ -21,11 +21,9 @@ def plot_data(fig_title, run_id, params, E, statevectors, eig_flag, prob_flag):
     plt.subplots_adjust(top=0.85)
     
     energy_plot.plot(np.arange(params.N+1)*params.db, E, 'ro-', label='Mean Energy of State')
-    if eig_flag:
-        w,v = hamiltonians.get_spectrum(params.hm_list, params.nbits)
-        for eig in w:
-            eig_line = energy_plot.axhline(y=eig.real, color='k', linestyle='--')
-        eig_line.set_label('Hamiltonian Energy Levels')
+    if gs_flag:
+        w,v = hamiltonians.get_gs(params.hm_list, params.nbits)
+        eig_line = energy_plot.axhline(y=w.real, color='k', linestyle='--', label='Ground State Energy')
     
     energy_plot.set_xlabel('Imaginary Time')
     energy_plot.set_ylabel('Energy')
@@ -33,25 +31,13 @@ def plot_data(fig_title, run_id, params, E, statevectors, eig_flag, prob_flag):
     energy_plot.legend(loc='best')
 
     if prob_flag:
-        if not eig_flag:
-            w,v = hamiltonians.get_spectrum(params.hm_list, params.nbits)
-        w_sort_i = np.argsort(w)
+        if not gs_flag:
+            w,v = hamiltonians.get_gs(params.hm_list, params.nbits)
 
         gs_probs = np.zeros(params.N+1, dtype=float)
-
-        for k in range(len(w)):
-            i = w_sort_i[k]
-            if k == 0:
-                prev_i = i
-            else:
-                prev_i = w_sort_i[k-1]
-            # stop looping if the energy increases from the ground state
-            if w[i] > w[prev_i]:
-                break
+        for j in range(params.N+1):
+            gs_probs[j] += np.abs( np.vdot(v, statevectors[j]) )**2
             
-            vec = v[:,i]
-            for j in range(params.N+1):
-                gs_probs[j] += np.abs( np.vdot(vec, statevectors[j]) )**2
         prob_plot.plot(np.arange(params.N+1)*params.db, gs_probs, 'bs-')
         prob_plot.set_ylim([0.0, 1.0])
         prob_plot.grid()
