@@ -1,7 +1,7 @@
 import numpy as np
 
 from ideal_qite import qite, CP_IMPORT_FLAG
-from qite_params import QITE_params
+from qite_params import QITE_params, DRIFT_NONE, DRIFT_A, DRIFT_THETA_2PI, DRIFT_THETA_PI_PI
 import hamiltonians
 from log_data import log_data, plot_data
 
@@ -37,6 +37,9 @@ h_params = 'J=[{:0.2f},{:0.2f},{:0.2f}], B={}'.format(J[0],J[1],J[2],B)
 init_sv = Statevector.from_label('01'*(nbits//2))
 init_circ = None
 
+# Drift Type
+drift_type = DRIFT_NONE
+
 # GPU Usage Flags:
 gpu_solver_flag = False    # True if you want to solve the systems of linear equations with a GPU, uses cupy as a backend
 gpu_simulator_flag = False # True if you want to simulate the quantum circuits with a GPU, uses qiskit-aer-gpu
@@ -52,7 +55,7 @@ run_id = '001'
 params = QITE_params()
 params.load_hamiltonian_params(hm_list, nbits, D)
 params.set_run_params(db, delta, N, 0, 
-Aer.get_backend('statevector_simulator'), init_circ, init_sv, 
+Aer.get_backend('statevector_simulator'), init_circ, init_sv,drift_type,
 gpu_simulator_flag, gpu_solver_flag and CP_IMPORT_FLAG)
 params.set_identifiers(log_path,fig_path,run_name)
 
