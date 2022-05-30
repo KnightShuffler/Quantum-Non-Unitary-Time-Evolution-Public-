@@ -208,8 +208,8 @@ class QITE_params:
         if run_name[-1] != '-':
             self.run_name += '-'
         
-        if self.gpu_simulator_flag:
-            self.run_name += 'GPU-'
+        # if self.gpu_simulator_flag:
+        #     self.run_name += 'GPU-'
 
         if not os.path.exists(self.log_path):
             os.makedirs(self.log_path)
