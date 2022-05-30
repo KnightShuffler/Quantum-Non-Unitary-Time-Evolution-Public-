@@ -33,6 +33,34 @@ def get_full_domain(qbits, nbits):
     '''
     return list( range( min(qbits), min(max(qbits) + 1, nbits) ) )
 
+def sample_from_a(a):
+    '''
+    Given a vector of real numbers a,
+    returns a vector where all elements are 0 except for a random
+    index i with probability:
+        P(i) = |a[i]|/sum(|a|)
+    and that index has the original a[i] in the output
+    '''
+
+    cdf = np.abs(a.copy())  # load |a|
+    cdf /= np.sum(cdf)      # load the PDF
+    cdf = np.cumsum(cdf)    # Convert to CDF
+    
+    # Generate a random number uniformly between 0 and 1
+    y = np.random.uniform(0.0,1.0)
+
+    # Flag to see if the index i was found
+    found_flag = False 
+
+    for i in range(len(cdf)):
+        if y <= cdf[i] and not found_flag:
+            found_flag = True
+            cdf[i] = a[i]
+        else:
+            cdf[i] = 0.0
+    
+    return cdf
+
 #----------------------------#
 # Pauli/Sigma Matrix Related #
 #----------------------------#
