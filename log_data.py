@@ -49,4 +49,40 @@ def plot_data(fig_title, run_id, params, E, statevectors, gs_flag, prob_flag):
 def log_data(title, params, E, times, alist):
     np.savetxt(params.log_path+params.run_name+title+'_energy.csv', E, delimiter=',')
     np.savetxt(params.log_path+params.run_name+title+'_iter_time.csv', times, delimiter=',')
-    np.save(params.log_path+params.run_name+'_alist.npy', alist, allow_pickle=True)
+    np.save(params.log_path+params.run_name+title+'_alist.npy', np.asarray(alist,dtype=object), allow_pickle=True)
+
+def plot_all_drifts(params, fig_title, run_names, num_runs, padding):
+    mean_Es  = np.zeros((len(run_names), params.N+1))
+    std_devs = np.zeros((len(run_names), params.N+1))
+    for i in range(len(run_names)):
+        run_name = run_names[i]
+
+        if run_name == 'drift_none':
+            mean_Es[i]  = np.loadtxt(params.log_path+run_name+'-'+str(0).zfill(padding)+'_energy.csv',delimiter=',')
+        else:
+            Es = np.zeros((num_runs, params.N+1))
+            for run in range(num_runs):
+                Es[run] = np.loadtxt(params.log_path+run_name+'-'+str(run).zfill(padding)+'_energy.csv',delimiter=',')
+            mean_Es[i]  = np.mean(Es,axis=0)
+            std_devs[i] = np.std(Es, axis=0)
+    
+    fig,axs = plt.subplots(1,1,figsize=(6,5))
+
+    fig.suptitle(fig_title, fontsize=16)
+    plt.subplots_adjust(top=0.85)
+
+    styles = ['k.-', 'ro-', 'gs-', 'b^-']
+
+    for i in range(len(run_names)):
+        # axs.plot(np.arange(0.0, params.N+1)*params.db, mean_Es[i], styles[i], label=run_names[i])
+        axs.errorbar(np.arange(0.0, params.N+1)*params.db, mean_Es[i], yerr=std_devs[i],fmt=styles[i], label=run_names[i])
+    
+    w,v = hamiltonians.get_gs(params.hm_list, params.nbits)
+    axs.axhline(y=w.real, linestyle='--', color='k', label='Ground State Energy')
+
+    axs.set_xlabel('Imaginary Time')
+    axs.set_ylabel('Energy')
+    axs.grid()
+    axs.legend(loc='best')
+    fig.tight_layout()
+    plt.savefig(params.fig_path+'all_drifts.png')

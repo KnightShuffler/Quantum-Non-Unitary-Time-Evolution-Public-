@@ -2,6 +2,8 @@ import numpy as np
 
 from qiskit import execute
 
+import warnings
+
 #-----------------#
 # General Helpers #
 #-----------------#
@@ -43,11 +45,10 @@ def sample_from_a(a):
     '''
 
     cdf = np.abs(a.copy())  # load |a|
-    cdf /= np.sum(cdf)      # load the PDF
     cdf = np.cumsum(cdf)    # Convert to CDF
     
-    # Generate a random number uniformly between 0 and 1
-    y = np.random.uniform(0.0,1.0)
+    # Generate a random number
+    y = np.random.uniform(0.0,cdf[-1])
 
     # Flag to see if the index i was found
     found_flag = False 
