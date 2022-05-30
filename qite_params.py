@@ -7,12 +7,6 @@ import os
 import hamiltonians
 from helpers import *
 
-# Drifting Types
-DRIFT_NONE = 0
-DRIFT_A = 1
-DRIFT_THETA_2PI = 2
-DRIFT_THETA_PI_PI = 3
-
 class QITE_params:
     def __init__(self):
         # Hamiltonian Information
@@ -36,7 +30,6 @@ class QITE_params:
         self.backend = None
         self.init_sv = None
         self.init_circ = None
-        self.drift_type = DRIFT_NONE
 
         # GPU usage Flags
         self.gpu_simulator_flag = False
@@ -54,8 +47,6 @@ class QITE_params:
         '''
         Returns a list of the extended domain of a k-local Hamiltonian term hm
         with a domain size D, and nbits qubits in a linear topology
-        
-        Note: D must be greater than the range of the hamiltonian term
         '''
         if QITE_params.domain_size(active) % 2 != D % 2:
             D -= 1
@@ -157,14 +148,13 @@ class QITE_params:
         print('Done')
     
     def set_run_params(self, db, delta, N, num_shots, 
-    backend, init_circ=None, init_sv=None, drift_type = DRIFT_NONE,
+    backend, init_circ=None, init_sv=None,
     gpu_sim_flag=False, gpu_calc_flag=False):
         self.db = db
         self.delta = delta
         self.N = N
         self.num_shots = num_shots
         self.backend = backend
-        self.drift_type = drift_type
         self.gpu_simulator_flag = gpu_sim_flag
         self.gpu_calc_flag = gpu_calc_flag
 
