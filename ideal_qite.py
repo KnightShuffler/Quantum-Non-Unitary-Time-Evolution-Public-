@@ -9,7 +9,7 @@ except ImportError as e:
 import time
 
 from helpers import *
-from qite_params import QITE_params
+from qite_params import QITE_params, DRIFT_NONE, DRIFT_A, DRIFT_THETA_2PI, DRIFT_THETA_PI_PI
 
 from qiskit import QuantumCircuit, execute
 from qiskit.quantum_info import Statevector
@@ -139,14 +139,33 @@ def update_alist(params, sigma_expectation, alist, term, scale):
     dalpha = np.eye(nops) * params.delta
     
     if not params.gpu_calc_flag:
-        x = np.linalg.lstsq(2*np.real(S) + dalpha, b, rcond=-1)[0]
+        a = np.linalg.lstsq(2*np.real(S) + dalpha, b, rcond=-1)[0]
     else:
         S = cp.asarray(2*np.real(S) + dalpha)
         b = cp.asarray(b)
-        x = cp.linalg.lstsq(S,b,rcond=-1)[0].get()
+        a = cp.linalg.lstsq(S,b,rcond=-1)[0].get()
     
-    a_coeffs = 2.0*params.db * x
-    alist.append([a_coeffs, domain, params.real_term_flags[term]])
+    # Update alist depending on the drift type of the run
+    if params.drift_type == DRIFT_A:
+        theta_coeffs = 2.0 * params.db* sample_from_a(a)
+    else:
+        thetas = 2.0 * params.db * a
+        
+        if params.drift_type == DRIFT_THETA_2PI:
+            # Fix the angles between [0,2pi)
+            thetas = np.mod(thetas, 2.0*np.pi)
+            # Sample from this
+            theta_coeffs = sample_from_a(thetas)
+        elif params.drift_type == DRIFT_THETA_PI_PI:
+            # Fix the angles between [-pi, pi)
+            thetas = np.mod(thetas, 2.0*np.pi)
+            thetas = np.where(thetas <= np.pi, thetas, thetas - 2.0*np.pi)
+            # Sample from this            
+            theta_coeffs = sample_from_a(thetas)
+        elif params.drift_type == DRIFT_NONE:
+            theta_coeffs = thetas
+    
+    alist.append([theta_coeffs, domain, params.real_term_flags[term]])
 
 def qite_step(params, psi0):
     alist = []
