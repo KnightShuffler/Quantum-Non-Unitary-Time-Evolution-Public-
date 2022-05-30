@@ -25,8 +25,8 @@ D_min = 2
 D_max = max(num_bits)
 
 # GPU Usage Flags
-gpu_solver_flag = False
-gpu_simulator_flag = False
+gpu_solver_flag = True
+gpu_simulator_flag = True
 
 sv_sim = Aer.get_backend('statevector_simulator')
 
