@@ -115,9 +115,6 @@ def is_valid_domain(hm_list, D, nbits):
     # Only a valid domain size if D and k have the same parity
     return k%2 == D%2
 
-
-TOLERANCE = 1e-5
-
 def is_real_hamiltonian(hm_list):
     '''
     returns whether the described hamiltonian is a real matrix in the Z basis
