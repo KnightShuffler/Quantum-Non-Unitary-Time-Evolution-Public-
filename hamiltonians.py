@@ -141,7 +141,7 @@ def is_real_hamiltonian(hm_list):
 # Hamiltonian of Different Models #
 ###################################
 
-def short_range_heisenberg(nbits,J,B=0):
+def short_range_heisenberg(nbits,J,B=0.0):
     hm_list = []
     for i in range(nbits-1):
         hm = [ [], [], [i,i+1] ]
