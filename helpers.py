@@ -8,6 +8,9 @@ import warnings
 # General Helpers #
 #-----------------#
 
+# Error Tolerance
+TOLERANCE = 1e-5
+
 def int_to_base(x, b, num_digits):
     '''
     convert a non-negative integer x to base b and return the digits in a list

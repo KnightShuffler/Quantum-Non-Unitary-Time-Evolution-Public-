@@ -115,9 +115,6 @@ def is_valid_domain(hm_list, D, nbits):
     # Only a valid domain size if D and k have the same parity
     return k%2 == D%2
 
-
-TOLERANCE = 1e-5
-
 def is_real_hamiltonian(hm_list):
     '''
     returns whether the described hamiltonian is a real matrix in the Z basis
@@ -144,7 +141,7 @@ def is_real_hamiltonian(hm_list):
 # Hamiltonian of Different Models #
 ###################################
 
-def short_range_heisenberg(nbits,J,B=0):
+def short_range_heisenberg(nbits,J,B=0.0):
     hm_list = []
     for i in range(nbits-1):
         hm = [ [], [], [i,i+1] ]
