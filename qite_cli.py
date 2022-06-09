@@ -19,6 +19,12 @@ def positive_int(x: str) -> int:
         raise argparse.ArgumentTypeError('Expected positive integer, received {}'.format(val))
     return val
 
+def bitstr(x: str) -> str:
+    for c in x:
+        if c != '0' or c != '1':
+            raise argparse.ArgumentTypeError('Expected bitstring, received \'{}\''.format(x))
+    return x
+
 parser = argparse.ArgumentParser(description='Run the QITE implementation.', formatter_class=argparse.RawTextHelpFormatter)
 # QITE Run Parameters
 run_params = parser.add_argument_group('QITE Run Parameters')
@@ -53,6 +59,9 @@ run_params.add_argument('-B', '--heisenberg_B', dest='B', default=0.0, metavar='
 inits = run_params.add_mutually_exclusive_group()
 inits.add_argument('--init_sv', type=str, 
                     help='File containing the initial statevector for the QITE run')
+inits.add_argument('--init_label', type=bitstr, 
+                    help='Label of computational basis state that is the initial state of the QITE \
+                        run')
 inits.add_argument('--init_circ', type=str, 
                     help='File containing the description of the initialization circuit')
 
@@ -115,6 +124,7 @@ def get_hamiltonian_list(args):
     else:
         if args.hamiltonian_file != None:
             # TODO: Load hamiltonian from file
+            raise ValueError('File loading not implemented yet, please use -H instead')
             ...
         else:
             raise ValueError('Hamiltonian description not given, make sure to set either the -H \
@@ -133,13 +143,19 @@ def get_inits(args):
     init_circ = None
     init_sv = None
 
-    if args.init_sv != None:
+    if args.init_label != None:
+        if len(args.init_label) != args.nbits:
+            raise ValueError('Length of state label does not match the number of qubits')
+        else:
+            init_sv = Statevector.from_label(args.init_label)
+    elif args.init_sv != None:
         # TODO: load statevector from file
+        print('File loading not implemented yet, init state will be |0...0>')
         ...
-    else:
-        if args.init_circ != None:
-            # TODO: load circuit from file
-            ...
+    else: # if args.init_circ != None:
+        # TODO: load circuit from file
+        print('File loading not implemented yet, init state will be |0...0>')
+        ...
         
     return init_circ, init_sv
 
@@ -184,6 +200,7 @@ def main() -> None:
         else:
             # TODO: placeholder for QITE code that runs on any backend
             statevectors = None
+            raise ValueError('Only sv_sim is supported as a backend as of right now')
             ...
         # Plot/Log
         if args.plot:
