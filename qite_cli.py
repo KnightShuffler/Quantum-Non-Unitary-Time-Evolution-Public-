@@ -11,6 +11,8 @@ from qiskit.quantum_info import Statevector
 
 import argparse
 
+import sys
+
 def positive_int(x: str) -> int:
     try:
         val = int(x)
@@ -99,6 +101,7 @@ log_flags.add_argument('--plot_path', type=str, help='Base path to store the plo
 log_flags.add_argument('--log_path', type=str, required=True,
                     help='Base path to store the logged data')
 log_flags.add_argument('--run_name', type=str, default='run', help='Identifier of the run logs')
+log_flags.add_argument('--run_log', type=str, help='File to store the runtime logs of the script')
 
 def get_hamiltonian_list(args):
     if args.hamiltonian != None:
@@ -176,6 +179,12 @@ def get_drift_type(args):
 
 def main() -> None:
     args = parser.parse_args()
+
+    # Set the output file 
+    if args.run_log != None:
+        f = open(args.run_log, 'w+')
+        sys.stdout = f
+
     # Obtain the Hamiltonian List
     hm_list,h_name,h_params = get_hamiltonian_list(args)    
 
@@ -194,6 +203,7 @@ def main() -> None:
     param_path = '/{}/{}/'.format(h_name,h_params)
     params.set_identifiers(args.log_path+param_path, args.plot_path+param_path, 
                             '{}-{}'.format(args.run_name,args.drift))
+    
     # Run QITE
     padding = int(np.floor(np.log10(args.runs)) + 1)
     for run in range(args.runs):
@@ -212,6 +222,7 @@ def main() -> None:
             plot_data('{}\n{}'.format(h_name,h_params), run_id, params, E, statevectors, 
                         args.plot_gs, args.plot_prob and (args.backend == 'sv_sim'))
         log_data(run_id, params, E, times, alist)
+    f.close()
 
 if __name__ == '__main__':
     main()
