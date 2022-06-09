@@ -129,12 +129,12 @@ def is_real_hamiltonian(hm_list):
             if hm[0][j] in odd_ys:
                 if np.abs(np.real(hm[1][j])) > TOLERANCE:
                     real_flags[m] = False
-                    continue
+                    break
             # If a term with even Ys, the coefficient should be real
             else:
                 if np.abs(np.imag(hm[1][j])) > TOLERANCE:
                     real_flags[m] = False
-                    continue
+                    break
     return real_flags
 
 ###################################
