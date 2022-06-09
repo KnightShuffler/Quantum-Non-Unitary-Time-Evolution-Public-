@@ -1,3 +1,4 @@
+#!/home/ADS/cmp3kumars/miniconda3/envs/qiskit/bin/python
 from ideal_qite import CP_IMPORT_FLAG
 from ideal_qite import qite as ideal_qite
 from qite_params import *
