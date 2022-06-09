@@ -52,7 +52,7 @@ hamiltonian_group.add_argument('-Hf', '--hamiltonian_file', type=str,
 
 run_params.add_argument('-J', '--heisenberg_J', dest='J', metavar='j', nargs=3, type=float, 
                     help='Coupling constants for the Heisenberg and Trasnverse Field Ising Models')
-run_params.add_argument('-B', '--heisenberg_B', dest='B', default=0.0, metavar='b', 
+run_params.add_argument('-B', '--heisenberg_B', dest='B', type=float, default=0.0, metavar='b', 
                     help='Magnetic field for the Heisenberg and Transverse Field Ising Models')
 
 # Initial Circuit/State
