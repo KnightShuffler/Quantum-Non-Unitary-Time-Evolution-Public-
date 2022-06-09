@@ -97,7 +97,7 @@ log_flags.add_argument('--plot_gs', action='store_true',
                     help='Set this to calculate and draw the ground state energy in the plot')
 log_flags.add_argument('--plot_prob', action='store_true',
                     help='Set this to calculate and plot the fidelity to the ground state')
-log_flags.add_argument('--plot_path', type=str, default='', help='Base path to store the plot')
+log_flags.add_argument('--plot_path', type=str, default='.', help='Base path to store the plot')
 log_flags.add_argument('--log_path', type=str, required=True,
                     help='Base path to store the logged data')
 log_flags.add_argument('--run_name', type=str, default='run', help='Identifier of the run logs')
