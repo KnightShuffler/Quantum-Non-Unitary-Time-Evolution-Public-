@@ -50,7 +50,7 @@ hamiltonian_group.add_argument('-H', '--hamiltonian', type=str,
 hamiltonian_group.add_argument('-Hf', '--hamiltonian_file', type=str, 
                                 help='File path containing a Hamiltonian description')
 
-run_params.add_argument('-J', '--heisenberg_J', dest='J', metavar='j', nargs=3, type=float, 
+run_params.add_argument('-J', '--heisenberg_J', dest='J', metavar='j', nargs='+', type=float, 
                     help='Coupling constants for the Heisenberg and Trasnverse Field Ising Models')
 run_params.add_argument('-B', '--heisenberg_B', dest='B', type=float, default=0.0, metavar='b', 
                     help='Magnetic field for the Heisenberg and Transverse Field Ising Models')
@@ -104,23 +104,27 @@ def get_hamiltonian_list(args):
         if args.hamiltonian == 'sr_heisenberg':
             if args.J == None:
                 raise ValueError('Coupling constants J not specified')
+            if len(args.J) != 3:
+                raise ValueError('J must have 3 components for the Heisenberg Model')
             h_name = 'Short Range Heisenberg - {} qubits'.format(args.nbits)
-            hm_list = hamiltonians.short_range_heisenberg(args.nbits, args.heisenberg_J, 
-                                                        args.heisenberg_B)
+            hm_list = hamiltonians.short_range_heisenberg(args.nbits, args.J, args.B)
             h_params = 'J = [{:0.2f}, {:0.2f}, {:0.2f}], B = {:0.2f}'.format(args.J[0], args.J[1], args.J[2], args.B)
         elif args.hamiltonian == 'lr_heisenberg':
             if args.J == None:
                 raise ValueError('Coupling constants J not specified')
+            if len(args.J) != 3:
+                raise ValueError('J must have 3 components for the Heisenberg Model')
             h_name = 'Long Range Heisenberg - {} qubits'.format(args.nbits)
-            hm_list = hamiltonians.long_range_heisenberg(args.nbits, args.heisenberg_J)
+            hm_list = hamiltonians.long_range_heisenberg(args.nbits, args.J)
             h_params = 'J = [{:0.2f}, {:0.2f}, {:0.2f}]'.format(args.J[0], args.J[1], args.J[2])
-        elif args.hamiltonians == 'afmt_ising':
+        elif args.hamiltonian == 'afmt_ising':
             if args.J == None:
                 raise ValueError('Coupling constants J not specified')
+            if len(args.J) != 1:
+                raise ValueError('J must have one component for the Transverse Field Ising Model')
             h_name = 'AFM Transverse Field Ising - {} qubits'.format(args.nbits)
-            hm_list = hamiltonians.afm_transverse_field_ising(args.nbits, args.heisenberg_J, 
-                                                            args.heisenberg_B)
-            h_params = 'J = [{:0.2f}, {:0.2f}, {:0.2f}], B = {:0.2f}'.format(args.J[0], args.J[1], args.J[2], args.B)
+            hm_list = hamiltonians.afm_transverse_field_ising(args.nbits, args.J[0], args.B)
+            h_params = 'J = {:0.2f}, B = {:0.2f}'.format(args.J[0], args.B)
     else:
         if args.hamiltonian_file != None:
             # TODO: Load hamiltonian from file
