@@ -1,0 +1,3 @@
+nohup python qite_cli.py -db 0.1 -delta 0.1 -N 30 -n 2 -D 2 -H lr_heisenberg -J 1 1 1 --init_label 01 --log_path ./qite_logs/server_runs --drift none --runs 1 --run_log lr_n2d2.log --gpu_solve --gpu_sim &
+nohup python qite_cli.py -db 0.1 -delta 0.1 -N 30 -n 4 -D 2 -H lr_heisenberg -J 1 1 1 --init_label 0101 --log_path ./qite_logs/server_runs --drift none --runs 1 --run_log lr_n4d2.log --gpu_solve --gpu_sim &
+nohup python qite_cli.py -db 0.1 -delta 0.1 -N 30 -n 4 -D 4 -H lr_heisenberg -J 1 1 1 --init_label 01 --log_path ./qite_logs/server_runs --drift none --runs 1 --run_log lr_n2d4.log --gpu_solve --gpu_sim &
