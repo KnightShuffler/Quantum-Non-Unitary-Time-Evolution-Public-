@@ -20,8 +20,8 @@ def positive_int(x: str) -> int:
     return val
 
 def bitstr(x: str) -> str:
-    for c in x:
-        if c != '0' or c != '1':
+    for i in range(len(x)):
+        if x[i] != '0' and x[i] != '1':
             raise argparse.ArgumentTypeError('Expected bitstring, received \'{}\''.format(x))
     return x
 
