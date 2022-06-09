@@ -180,7 +180,7 @@ def main() -> None:
 
     # Load the Hamiltonian Params
     params = QITE_params()
-    params.load_hamiltonian_params(hm_list, args.nbits, args.D)
+    params.load_hamiltonian_params(hm_list, args.nbits, args.domain_size)
     # Load the Run Params
     backend = get_backend(args)
     init_circ, init_sv = get_inits(args)
