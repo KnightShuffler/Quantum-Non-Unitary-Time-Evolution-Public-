@@ -81,7 +81,7 @@ def tomography(params, psi0, alist, term):
     psi = propagate(params, psi0, alist)
 
     if params.small_domain_flags[term]:
-        domain = get_full_domain(params.hm_list[2], params.nbits)
+        domain = get_full_domain(params.hm_list[term][2], params.nbits)
     else:
         domain = params.domains[term]
 
