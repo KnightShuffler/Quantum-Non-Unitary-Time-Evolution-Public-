@@ -105,7 +105,7 @@ def update_alist(params, sigma_expectation, alist, term, scale):
     # Load c
     c = 1.0
     for j in range(num_terms):
-        c -= 2*scale * params.db * sigma_expectation[ ext_domain_pauli(hm[0][j], hm[2], big_domain) ]
+        c -= 2*scale * params.db * np.real(hm[1][j]) * sigma_expectation[ ext_domain_pauli(hm[0][j], hm[2], big_domain) ]
     
     # Load S
     if params.real_term_flags[term]:
@@ -132,7 +132,7 @@ def update_alist(params, sigma_expectation, alist, term, scale):
 
             p_,c_ = pauli_string_prod(I, J, len(big_domain))
 
-            b[i] += scale * hm[1][j] * sigma_expectation[p_] * c_
+            b[i] += scale * np.conj(hm[1][j]) * sigma_expectation[p_] * c_
     b = (4.0 / np.sqrt(c)) * np.imag(b)
 
     #Regularizer
