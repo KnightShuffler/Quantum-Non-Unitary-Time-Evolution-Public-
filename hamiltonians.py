@@ -21,74 +21,197 @@ from helpers import *
 # Helper Functions #
 ####################
 
-def print_hamiltonian(hm_list):
-    print('H is a {}-local Hamiltonian'.format(get_k(hm_list)))
-    term = 0
-    for hm in hm_list:
-        term += 1
-        print('Term {} acting on qubits {}:'.format(term,str(hm[2])))
-        for j in range(len(hm[0])):
-            nactive = len(hm[2])
-            pstring = int_to_base(hm[0][j],4,nactive)
-            for i in range(nactive):
-                if pstring[i] == 0:
-                    pstring[i] = 'I'
+class Hamiltonian:
+    def __init__(self, hm_list, lattice_dim, lattice_bound, qubit_map):
+        self.hm_list = hm_list.copy()
+        self.d = lattice_dim
+        self.l = lattice_bound
+        v = Hamiltonian.verify_map(lattice_dim, lattice_bound, qubit_map)
+        if v != True:
+            print('Qubit map not valid!')
+            raise ValueError(v)
+        self.map = qubit_map
+        self.nbits = len(self.map)
+        self.real_term_flags = self.is_real_hamiltonian()
+    
+    def verify_map(d, l, map):
+        coords = map.keys()
+        bound = l**d - 1
+        counts = dict( (val, 0) for val in map.values())
+        for coord in coords:
+            if coord[0] > bound or coord[0] < 0 or coord[1] > bound or coord[1] < 0:
+                return 'Out of bounds coordinate {}'.format(coord)
+            counts[map[coord]] += 1
+            if counts[map[coord]] > 1:
+                return 'Multiple coordinates map to qubit index {}'.format(map[coord])
+        return True
+
+    def print(self):
+        term = 0
+        for hm in self.hm_list:
+            term += 1
+            print('Term {} acting on the qubit locations {}:'.format(term,hm[2]))
+            for j in range(len(hm[0])):
+                nactive = len(hm[2])
+                pstring = int_to_base(hm[0][j],4,nactive)
+                for i in range(nactive):
+                    if pstring[i] == 0:
+                        pstring[i] = 'I'
+                    else:
+                        pstring[i] = chr(ord('X') + pstring[i] - 1)
+                print('\t({0:.2f} {1} {2:.2f}i)'.format(hm[1][j].real, '+-'[int(hm[1][j].imag) < 0], abs(hm[1][j].imag)),end=' ',flush=True)
+                for i in range(nactive):
+                    print('{}_{}'.format(pstring[i],hm[2][i]),end=' ',flush=True)
+                if j < len(hm[0])-1:
+                    print('+')
                 else:
-                    pstring[i] = chr(ord('X') + pstring[i] - 1)
-            print('\t({0:.2f} {1} {2:.2f}i)'.format(hm[1][j].real, '+-'[int(hm[1][j].imag) < 0], abs(hm[1][j].imag)),end=' ',flush=True)
-            for i in range(nactive):
-                print('{}_{}'.format(pstring[i],hm[2][i]),end=' ',flush=True)
-            if j < len(hm[0])-1:
-                print('+')
-            else:
-                print()
+                    print()
+    
+    def get_matrix(self):
+        '''
+        returns the matrix representation of the Hamiltonian
+        '''
+        nbits = self.nbits
+        num_basis = 2**nbits
+        h_mat = np.zeros([num_basis,num_basis],dtype=complex)
 
-def get_matrix(hm_list, nbits):
-    num_basis = 2**nbits
-    h_mat = np.zeros([num_basis,num_basis],dtype=complex)
+        if nbits == 1:
+            for hm in self.hm_list:
+                for i in range(len(hm[0])):
+                    h_mat += hm[1][i] * sigma_matrices[hm[0][i]]
+        else:
+            for hm in self.hm_list:
+                active = [self.map[hm[2][i]] for i in range(len(hm[2]))]
+                nactive = len(active)
+                nterms = len(hm[0])
+                # Loop through the Pauli terms in hm
+                for i in range(nterms):
+                    full_pauli_str = [0] * nbits
+                    partial_pauli_str = int_to_base(hm[0][i],4,nactive)
+                    for j in range(nactive):
+                        full_pauli_str[active[j]] = partial_pauli_str[j]
+                    # reverse the string to be consistend with Qiskit's qubit ordering
+                    full_pauli_str = full_pauli_str[::-1]
+                    # The matrix for the term is a tensor product of the corresponding Pauli matrices
+                    term_matrix = sigma_matrices[full_pauli_str[0]]
+                    for j in range(1,nbits):
+                        term_matrix = np.kron(term_matrix, sigma_matrices[full_pauli_str[j]])
+                    # Scale by the coefficient of the term
+                    term_matrix *= hm[1][i]
+                    
+                    # Add the term to the final matrix
+                    h_mat += term_matrix
+        return h_mat
 
-    if nbits == 1:
-        for hm in hm_list:
-            for i in range(len(hm[0])):
-                h_mat += hm[1][i] * sigma_matrices[hm[0][i]]
-    else:
-        for hm in hm_list:
-            active = hm[2]
-            nactive = len(active)
-            nterms = len(hm[0])
-            # Loop through the Pauli terms in hm
-            for i in range(nterms):
-                full_pauli_str = [0] * nbits
-                partial_pauli_str = int_to_base(hm[0][i],4,nactive)
-                for j in range(len(active)):
-                    full_pauli_str[active[j]] = partial_pauli_str[j]
-                # reverse the string to be consistend with Qiskit's qubit ordering
-                full_pauli_str = full_pauli_str[::-1]
-                # The matrix for the term is a tensor product of the corresponding Pauli matrices
-                term_matrix = sigma_matrices[full_pauli_str[0]]
-                for j in range(1,nbits):
-                    term_matrix = np.kron(term_matrix, sigma_matrices[full_pauli_str[j]])
-                # Scale by the coefficient of the term
-                term_matrix *= hm[1][i]
+    def get_spectrum(self):
+        '''
+        returns the spectrum of the Hamiltonian
+        '''
+        h_mat = self.get_matrix()
+        return np.linalg.eig(h_mat)
+
+    def get_gs(self):
+        '''
+        returns the ground state energy and the ground state vector of the Hamiltonian
+        '''
+        w,v = self.get_spectrum()
+        i = np.argmin(w)
+        return w[i],v[:,i]
+    
+    def is_real_hamiltonian(self):
+        '''
+        returns whether each term of the hamiltonian is a real matrix in the Z basis
+        '''
+        real_flags = [True] * len(self.hm_list)
+        for m in range(len(self.hm_list)):
+            hm = self.hm_list[m]
+            nactive = len(hm[2])
+            odd_ys = odd_y_pauli_strings(nactive)
+            for j in range(len(hm[0])):
+                # If a term with odd Ys, the coefficient should be imaginary
+                if hm[0][j] in odd_ys:
+                    if np.abs(np.real(hm[1][j])) > TOLERANCE:
+                        real_flags[m] = False
+                        break
+                # If a term with even Ys, the coefficient should be real
+                else:
+                    if np.abs(np.imag(hm[1][j])) > TOLERANCE:
+                        real_flags[m] = False
+                        break
+        return real_flags
+    
+    ...
+
+
+# def print_hamiltonian(hm_list):
+#     print('H is a {}-local Hamiltonian'.format(get_k(hm_list)))
+#     term = 0
+#     for hm in hm_list:
+#         term += 1
+#         print('Term {} acting on qubits {}:'.format(term,str(hm[2])))
+#         for j in range(len(hm[0])):
+#             nactive = len(hm[2])
+#             pstring = int_to_base(hm[0][j],4,nactive)
+#             for i in range(nactive):
+#                 if pstring[i] == 0:
+#                     pstring[i] = 'I'
+#                 else:
+#                     pstring[i] = chr(ord('X') + pstring[i] - 1)
+#             print('\t({0:.2f} {1} {2:.2f}i)'.format(hm[1][j].real, '+-'[int(hm[1][j].imag) < 0], abs(hm[1][j].imag)),end=' ',flush=True)
+#             for i in range(nactive):
+#                 print('{}_{}'.format(pstring[i],hm[2][i]),end=' ',flush=True)
+#             if j < len(hm[0])-1:
+#                 print('+')
+#             else:
+#                 print()
+
+# def get_matrix(hm_list, nbits):
+#     num_basis = 2**nbits
+#     h_mat = np.zeros([num_basis,num_basis],dtype=complex)
+
+#     if nbits == 1:
+#         for hm in hm_list:
+#             for i in range(len(hm[0])):
+#                 h_mat += hm[1][i] * sigma_matrices[hm[0][i]]
+#     else:
+#         for hm in hm_list:
+#             active = hm[2]
+#             nactive = len(active)
+#             nterms = len(hm[0])
+#             # Loop through the Pauli terms in hm
+#             for i in range(nterms):
+#                 full_pauli_str = [0] * nbits
+#                 partial_pauli_str = int_to_base(hm[0][i],4,nactive)
+#                 for j in range(len(active)):
+#                     full_pauli_str[active[j]] = partial_pauli_str[j]
+#                 # reverse the string to be consistend with Qiskit's qubit ordering
+#                 full_pauli_str = full_pauli_str[::-1]
+#                 # The matrix for the term is a tensor product of the corresponding Pauli matrices
+#                 term_matrix = sigma_matrices[full_pauli_str[0]]
+#                 for j in range(1,nbits):
+#                     term_matrix = np.kron(term_matrix, sigma_matrices[full_pauli_str[j]])
+#                 # Scale by the coefficient of the term
+#                 term_matrix *= hm[1][i]
                 
-                # Add the term to the final matrix
-                h_mat += term_matrix
-    return h_mat
+#                 # Add the term to the final matrix
+#                 h_mat += term_matrix
+#     return h_mat
 
-def get_spectrum(hm_list, nbits):
-    '''
-    returns the spectrum of the Hamiltonian
-    '''
-    h_mat = get_matrix(hm_list, nbits)
-    return np.linalg.eig(h_mat)
+# def get_spectrum(hm_list, nbits):
+#     '''
+#     returns the spectrum of the Hamiltonian
+#     '''
+#     h_mat = get_matrix(hm_list, nbits)
+#     return np.linalg.eig(h_mat)
 
-def get_gs(hm_list, nbits):
-    '''
-    returns the ground state energy and the ground state vector of the Hamiltonian
-    '''
-    w,v = get_spectrum(hm_list,nbits)
-    i = np.argmin(w)
-    return w[i],v[:,i]
+# def get_gs(hm_list, nbits):
+#     '''
+#     returns the ground state energy and the ground state vector of the Hamiltonian
+#     '''
+#     w,v = get_spectrum(hm_list,nbits)
+#     i = np.argmin(w)
+#     return w[i],v[:,i]
+
 
 def get_k(hm_list):
     '''
