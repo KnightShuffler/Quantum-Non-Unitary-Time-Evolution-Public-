@@ -149,7 +149,10 @@ class Hamiltonian:
                         break
         return real_flags
     
-    ...
+    def multiply_scalar(self, scalar):
+        for i in range(len(self.hm_list)):
+            for j in range(len(self.hm_list[i][1])):
+                self.hm_list[i][1][j] *= scalar
 
 def get_k(hm_list):
     '''
