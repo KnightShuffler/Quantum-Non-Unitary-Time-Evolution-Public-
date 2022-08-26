@@ -222,7 +222,7 @@ class ShortRangeHeisenberg(Hamiltonian):
                 for i in range(n_spins):
                     hm_list.append([ [3], [B], [i] ])
         
-        super.__init__(self, hm_list, n_dim, bound, qubit_map)
+        super().__init__(self, hm_list, n_dim, bound, qubit_map)
 
 class LongRangeHeisenberg(Hamiltonian):
     def __init__(self,  n_spins, J, B=0, n_dim=1):
@@ -242,7 +242,7 @@ class LongRangeHeisenberg(Hamiltonian):
                         hm[1].append(prefactor * J[k])
                     hm_list.append(hm)
         
-        super.__init__(self, hm_list, n_dim, bound, qubit_map)
+        super().__init__(self, hm_list, n_dim, bound, qubit_map)
 
 class TransverseFieldIsing_AFM(Hamiltonian):
     def __init__(self, n_spins, J, h=0, n_dim=1):
@@ -260,4 +260,4 @@ class TransverseFieldIsing_AFM(Hamiltonian):
                 for i in range(n_spins):
                     hm_list.append( [ [1], [h], [i] ] )
 
-        super.__init__(self, hm_list, n_dim, bound, qubit_map)  
+        super().__init__(self, hm_list, n_dim, bound, qubit_map)  
