@@ -22,15 +22,24 @@ from helpers import *
 ####################
 
 class Hamiltonian:
-    def __init__(self, hm_list, lattice_dim, lattice_bound, qubit_map):
+    def __init__(self, hm_list, lattice_dim, lattice_bound, qubit_map=None):
         self.hm_list = hm_list.copy()
         self.d = lattice_dim
         self.l = lattice_bound
-        v = Hamiltonian.verify_map(lattice_dim, lattice_bound, qubit_map)
-        if v != True:
-            print('Qubit map not valid!')
-            raise ValueError(v)
-        self.map = qubit_map
+        
+        # None qubit_map corresponds to a default 1D mapping
+        if qubit_map == None:
+            if self.d != 1:
+                raise ValueError('Default qubit map only available for 1D topology')
+            self.map = {}
+            for i in range(self.l):
+                self.map[i] = i
+        else:
+            v = Hamiltonian.verify_map(lattice_dim, lattice_bound, qubit_map)
+            if v != True:
+                print('Qubit map not valid!')
+                raise ValueError(v)
+            self.map = qubit_map
         self.nbits = len(self.map)
         self.real_term_flags = self.is_real_hamiltonian()
     
