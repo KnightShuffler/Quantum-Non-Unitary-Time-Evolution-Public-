@@ -38,6 +38,36 @@ def get_full_domain(qbits, nbits):
     '''
     return list( range( min(qbits), min(max(qbits) + 1, nbits) ) )
 
+def in_lattice(point, d, l):
+    '''
+    Returns True if the point is within a d-dimensional lattice
+    with non-negative coordinates, of side length l
+    '''
+    for i in range(d):
+        if point[i] < 0 or point[i] >= l:
+            return False
+    return True
+
+def get_center(points):
+    '''
+    Returns the coordinates of the center of the points
+    '''
+    n = len(points)
+    return np.sum(points,axis=0)/n
+
+def manhattan_dist(a, b):
+    '''
+    Returns the Manhatan distance between points a and b
+    '''
+    return np.sum(np.abs(a - b))
+
+def within_radius(center, point, radius):
+    '''
+    Returns True if the point is within a Manhattan distance of radius 
+    away from the center
+    '''
+    return manhattan_dist(point, center) <= radius
+
 def sample_from_a(a):
     '''
     Given a vector of real numbers a,
