@@ -60,6 +60,8 @@ class QITE_params:
 
         lc = [0] * d # loop counters
         for i in range(l**d):
+            # check if the lattice point is up to a manhattan distance
+            # of D/2 of the center
             if (within_radius(c, lc, D//2)):
                 n_domain.append(tuple(lc))
             # update loop counters
