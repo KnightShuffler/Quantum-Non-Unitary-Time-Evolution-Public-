@@ -45,10 +45,9 @@ class Hamiltonian:
     
     def verify_map(d, l, map):
         coords = map.keys()
-        bound = l**d - 1
         counts = dict( (val, 0) for val in map.values())
         for coord in coords:
-            if coord[0] > bound or coord[0] < 0 or coord[1] > bound or coord[1] < 0:
+            if not in_lattice(coord, d, l):
                 return 'Out of bounds coordinate {}'.format(coord)
             counts[map[coord]] += 1
             if counts[map[coord]] > 1:
