@@ -50,18 +50,31 @@ class QITE_params:
     def domain_size(qbits):
         return max(qbits) - min(qbits) + 1
 
-    def get_extended_domain(active, D, nbits):
+    def get_new_domain(active, D, d, l):
         '''
-        Returns a list of the extended domain of a k-local Hamiltonian term hm
-        with a domain size D, and nbits qubits in a linear topology
+        Returns a list of the extended/shrunk domain of a Hamiltonian 
+        with domain size D on a d-dimensional lattice of bound l
         '''
-        if QITE_params.domain_size(active) % 2 != D % 2:
-            D -= 1
-        radius = D//2
-        center = (min(active) + max(active)) // 2
-        _max = min(center + radius + 1, nbits)
-        _min = max(center + radius - D + 1, 0)
-        return list(range(_min,_max))
+        c = get_center(active)
+        n_domain = []
+
+        lc = [0] * d # loop counters
+        for i in range(l**d):
+            if (within_radius(c, lc, D//2)):
+                n_domain.append(tuple(lc))
+            # update loop counters
+            j = 0
+            while True:
+                if j >= d:
+                    break
+                lc[j] += 1
+                if lc[j] == l:
+                    lc[j] = 0
+                    j += 1
+                else:
+                    break
+        return n_domain
+
     
     def load_measurement_keys(self, m, domain_ops):
         hm = self.hm_list[m]
