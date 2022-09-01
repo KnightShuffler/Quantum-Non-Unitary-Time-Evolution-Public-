@@ -24,6 +24,7 @@ from helpers import *
 class Hamiltonian:
     def __init__(self, hm_list, lattice_dim, lattice_bound, qubit_map=None):
         self.hm_list = hm_list.copy()
+        self.num_terms = len(hm_list)
         self.d = lattice_dim
         self.l = lattice_bound
         
@@ -128,13 +129,14 @@ class Hamiltonian:
     
     def is_real_hamiltonian(self):
         '''
-        returns whether each term of the hamiltonian is a real matrix in the Z basis
+        calculates whether each term of the hamiltonian is a real matrix in the Z basis
         '''
-        real_flags = [True] * len(self.hm_list)
+        real_flags = [True] * self.num_terms
         for m in range(len(self.hm_list)):
             hm = self.hm_list[m]
             nactive = len(hm[2])
             odd_ys = odd_y_pauli_strings(nactive)
+            # Set to True, calculate if False
             for j in range(len(hm[0])):
                 # If a term with odd Ys, the coefficient should be imaginary
                 if hm[0][j] in odd_ys:
@@ -146,59 +148,59 @@ class Hamiltonian:
                     if np.abs(np.imag(hm[1][j])) > TOLERANCE:
                         real_flags[m] = False
                         break
-        return real_flags
+            return real_flags
     
     def multiply_scalar(self, scalar):
         for i in range(len(self.hm_list)):
             for j in range(len(self.hm_list[i][1])):
                 self.hm_list[i][1][j] *= scalar
 
-def get_k(hm_list):
-    '''
-    Given that hm_list describes a k-local Hamiltonian on a 
-    linear qubit topology, this function returns what k is.
-    '''
-    k = 0
-    for hm in hm_list:
-        range = np.max(hm[2]) - np.min(hm[2]) + 1
-        if k < range:
-            k = range
-    return k
+# def get_k(hm_list):
+#     '''
+#     Given that hm_list describes a k-local Hamiltonian on a 
+#     linear qubit topology, this function returns what k is.
+#     '''
+#     k = 0
+#     for hm in hm_list:
+#         range = np.max(hm[2]) - np.min(hm[2]) + 1
+#         if k < range:
+#             k = range
+#     return k
 
-def is_valid_domain(hm_list, D, nbits):
-    '''
-    Checks if D is a valid domain size for a k-local Hamiltonian
-    on a linear qubit topology
-    '''
-    # domain size is restrited to the number of qubits
-    if D > nbits:
-        return False
+# def is_valid_domain(hm_list, D, nbits):
+#     '''
+#     Checks if D is a valid domain size for a k-local Hamiltonian
+#     on a linear qubit topology
+#     '''
+#     # domain size is restrited to the number of qubits
+#     if D > nbits:
+#         return False
     
-    k = get_k(hm_list)
-    # Only a valid domain size if D and k have the same parity
-    return k%2 == D%2
+#     k = get_k(hm_list)
+#     # Only a valid domain size if D and k have the same parity
+#     return k%2 == D%2
 
-def is_real_hamiltonian(hm_list):
-    '''
-    returns whether the described hamiltonian is a real matrix in the Z basis
-    '''
-    real_flags = [True] * len(hm_list)
-    for m in range(len(hm_list)):
-        hm = hm_list[m]
-        nactive = len(hm[2])
-        odd_ys = odd_y_pauli_strings(nactive)
-        for j in range(len(hm[0])):
-            # If a term with odd Ys, the coefficient should be imaginary
-            if hm[0][j] in odd_ys:
-                if np.abs(np.real(hm[1][j])) > TOLERANCE:
-                    real_flags[m] = False
-                    break
-            # If a term with even Ys, the coefficient should be real
-            else:
-                if np.abs(np.imag(hm[1][j])) > TOLERANCE:
-                    real_flags[m] = False
-                    break
-    return real_flags
+# def is_real_hamiltonian(hm_list):
+#     '''
+#     returns whether the described hamiltonian is a real matrix in the Z basis
+#     '''
+#     real_flags = [True] * len(hm_list)
+#     for m in range(len(hm_list)):
+#         hm = hm_list[m]
+#         nactive = len(hm[2])
+#         odd_ys = odd_y_pauli_strings(nactive)
+#         for j in range(len(hm[0])):
+#             # If a term with odd Ys, the coefficient should be imaginary
+#             if hm[0][j] in odd_ys:
+#                 if np.abs(np.real(hm[1][j])) > TOLERANCE:
+#                     real_flags[m] = False
+#                     break
+#             # If a term with even Ys, the coefficient should be real
+#             else:
+#                 if np.abs(np.imag(hm[1][j])) > TOLERANCE:
+#                     real_flags[m] = False
+#                     break
+#     return real_flags
 
 ###################################
 # Hamiltonian of Different Models #
