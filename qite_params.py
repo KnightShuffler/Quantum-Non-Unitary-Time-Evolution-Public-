@@ -4,7 +4,7 @@ from qiskit.quantum_info import Statevector
 from qiskit.providers.aer import AerError
 import os
 
-import hamiltonians
+from hamiltonians import Hamiltonian
 from helpers import *
 
 DRIFT_NONE = 0
@@ -13,14 +13,15 @@ DRIFT_THETA_2PI = 2
 DRIFT_THETA_PI_PI = 3
 
 class QITE_params:
-    def __init__(self):
+    def __init__(self, Ham: Hamiltonian):
         # Hamiltonian Information
-        self.hm_list = []
-        self.nterms = 0
-        self.real_term_flags = []
+        # self.hm_list = []
+        # self.nterms = 0
+        # self.real_term_flags = []
+        self.H = Ham
         self.small_domain_flags = []
         self.odd_y_strings = {}
-        self.domains = []
+        self.u_domains = []
         self.measurement_keys = {}
 
         self.nbits = 0
@@ -47,8 +48,8 @@ class QITE_params:
         self.fig_path = ''
         self.run_name = ''
     
-    def domain_size(qbits):
-        return max(qbits) - min(qbits) + 1
+    # def domain_size(qbits):
+    #     return max(qbits) - min(qbits) + 1
 
     def get_new_domain(active, D, d, l):
         '''
@@ -56,30 +57,14 @@ class QITE_params:
         with domain size D on a d-dimensional lattice of bound l
         '''
         c = get_center(active)
-        n_domain = []
-
-        lc = [0] * d # loop counters
-        for i in range(l**d):
-            # check if the lattice point is up to a manhattan distance
-            # of D/2 of the center
-            if (within_radius(c, lc, D//2)):
-                n_domain.append(tuple(lc))
-            # update loop counters
-            j = 0
-            while True:
-                if j >= d:
-                    break
-                lc[j] += 1
-                if lc[j] == l:
-                    lc[j] = 0
-                    j += 1
-                else:
-                    break
-        return n_domain
-
+        return get_m_sphere(c, D//2, d, l)
     
     def load_measurement_keys(self, m, domain_ops):
-        hm = self.hm_list[m]
+        '''
+        Calculates the measurement operators required for the m-th term 
+        in the Hamiltonian's hm_list
+        '''
+        hm = self.H.hm_list[m]
         active = get_full_domain(hm[2], self.nbits)
         domain = self.domains[m]
         ndomain = len(domain)
@@ -119,36 +104,30 @@ class QITE_params:
                 if p_ not in self.measurement_keys[m]:
                     self.measurement_keys[m].append(p_)
 
-    def load_hamiltonian_params(self, hm_list, nbits, D):
+    def load_hamiltonian_params(self, D):
         print('Loading Hamiltonian Parameters...',end=' ',flush=True)
         # Validate the passed parameters
-        if not hamiltonians.is_valid_domain(hm_list, D, nbits):
-            raise ValueError('The domain size D is not valid for the hamiltonian, parameters not set.')
+        # if not hamiltonians.is_valid_domain(hm_list, D, nbits):
+        #     raise ValueError('The domain size D is not valid for the hamiltonian, parameters not set.')
 
-        self.hm_list = hm_list
-        self.nterms = len(hm_list)
-        self.nbits = nbits
+        hm_list = self.H.hm_list
+        nterms = self.H.num_terms
+        nbits = self.H.nbits
+
         self.D = D
-        print('Done')
 
         print('Calculating Unitary Domains...',end=' ',flush=True)
         # Calculate the domains of the unitaries simulating each term
-        # If the domain size is less than the number of qubits calculate the domains
-        if D != nbits:
-            for hm in self.hm_list:
-                self.domains.append(QITE_params.get_extended_domain(hm[2], self.D, self.nbits))
-        # Otherwise, set the domain to be the full range of qubits
-        else:
-            self.domains = [list(range(0,nbits))] * self.nterms
+        for hm in hm_list:
+            self.u_domains.append(QITE_params.get_new_domain(hm[2], D, self.H.d, self.H.l))
         print('Done')
 
         # Check if the terms are real
         print('Calculating Required Odd-Y Pauli Strings...', end=' ', flush=True)
-        self.real_term_flags = hamiltonians.is_real_hamiltonian(self.hm_list)
 
         # Initialize the keys for the odd y strings
         for m in range(self.nterms):
-            if self.real_term_flags[m]:
+            if self.H.real_term_flags[m]:
                 self.odd_y_strings[len(self.domains[m])] = None
         
         # Load the odd Y Pauli Strings

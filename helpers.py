@@ -32,11 +32,7 @@ def base_to_int(digits, b):
         x += digits[i] * (b**i)
     return x
 
-def get_full_domain(qbits, nbits):
-    '''
-    returns the full domain of a linear topology of nbits qubits
-    '''
-    return list( range( min(qbits), min(max(qbits) + 1, nbits) ) )
+# Manhattan Distance Helpers
 
 def in_lattice(point, d, l):
     '''
@@ -67,6 +63,49 @@ def within_radius(center, point, radius):
     away from the center
     '''
     return manhattan_dist(point, center) <= radius
+
+def get_m_sphere(c, r, d, l):
+    '''
+    Returns the list of points at a Manhattan distance of r from the point c
+    in a d-dimensional lattice of side length l
+    '''
+    if d > 1:
+        # Calculate lower and uppper bounds for each dimension
+        lb = np.asarray(c) - r*np.ones(d)
+        ub = np.asarray(c) + r*np.ones(d)
+        lb = np.where(lb < 0, 0, lb)
+        ub = np.where(ub > l-1, l-1, ub)
+
+        # Get the integer bounds so that each point is a lattice point
+        lb = np.ceil(lb).astype(int)
+        ub = np.floor(ub).astype(int)
+
+        # Loop counter
+        lc = lb.copy()
+
+        # Sphere points
+        sphere = []
+        while True:
+            # Check point
+            if within_radius(c, lc, r):
+                sphere.append(tuple(lc))
+            
+            # Update
+            # Break if the last point is reached
+            if np.array_equal(lc, ub):
+                break
+            # Update the loop counter
+            j = 0
+            while True:
+                if j >= d:
+                    break
+                lc[j] += 1
+                if lc[j] > ub[j]:
+                    lc[j] = lb[j]
+                    j += 1
+                else:
+                    break
+        return sphere
 
 def sample_from_a(a):
     '''
