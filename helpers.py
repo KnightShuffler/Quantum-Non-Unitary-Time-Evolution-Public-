@@ -64,48 +64,35 @@ def within_radius(center, point, radius):
     '''
     return manhattan_dist(point, center) <= radius
 
-def get_m_sphere(c, r, d, l):
+def get_m_sphere(c, R, d, l):
     '''
-    Returns the list of points at a Manhattan distance of r from the point c
+    Returns the list of points at a Manhattan distance of R from the point c
     in a d-dimensional lattice of side length l
     '''
-    if d > 1:
-        # Calculate lower and uppper bounds for each dimension
-        lb = np.asarray(c) - r*np.ones(d)
-        ub = np.asarray(c) + r*np.ones(d)
-        lb = np.where(lb < 0, 0, lb)
-        ub = np.where(ub > l-1, l-1, ub)
+    sphere = []
+    # Cast c to a tuple, important for the d=1 base case
+    try:
+        c = tuple(c)
+    except TypeError as e:
+        if type(c) is not tuple:
+            c = (c,)
 
-        # Get the integer bounds so that each point is a lattice point
-        lb = np.ceil(lb).astype(int)
-        ub = np.floor(ub).astype(int)
+    lb = max(int(np.ceil(c[0] - R)), 0)
+    ub = min(int(np.ceil(c[0] + R)), l-1)
+    for i in np.arange(lb, ub+1, 1):
+        if d > 1:
+            # calculate new radius
+            if i <= c[0]:
+                r = i - (c[0] - R)
+            else:
+                r = R - (i - c[0])
 
-        # Loop counter
-        lc = lb.copy()
-
-        # Sphere points
-        sphere = []
-        while True:
-            # Check point
-            if within_radius(c, lc, r):
-                sphere.append(tuple(lc))
-            
-            # Update
-            # Break if the last point is reached
-            if np.array_equal(lc, ub):
-                break
-            # Update the loop counter
-            j = 0
-            while True:
-                if j >= d:
-                    break
-                lc[j] += 1
-                if lc[j] > ub[j]:
-                    lc[j] = lb[j]
-                    j += 1
-                else:
-                    break
-        return sphere
+            sub_sphere = get_m_sphere(c[1:], r, d-1, l)
+            for point in sub_sphere:
+                sphere.append( (i,) + point )
+        else:
+            sphere.append( (i,) )
+    return sphere
 
 def sample_from_a(a):
     '''
