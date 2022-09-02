@@ -215,6 +215,33 @@ def ext_domain_pauli(p, active, domain):
         new_pstring[ind] = pstring[i]
     return base_to_int(new_pstring, 4)
 
+def pauli_index_to_dict(p, domain):
+    '''
+    Converts a base-4 integer Pauli string index p to a dictionary of which Pauli
+    operators act on each qubit in the domain
+    '''
+    p_dict = {}
+    p_ops = int_to_base(p, 4, len(domain))
+    for i in range(len(domain)):
+        p_dict[domain[i]] = p_ops[i]
+    return p_dict
+
+def pauli_dict_product(p1_dict, p2_dict):
+    '''
+    Returns the product of two Pauli string dictionaries and the phase accumulated
+    '''
+    keys = list( set(p1_dict.keys()) | set(p2_dict.keys()) )
+    prod_dict = {}
+    coeff = 1+0.j
+    for key in keys:
+        if key not in p1_dict.keys():
+            p1_dict[key] = 0
+        if key not in p2_dict.keys():
+            p2_dict[key] = 0
+        
+        coeff *= pauli_prod[1][p1_dict[key], p2_dict[key]]
+        prod_dict[key] = pauli_prod[0][p1_dict[key], p2_dict[key]]
+    return prod_dict, coeff
 
 #-------------------------#
 # Quantum Circuit Related #
