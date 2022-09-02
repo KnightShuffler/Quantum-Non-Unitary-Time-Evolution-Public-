@@ -65,8 +65,9 @@ class QITE_params:
         in the Hamiltonian's hm_list
         '''
         hm = self.H.hm_list[m]
-        active = get_full_domain(hm[2], self.nbits)
-        domain = self.domains[m]
+        c, R = min_bounding_sphere(hm[2])
+        active = get_m_sphere(c, R, self.H.d, self.H.l)
+        domain = self.u_domains[m]
         ndomain = len(domain)
         nactive = len(active)
         
