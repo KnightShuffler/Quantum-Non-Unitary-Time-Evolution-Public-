@@ -32,7 +32,9 @@ def base_to_int(digits, b):
         x += digits[i] * (b**i)
     return x
 
-# Manhattan Distance Helpers
+#----------------------------#
+# Manhattan Distance Helpers #
+#----------------------------#
 
 def in_lattice(point, d, l):
     '''
@@ -94,6 +96,18 @@ def get_m_sphere(c, R, d, l):
             sphere.append( (i,) )
     return sphere
 
+def min_bounding_sphere(points):
+    center = get_center(points)
+    max_rad = 0
+    for p in points:
+        rad = manhattan_dist(p, center)
+        if rad > max_rad:
+            max_rad = rad
+    return center, max_rad
+
+#----------#
+# Sampling #
+#----------#
 def sample_from_a(a):
     '''
     Given a vector of real numbers a,
