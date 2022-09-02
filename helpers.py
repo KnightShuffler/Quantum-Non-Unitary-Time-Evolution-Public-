@@ -80,7 +80,8 @@ def get_m_sphere(c, R, d, l):
             c = (c,)
 
     lb = max(int(np.ceil(c[0] - R)), 0)
-    ub = min(int(np.ceil(c[0] + R)), l-1)
+    ub = min(int(np.floor(c[0] + R)), l-1)
+    
     for i in np.arange(lb, ub+1, 1):
         if d > 1:
             # calculate new radius
@@ -88,7 +89,6 @@ def get_m_sphere(c, R, d, l):
                 r = i - (c[0] - R)
             else:
                 r = R - (i - c[0])
-
             sub_sphere = get_m_sphere(c[1:], r, d-1, l)
             for point in sub_sphere:
                 sphere.append( (i,) + point )
