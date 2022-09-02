@@ -14,12 +14,7 @@ DRIFT_THETA_PI_PI = 3
 
 class QITE_params:
     def __init__(self, Ham: Hamiltonian):
-        # Hamiltonian Information
-        # self.hm_list = []
-        # self.nterms = 0
-        # self.real_term_flags = []
         self.H = Ham
-        self.small_domain_flags = []
         self.odd_y_strings = {}
         self.u_domains = []
         self.measurement_keys = {}
@@ -47,9 +42,6 @@ class QITE_params:
         self.log_path = ''
         self.fig_path = ''
         self.run_name = ''
-    
-    # def domain_size(qbits):
-    #     return max(qbits) - min(qbits) + 1
 
     def get_new_domain(active, D, d, l):
         '''
@@ -57,8 +49,13 @@ class QITE_params:
         with domain size D on a d-dimensional lattice of bound l
         '''
         c = get_center(active)
-        return get_m_sphere(c, D//2, d, l)
-    
+        dom = get_m_sphere(c, D//2, d, l)
+        if d == 1:
+            domain = [ point[0] for point in dom ]
+            return domain
+        else:
+            return dom
+
     def load_measurement_keys(self, m, domain_ops):
         '''
         Calculates the measurement operators required for the m-th term 
@@ -66,44 +63,42 @@ class QITE_params:
         '''
         hm = self.H.hm_list[m]
         c, R = min_bounding_sphere(hm[2])
-        active = get_m_sphere(c, R, self.H.d, self.H.l)
-        domain = self.u_domains[m]
-        ndomain = len(domain)
-        nactive = len(active)
-        
-        if ndomain >= nactive:
-            big_domain = domain
-            self.small_domain_flags[m] = False
-        else:
-            big_domain = active
-            self.small_domain_flags[m] = True
+        u_domain = self.u_domains[m]
+
+        # List of pauli dictionaries for the operators of the unitary's domain
+        h_ops = [
+            pauli_index_to_dict(hm[0][j], hm[2]) for j in range(len(hm[0]))
+        ]
+
+        def add_entry(entry):
+            for dict in self.measurement_keys[m]:
+                if same_pauli_dicts(entry, dict):
+                    return
+            self.measurement_keys[m].append(entry)
 
         # Measurements for c: Pauli strings in hm
-        for j in hm[0]:
-            J = ext_domain_pauli(j, hm[2], big_domain)
-            if J not in self.measurement_keys[m]:
-                self.measurement_keys[m].append(J)
+        self.measurement_keys[m] += h_ops
         
         # Measurements for S: Products of Pauli strings on the unitary domain
+        stored_indices = []
         for i in domain_ops:
-            I = ext_domain_pauli(i, domain, big_domain)
             for j in domain_ops:
-                J = ext_domain_pauli(j, domain, big_domain)
-                
-                p_,c_ = pauli_string_prod(I, J, len(big_domain))
-                if p_ not in self.measurement_keys[m]:
-                    self.measurement_keys[m].append(p_)
+                if j >= i:
+                    break
+                p_,c_ = pauli_string_prod(i, j, len(u_domain))
+                if p_ not in stored_indices:
+                    stored_indices.append(p_)
+                    add_entry(pauli_index_to_dict(p_, u_domain))
         
         # Measurements for b: Products of Pauli strings on the unitary domain with 
         # the Pauli strings in hm
         for i in domain_ops:
-            I = ext_domain_pauli(i, domain, big_domain)
+            i_dict = pauli_index_to_dict(i, u_domain)
             for j in hm[0]:
-                J = ext_domain_pauli(j, hm[2], big_domain)
-                
-                p_,c_ = pauli_string_prod(I, J, len(big_domain))
-                if p_ not in self.measurement_keys[m]:
-                    self.measurement_keys[m].append(p_)
+                j_dict = pauli_index_to_dict(j, hm[2])
+
+                prod_dict, coeff = pauli_dict_product(i_dict, j_dict)
+                add_entry(prod_dict)
 
     def load_hamiltonian_params(self, D):
         print('Loading Hamiltonian Parameters...',end=' ',flush=True)
@@ -127,9 +122,9 @@ class QITE_params:
         print('Calculating Required Odd-Y Pauli Strings...', end=' ', flush=True)
 
         # Initialize the keys for the odd y strings
-        for m in range(self.nterms):
+        for m in range(nterms):
             if self.H.real_term_flags[m]:
-                self.odd_y_strings[len(self.domains[m])] = None
+                self.odd_y_strings[len(self.u_domains[m])] = None
         
         # Load the odd Y Pauli Strings
         for y_len in self.odd_y_strings.keys():
@@ -137,15 +132,15 @@ class QITE_params:
         print('Done')
         
         print('Calculating Required Pauli Measurements...', end=' ', flush=True)
-        self.small_domain_flags = [False] * self.nterms
+        self.small_domain_flags = [False] * nterms
 
         # Calculate the strings to measure for each term:
-        for m in range(self.nterms):
+        for m in range(nterms):
             # Initialize list of keys for the m-th term
             self.measurement_keys[m] = []
-            ndomain = len(self.domains[m])
+            ndomain = len(self.u_domains[m])
             # Populate the keys
-            domain_ops = self.odd_y_strings[ndomain] if self.real_term_flags[m] else list(range(4**ndomain))
+            domain_ops = self.odd_y_strings[ndomain] if self.H.real_term_flags[m] else list(range(4**ndomain))
             self.load_measurement_keys(m, domain_ops)
         print('Done')
     
