@@ -226,6 +226,23 @@ def pauli_index_to_dict(p, domain):
         p_dict[domain[i]] = p_ops[i]
     return p_dict
 
+def same_pauli_dicts(pd1, pd2):
+    '''
+    Returns whether two Pauli string dictionaries represent the same operator
+    '''
+    keys = list( set(pd1.keys()) | set(pd2.keys()) )
+    for key in keys:
+        if key not in pd1.keys():
+            if pd2[key] != 0:
+                return False
+        elif key not in pd2.keys():
+            if pd1[key] != 0:
+                return False
+        else:
+            if pd1[key] != pd2[key]:
+                return False
+    return True
+
 def pauli_dict_product(p1_dict, p2_dict):
     '''
     Returns the product of two Pauli string dictionaries and the phase accumulated
