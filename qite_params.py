@@ -17,7 +17,8 @@ class QITE_params:
         self.H = Ham
         self.odd_y_strings = {}
         self.u_domains = []
-        self.measurement_keys = {}
+        self.h_measurements = {}
+        self.u_measurements = {}
 
         self.nbits = Ham.nbits
         self.D = 0
@@ -71,14 +72,14 @@ class QITE_params:
             pauli_index_to_dict(hm[0][j], hm[2]) for j in range(len(hm[0]))
         ]
 
-        def add_entry(entry):
-            for dict in self.measurement_keys[m]:
+        def add_entry(meas, entry):
+            for dict in meas:
                 if same_pauli_dicts(entry, dict):
                     return
-            self.measurement_keys[m].append(entry)
+            meas.append(entry)
 
         # Measurements for c: Pauli strings in hm
-        self.measurement_keys[m] += h_ops
+        self.h_measurements[m] = h_ops
         
         # Measurements for S: Products of Pauli strings on the unitary domain
         # All Pauli strings of length > 1 can be expressed as a product of two 
@@ -87,8 +88,7 @@ class QITE_params:
         # Excluding the identity operator since its always measured to be 1
         # and also excluding it will allow for 1 qubit logic
         for i in range(1,4**len(u_domain)):
-            i_dict = pauli_index_to_dict(i, u_domain)
-            add_entry(i_dict)
+            self.u_measurements[m].append(pauli_index_to_dict(i, u_domain))
         
         # Measurements for b: Products of Pauli strings on the unitary domain with 
         # the Pauli strings in hm
@@ -99,11 +99,9 @@ class QITE_params:
         if u_R < h_R:
             for i in domain_ops:
                 i_dict = pauli_index_to_dict(i, u_domain)
-                for j in hm[0]:
-                    j_dict = pauli_index_to_dict(j, hm[2])
-
+                for j_dict in h_ops:
                     prod_dict, coeff = pauli_dict_product(i_dict, j_dict)
-                    add_entry(prod_dict)
+                    add_entry(self.u_measurements[m], prod_dict)
 
     def load_hamiltonian_params(self, D):
         print('Loading Hamiltonian Parameters...',end=' ',flush=True)
@@ -141,7 +139,8 @@ class QITE_params:
         # Calculate the strings to measure for each term:
         for m in range(nterms):
             # Initialize list of keys for the m-th term
-            self.measurement_keys[m] = []
+            self.h_measurements[m] = []
+            self.u_measurements[m] = []
             ndomain = len(self.u_domains[m])
             # Populate the keys
             domain_ops = self.odd_y_strings[ndomain] if self.H.real_term_flags[m] else list(range(4**ndomain))
