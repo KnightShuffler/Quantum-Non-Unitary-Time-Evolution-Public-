@@ -62,8 +62,9 @@ class QITE_params:
         in the Hamiltonian's hm_list
         '''
         hm = self.H.hm_list[m]
-        c, R = min_bounding_sphere(hm[2])
+        h_c, h_R = min_bounding_sphere(hm[2])
         u_domain = self.u_domains[m]
+        u_c, u_R = min_bounding_sphere(u_domain)
 
         # List of pauli dictionaries for the operators of the unitary's domain
         h_ops = [
@@ -91,13 +92,18 @@ class QITE_params:
         
         # Measurements for b: Products of Pauli strings on the unitary domain with 
         # the Pauli strings in hm
-        for i in domain_ops:
-            i_dict = pauli_index_to_dict(i, u_domain)
-            for j in hm[0]:
-                j_dict = pauli_index_to_dict(j, hm[2])
 
-                prod_dict, coeff = pauli_dict_product(i_dict, j_dict)
-                add_entry(prod_dict)
+        # Only need to do this calculation if the unitary domain is smaller than the
+        # Hamiltonian term's domain, otherwise, all measurement operators were accounted
+        # for when building S
+        if u_R < h_R:
+            for i in domain_ops:
+                i_dict = pauli_index_to_dict(i, u_domain)
+                for j in hm[0]:
+                    j_dict = pauli_index_to_dict(j, hm[2])
+
+                    prod_dict, coeff = pauli_dict_product(i_dict, j_dict)
+                    add_entry(prod_dict)
 
     def load_hamiltonian_params(self, D):
         print('Loading Hamiltonian Parameters...',end=' ',flush=True)
