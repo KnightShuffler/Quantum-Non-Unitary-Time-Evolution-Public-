@@ -19,7 +19,7 @@ class QITE_params:
         self.u_domains = []
         self.measurement_keys = {}
 
-        self.nbits = 0
+        self.nbits = Ham.nbits
         self.D = 0
 
         # QITE Run Parameters
@@ -113,7 +113,6 @@ class QITE_params:
 
         hm_list = self.H.hm_list
         nterms = self.H.num_terms
-        nbits = self.H.nbits
 
         self.D = D
 
