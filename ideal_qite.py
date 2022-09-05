@@ -28,32 +28,36 @@ def evolve_statevector(params, qc, psi):
     result = execute(circ, params.backend).result()
     return result.get_statevector(circ)
 
-def pauli_expectation(params, psi, p, qbits):
+def pauli_expectation(params, psi, p_dict, qubit_map):
     '''
-    returns the theoretical expectation <psi|P|psi> where P is the pauli string acting on qbits, indexed by p
+    returns the theoretical expectation <psi|P|psi> where P is the pauli string acting on qbits, 
+    described using a Pauli string dictionary
     '''
-    pstring = int_to_base(p,4,len(qbits))
+
+    bases = get_qc_bases_from_pauli_dict(p_dict, qubit_map)
+    active = list(bases.keys())
     qc = QuantumCircuit(params.nbits)
-    for i in range(len(qbits)):
-        if pstring[i] == 1:
-            qc.x(qbits[i])
-        elif pstring[i] == 2:
-            qc.y(qbits[i])
-        elif pstring[i] == 3:
-            qc.z(qbits[i])
+    for i in active:
+        if bases[i] == 1:
+            qc.x(i)
+        elif bases[i] == 2:
+            qc.y(i)
+        elif bases[i] == 3:
+            qc.z(i)
     
     phi = evolve_statevector(params, qc, psi)
     
     return np.real(np.vdot(psi.data, phi.data))
 
-def measure_energy(params, psi, hm_list):
+def measure_energy(params: QITE_params, psi):
     '''
     returns the mean energy <psi|H|psi>
     '''
     E = 0.0
-    for hm in hm_list:
+    for m in range(params.H.num_terms):
+        hm = params.H.hm_list[m]
         for j in range(len(hm[0])):
-            E += pauli_expectation(params, psi, hm[0][j], hm[2]) * hm[1][j]
+            E += pauli_expectation(params, psi, params.h_measurements[m][j], params.H.map) * hm[1][j]
     return E
 
 def propagate(params, psi0, alist):
@@ -188,7 +192,7 @@ def qite(params):
 
     alist = []
 
-    E[0] = measure_energy(params, params.init_sv, params.hm_list)
+    E[0] = measure_energy(params, params.init_sv)
     statevectors[0] = params.init_sv.data
 
     print('Starting Ideal QITE Simulation:')
@@ -201,7 +205,7 @@ def qite(params):
             alist.append(a)
 
         statevectors[i] = psi.data
-        E[i] = measure_energy(params, psi, params.hm_list)
+        E[i] = measure_energy(params, psi)
 
         end = time.time()
         duration = end - start
