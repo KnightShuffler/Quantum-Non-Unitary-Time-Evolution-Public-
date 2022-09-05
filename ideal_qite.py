@@ -1,4 +1,3 @@
-from hamiltonians import TOLERANCE
 import numpy as np
 CP_IMPORT_FLAG = True
 try:
