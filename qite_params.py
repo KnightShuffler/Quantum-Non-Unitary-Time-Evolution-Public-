@@ -80,15 +80,14 @@ class QITE_params:
         self.measurement_keys[m] += h_ops
         
         # Measurements for S: Products of Pauli strings on the unitary domain
-        stored_indices = []
-        for i in domain_ops:
-            for j in domain_ops:
-                if j >= i:
-                    break
-                p_,c_ = pauli_string_prod(i, j, len(u_domain))
-                if p_ not in stored_indices:
-                    stored_indices.append(p_)
-                    add_entry(pauli_index_to_dict(p_, u_domain))
+        # All Pauli strings of length > 1 can be expressed as a product of two 
+        # Pauli strings with only odd number of Ys, so all the Pauli strings
+        # acting on the unitary domain must be measured to build S
+        # Excluding the identity operator since its always measured to be 1
+        # and also excluding it will allow for 1 qubit logic
+        for i in range(1,4**len(u_domain)):
+            i_dict = pauli_index_to_dict(i, u_domain)
+            add_entry(i_dict)
         
         # Measurements for b: Products of Pauli strings on the unitary domain with 
         # the Pauli strings in hm
