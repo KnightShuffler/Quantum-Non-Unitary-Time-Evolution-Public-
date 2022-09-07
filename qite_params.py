@@ -97,7 +97,7 @@ class QITE_params:
         # and also excluding it will allow for 1 qubit logic
         # for i in range(1,4**len(u_domain)):
         #     self.u_measurements[m].append(pauli_index_to_dict(i, u_domain))
-        self.u_measurements[m] = domain_ops
+        self.u_measurements[m] = list(range(4**len(u_domain)))
         
         # Measurements for b: Products of Pauli strings on the unitary domain with 
         # the Pauli strings in hm
@@ -117,7 +117,7 @@ class QITE_params:
             for i in range(len(mix_dicts)):
                 mix_dict = mix_dicts[i]
                 pauli_id = 0
-                power = 1
+                power = 0
                 for j in range(len(self.mix_domains[m])):
                     qbit = self.mix_domains[m][j]
                     if qbit in mix_dict.keys():
