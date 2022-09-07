@@ -18,7 +18,7 @@ from qiskit.quantum_info import Statevector
 # The tolerance for performing rotations
 TOLERANCE = 1e-5
 
-def evolve_statevector(params, qc, psi):
+def evolve_statevector(params: QITE_params, qc, psi):
     '''
     Evolves the statevector psi through the circuit qc and returns the statevector
     '''
@@ -28,7 +28,7 @@ def evolve_statevector(params, qc, psi):
     result = execute(circ, params.backend).result()
     return result.get_statevector(circ)
 
-def pauli_expectation(params, psi, p, qbits, qubit_map):
+def pauli_expectation(params: QITE_params, psi, p, qbits, qubit_map):
     '''
     returns the theoretical expectation <psi|P|psi> where P is the pauli string acting on qbits, 
     described using a Pauli string dictionary
@@ -233,7 +233,7 @@ def qite_step(params: QITE_params, psi0):
     
     return propagate(params, psi0, alist), alist
 
-def qite(params):
+def qite(params: QITE_params):
     E = np.zeros(params.N + 1)
     times = np.zeros(params.N + 1)
     statevectors = np.zeros((params.N+1, 2**params.nbits), dtype=complex)
