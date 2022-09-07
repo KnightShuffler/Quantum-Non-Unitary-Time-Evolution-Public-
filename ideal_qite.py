@@ -79,19 +79,26 @@ def propagate(params, psi0, alist):
     
     return evolve_statevector(params, qc, psi0)
 
-def tomography(params, psi0, alist, term):
-    sigma_expectation = {}
+def tomography(params: QITE_params, psi0, alist, term):
+    sigma_expectation = { 
+        'c': {}, # acts on h_domains[m]
+        'S': {}, # acts on u_domains[m]
+        'b': {}  # acts on mix_domains[m]
+    }
 
     psi = propagate(params, psi0, alist)
 
-    if params.small_domain_flags[term]:
-        domain = get_full_domain(params.hm_list[term][2], params.nbits)
-    else:
-        domain = params.domains[term]
-
-    for key in params.measurement_keys[term]:
-        sigma_expectation[key] = pauli_expectation(params, psi, key, domain)
-
+    # If the unitary domain radius >= the hamiltonian term domain radius, all the
+    # measurement operators of S cover all the measurement we need to take
+    for p in params.u_measurements[term]:
+        sigma_expectation['S'][p] = pauli_expectation(params, psi, p, params.u_domains[term], params.H.map)
+    # Otherwise, we need to account for all the different measurement domains
+    if params.small_u_domain_flags[term]:
+        for p in params.h_measurements[term]:
+            sigma_expectation['c'][p] = pauli_expectation(params, psi, p, params.h_domains[term], params.H.map)
+        for p in params.mix_measurements[term]:
+            sigma_expectation['b'][p] = pauli_expectation(params, psi, p, params.mix_domains[term], params.H.map)
+        
     return sigma_expectation
 
 def update_alist(params, sigma_expectation, alist, term, scale):
