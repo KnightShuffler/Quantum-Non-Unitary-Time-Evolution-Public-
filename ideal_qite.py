@@ -61,7 +61,7 @@ def measure_energy(params: QITE_params, psi):
             E += pauli_expectation(params, psi, params.h_measurements[m][j], params.h_domains[m], params.H.map) * hm[1][j]
     return E
 
-def propagate(params, psi0, alist):
+def propagate(params: QITE_params, psi0, alist):
     qc = QuantumCircuit(params.nbits)
     qc.initialize(psi0, list(range(params.nbits)))
     for t in range(len(alist)):
@@ -73,9 +73,10 @@ def propagate(params, psi0, alist):
             if not alist[t][2] and i == 0:
                 continue
 
-            angle = np.real(alist[t][0][i])
+            angle = alist[t][0][i]
             if np.abs(angle) > TOLERANCE:
-                pauli_string_exp(qc, domain, ops[i], angle)
+                p_dict = pauli_index_to_dict(ops[i], domain)
+                pauli_string_exp(qc, p_dict, params.H.map, angle)
     
     return evolve_statevector(params, qc, psi0)
 
