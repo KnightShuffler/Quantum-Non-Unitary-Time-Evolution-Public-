@@ -28,11 +28,12 @@ def evolve_statevector(params, qc, psi):
     result = execute(circ, params.backend).result()
     return result.get_statevector(circ)
 
-def pauli_expectation(params, psi, p_dict, qubit_map):
+def pauli_expectation(params, psi, p, qbits, qubit_map):
     '''
     returns the theoretical expectation <psi|P|psi> where P is the pauli string acting on qbits, 
     described using a Pauli string dictionary
     '''
+    p_dict = pauli_index_to_dict(p, qbits)
 
     bases = get_qc_bases_from_pauli_dict(p_dict, qubit_map)
     active = list(bases.keys())
@@ -57,7 +58,7 @@ def measure_energy(params: QITE_params, psi):
     for m in range(params.H.num_terms):
         hm = params.H.hm_list[m]
         for j in range(len(hm[0])):
-            E += pauli_expectation(params, psi, params.h_measurements[m][j], params.H.map) * hm[1][j]
+            E += pauli_expectation(params, psi, params.h_measurements[m][j], params.h_domains[m], params.H.map) * hm[1][j]
     return E
 
 def propagate(params, psi0, alist):

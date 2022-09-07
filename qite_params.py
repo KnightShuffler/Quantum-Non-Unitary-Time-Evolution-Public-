@@ -16,9 +16,16 @@ class QITE_params:
     def __init__(self, Ham: Hamiltonian):
         self.H = Ham
         self.odd_y_strings = {}
+        self.h_domains = []
+        for hm in Ham.hm_list:
+            self.h_domains.append(hm[2])
         self.u_domains = []
+        self.mix_domains = []
         self.h_measurements = {}
         self.u_measurements = {}
+        self.mix_measurements = {}
+
+        self.small_u_domain_flags = [False] * Ham.num_terms
 
         self.nbits = Ham.nbits
         self.D = 0
@@ -79,7 +86,8 @@ class QITE_params:
             meas.append(entry)
 
         # Measurements for c: Pauli strings in hm
-        self.h_measurements[m] = h_ops
+        # self.h_measurements[m] = h_ops
+        self.h_measurements[m] = hm[0]
         
         # Measurements for S: Products of Pauli strings on the unitary domain
         # All Pauli strings of length > 1 can be expressed as a product of two 
@@ -87,8 +95,9 @@ class QITE_params:
         # acting on the unitary domain must be measured to build S
         # Excluding the identity operator since its always measured to be 1
         # and also excluding it will allow for 1 qubit logic
-        for i in range(1,4**len(u_domain)):
-            self.u_measurements[m].append(pauli_index_to_dict(i, u_domain))
+        # for i in range(1,4**len(u_domain)):
+        #     self.u_measurements[m].append(pauli_index_to_dict(i, u_domain))
+        self.u_measurements[m] = domain_ops
         
         # Measurements for b: Products of Pauli strings on the unitary domain with 
         # the Pauli strings in hm
@@ -97,11 +106,25 @@ class QITE_params:
         # Hamiltonian term's domain, otherwise, all measurement operators were accounted
         # for when building S
         if u_R < h_R:
+            self.small_u_domain_flags[m] = True
+            mix_dicts = []
             for i in domain_ops:
                 i_dict = pauli_index_to_dict(i, u_domain)
                 for j_dict in h_ops:
                     prod_dict, coeff = pauli_dict_product(i_dict, j_dict)
-                    add_entry(self.u_measurements[m], prod_dict)
+                    add_entry(mix_dicts, prod_dict)
+            # Calculate indices for the mix_measurements
+            for i in range(len(mix_dicts)):
+                mix_dict = mix_dicts[i]
+                pauli_id = 0
+                power = 1
+                for j in range(len(self.mix_domains[m])):
+                    qbit = self.mix_domains[m][j]
+                    if qbit in mix_dict.keys():
+                        index = mix_dict[qbit]
+                        pauli_id += index * 4**power
+                    power += 1
+                self.mix_measurements[m].append(pauli_id)
 
     def load_hamiltonian_params(self, D):
         print('Loading Hamiltonian Parameters...',end=' ',flush=True)
@@ -118,6 +141,7 @@ class QITE_params:
         # Calculate the domains of the unitaries simulating each term
         for hm in hm_list:
             self.u_domains.append(QITE_params.get_new_domain(hm[2], D, self.H.d, self.H.l))
+            self.mix_domains.append( list(set(hm[2]) | set(self.u_domains[-1])) )
         print('Done')
 
         # Check if the terms are real
@@ -134,13 +158,13 @@ class QITE_params:
         print('Done')
         
         print('Calculating Required Pauli Measurements...', end=' ', flush=True)
-        self.small_domain_flags = [False] * nterms
 
         # Calculate the strings to measure for each term:
         for m in range(nterms):
             # Initialize list of keys for the m-th term
             self.h_measurements[m] = []
             self.u_measurements[m] = []
+            self.mix_measurements[m] = []
             ndomain = len(self.u_domains[m])
             # Populate the keys
             domain_ops = self.odd_y_strings[ndomain] if self.H.real_term_flags[m] else list(range(4**ndomain))
