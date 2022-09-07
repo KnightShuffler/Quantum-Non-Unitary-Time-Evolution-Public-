@@ -102,25 +102,44 @@ def tomography(params: QITE_params, psi0, alist, term):
         
     return sigma_expectation
 
-def update_alist(params, sigma_expectation, alist, term, scale):
-    hm = params.hm_list[term]
+def update_alist(params: QITE_params, sigma_expectation, alist, term, scale):
+    hm = params.H.hm_list[term]
     num_terms = len(hm[0])
-    domain = params.domains[term]
-    ndomain = len(domain)
-    active = get_full_domain(hm[2], params.nbits)
-    
-    if params.small_domain_flags[term]:
-        big_domain = active
-    else:
-        big_domain = domain
+    u_domain = params.u_domains[term]
+    ndomain = len(u_domain)
+
+    def full_pauli_index(p, d1, d2):
+        index = 0
+        for i in range(len(d1)):
+            gate = p % 4
+            
+            qbit = d1[i]
+            # find the index of qbit in d2
+            j=0
+            while d2[j] != qbit:
+                j += 1
+                if j == len(d2):
+                    raise ValueError('Element {} not found in domain {}'.format(d1[i],d2) )
+
+            index += gate * 4**j
+            p = p//4
+        return index
     
     # Load c
     c = 1.0
     for j in range(num_terms):
-        c -= 2*scale * params.db * np.real(hm[1][j]) * sigma_expectation[ ext_domain_pauli(hm[0][j], hm[2], big_domain) ]
+        if params.small_u_domain_flags[term]:
+            key1 = 'c'
+            key2 = params.h_measurements[term][j]
+        else:
+            key1 = 'S'
+            key2 = full_pauli_index(params.h_measurements[term][j], 
+                                    params.h_domains[term], 
+                                    params.u_domains[term])
+        c += 2*scale * params.db * np.real(hm[1][j]) * sigma_expectation[key1][key2]
     
     # Load S
-    if params.real_term_flags[term]:
+    if params.H.real_term_flags[term]:
         ops = params.odd_y_strings[ndomain]
     else:
         ops = list(range(4**ndomain))
@@ -128,34 +147,54 @@ def update_alist(params, sigma_expectation, alist, term, scale):
     
     S = np.zeros((nops,nops), dtype=complex)
     for i in range(nops):
-        I = ext_domain_pauli(ops[i], domain, big_domain)
-        for j in range(nops):
-            J = ext_domain_pauli(ops[j], domain, big_domain)
-            p_,c_ = pauli_string_prod(I, J, len(big_domain))
-            
-            S[i,j] = sigma_expectation[p_] * c_
+        I = ops[i]
+        for j in range(0,i):
+            J = ops[j]
+            p_,c_ = pauli_string_prod(I, J, ndomain)
+            S[i,j] = sigma_expectation['S'][p_] * c_
+            # S is Hermitian, so we know the upper triangle
+            S[j,i] = S[i,j].conjugate()
+        # The diagonal is full of 1s: <psi|I|psi>
+        S[i,i] = 1.0
     
     # Load b
     b = np.zeros(nops, dtype=complex)
     for i in range(nops):
-        I = ext_domain_pauli(ops[i], domain, big_domain)
+        if params.small_u_domain_flags[term]:
+            key1 = 'b'
+            I = full_pauli_index(ops[i], 
+                                u_domain, 
+                                params.mix_domains[term])
+        else:
+            key1 = 'S'
+            I = ops[i]
         for j in range(num_terms):
-            J = ext_domain_pauli(hm[0][j], hm[2], big_domain)
+            if not params.small_u_domain_flags[term]:
+                J = full_pauli_index(params.h_measurements[term][j], 
+                                    params.h_domains[term], 
+                                    params.mix_domains[term])
+            else:
+                J = full_pauli_index(params.h_measurements[j],
+                                    params.h_domains[term],
+                                    u_domain)
 
-            p_,c_ = pauli_string_prod(I, J, len(big_domain))
+            if not params.small_u_domain_flags[term]:
+                p_,c_ = pauli_string_prod(I, J, len(params.mix_domains[term]))
+            else:
+                p_,c_ = pauli_string_prod(I, J, ndomain)
 
-            b[i] += scale * np.conj(hm[1][j]) * sigma_expectation[p_] * c_
-    b = (4.0 / np.sqrt(c)) * np.imag(b)
+            b[i] += scale * np.imag(hm[1][j] * c_) * sigma_expectation[key1][p_]
+    b = -(2.0 / np.sqrt(c)) * b
 
     #Regularizer
     dalpha = np.eye(nops) * params.delta
     
     if not params.gpu_calc_flag:
-        a = np.linalg.lstsq(2*np.real(S) + dalpha, b, rcond=-1)[0]
+        a = np.real(np.linalg.lstsq(np.real(S) + dalpha, b, rcond=-1)[0])
     else:
-        S = cp.asarray(2*np.real(S) + dalpha)
+        S = cp.asarray(np.real(S) + dalpha)
         b = cp.asarray(b)
-        a = cp.linalg.lstsq(S,b,rcond=-1)[0].get()
+        a = np.real(cp.linalg.lstsq(S,b,rcond=-1)[0].get())
     
     # Update alist depending on the drift type of the run
     if params.drift_type == DRIFT_A:
@@ -177,7 +216,7 @@ def update_alist(params, sigma_expectation, alist, term, scale):
         elif params.drift_type == DRIFT_NONE:
             theta_coeffs = thetas
     
-    alist.append([theta_coeffs, domain, params.real_term_flags[term]])
+    alist.append([theta_coeffs, u_domain, params.H.real_term_flags[term]])
 
 def qite_step(params, psi0):
     alist = []
