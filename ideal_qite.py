@@ -218,16 +218,16 @@ def update_alist(params: QITE_params, sigma_expectation, alist, term, scale):
     
     alist.append([theta_coeffs, u_domain, params.H.real_term_flags[term]])
 
-def qite_step(params, psi0):
+def qite_step(params: QITE_params, psi0):
     alist = []
-    for i in range(params.nterms - 1):
+    for i in range(params.H.num_terms - 1):
         sigma_expectation = tomography(params, psi0, alist, i)
         update_alist(params, sigma_expectation, alist, i, 0.5)
     
-    sigma_expectation = tomography(params, psi0, alist, params.nterms-1)
-    update_alist(params, sigma_expectation, alist, params.nterms-1, 1.0)
+    sigma_expectation = tomography(params, psi0, alist, params.H.num_terms-1)
+    update_alist(params, sigma_expectation, alist, params.H.num_terms-1, 1.0)
 
-    for i in range(params.nterms - 2, -1, -1):
+    for i in range(params.H.num_terms - 2, -1, -1):
         sigma_expectation = tomography(params, psi0, alist, i)
         update_alist(params, sigma_expectation, alist, i, 0.5)
     
