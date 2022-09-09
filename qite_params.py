@@ -68,11 +68,26 @@ class QITE_params:
         '''
         Calculates the measurement operators required for the m-th term 
         in the Hamiltonian's hm_list
+        h_measurements - Pauli indices for the Hamiltonian terms, domain h_domains[m]
+        u_measurements - Pauli indices for the Unitary terms, domain u_domains[m]
+        mix_measurement - Pauli indices for the products of h and u terms, domain mix_domains[m]
         '''
         hm = self.H.hm_list[m]
         h_c, h_R = min_bounding_sphere(hm[2])
         u_domain = self.u_domains[m]
         u_c, u_R = min_bounding_sphere(u_domain)
+
+        # Measurements for c: Pauli strings in hm
+        self.h_measurements[m] = hm[0]
+        
+        # Measurements for S: Products of Pauli strings on the unitary domain
+        # All Pauli strings of can be expressed as a product of two 
+        # Pauli strings with only odd number of Ys, so all the Pauli strings
+        # acting on the unitary domain must be measured to build S
+        self.u_measurements[m] = list(range(4**len(u_domain)))
+        
+        # Measurements for b: Products of Pauli strings on the unitary domain with 
+        # the Pauli strings in hm
 
         # List of pauli dictionaries for the operators of the unitary's domain
         h_ops = [
@@ -84,23 +99,6 @@ class QITE_params:
                 if same_pauli_dicts(entry, dict):
                     return
             meas.append(entry)
-
-        # Measurements for c: Pauli strings in hm
-        # self.h_measurements[m] = h_ops
-        self.h_measurements[m] = hm[0]
-        
-        # Measurements for S: Products of Pauli strings on the unitary domain
-        # All Pauli strings of length > 1 can be expressed as a product of two 
-        # Pauli strings with only odd number of Ys, so all the Pauli strings
-        # acting on the unitary domain must be measured to build S
-        # Excluding the identity operator since its always measured to be 1
-        # and also excluding it will allow for 1 qubit logic
-        # for i in range(1,4**len(u_domain)):
-        #     self.u_measurements[m].append(pauli_index_to_dict(i, u_domain))
-        self.u_measurements[m] = list(range(4**len(u_domain)))
-        
-        # Measurements for b: Products of Pauli strings on the unitary domain with 
-        # the Pauli strings in hm
 
         # Only need to do this calculation if the unitary domain is smaller than the
         # Hamiltonian term's domain, otherwise, all measurement operators were accounted
