@@ -160,6 +160,17 @@ class Hamiltonian:
                         break
             return real_flags
     
+    def is_hermitian(self):
+        '''
+        returns whether the Hamiltonian is a Hermitian operator by checking if 
+        any amplitude in hm[1] has an imaginary part
+        '''
+        for hm in self.hm_list:
+            for amp in hm[1]:
+                if np.abs(np.imag(amp)) > TOLERANCE:
+                    return False
+        return True
+    
     def multiply_scalar(self, scalar):
         '''
         multiplies a scalar value to the Hamiltonian
