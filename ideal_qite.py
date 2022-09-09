@@ -139,7 +139,7 @@ def update_alist(params: QITE_params, sigma_expectation, alist, term, scale):
         c += 2*scale * params.db * np.real(hm[1][j]) * sigma_expectation[key1][key2]
     
     # Load S
-    if params.H.real_term_flags[term]:
+    if params.H.real_term_flags[term] and params.reduce_dimension_flag:
         ops = params.odd_y_strings[ndomain]
     else:
         ops = list(range(4**ndomain))
@@ -216,7 +216,7 @@ def update_alist(params: QITE_params, sigma_expectation, alist, term, scale):
         elif params.drift_type == DRIFT_NONE:
             theta_coeffs = thetas
     
-    alist.append([theta_coeffs, u_domain, params.H.real_term_flags[term]])
+    alist.append([theta_coeffs, u_domain, params.H.real_term_flags[term] and params.reduce_dimension_flag])
 
 def qite_step(params: QITE_params, psi0):
     alist = []
