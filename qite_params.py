@@ -25,6 +25,8 @@ class QITE_params:
         self.u_measurements = {}
         self.mix_measurements = {}
 
+        self.reduce_dimension_flag = None
+
         self.small_u_domain_flags = [False] * Ham.num_terms
 
         self.nbits = Ham.nbits
@@ -124,18 +126,17 @@ class QITE_params:
                     power += 1
                 self.mix_measurements[m].append(pauli_id)
 
-    def load_hamiltonian_params(self, D):
-        print('Loading Hamiltonian Parameters...',end=' ',flush=True)
-        # Validate the passed parameters
-        # if not hamiltonians.is_valid_domain(hm_list, D, nbits):
-        #     raise ValueError('The domain size D is not valid for the hamiltonian, parameters not set.')
-
+    def load_hamiltonian_params(self, D: int, reduce_dim: bool =True):
+        '''
+        Performs the precalculations to run QITE at a unitary domain diameter of
+        '''
+        print('Performing Hamiltonian precalculations...')
         hm_list = self.H.hm_list
         nterms = self.H.num_terms
-
         self.D = D
+        self.reduce_dimension_flag = reduce_dim
 
-        print('Calculating Unitary Domains...',end=' ',flush=True)
+        print('\tCalculating Unitary Domains...',end=' ',flush=True)
         # Calculate the domains of the unitaries simulating each term
         for hm in hm_list:
             self.u_domains.append(QITE_params.get_new_domain(hm[2], D, self.H.d, self.H.l))
@@ -143,19 +144,20 @@ class QITE_params:
         print('Done')
 
         # Check if the terms are real
-        print('Calculating Required Odd-Y Pauli Strings...', end=' ', flush=True)
+        if reduce_dim:
+            print('\tCalculating Required Odd-Y Pauli Strings...', end=' ', flush=True)
 
-        # Initialize the keys for the odd y strings
-        for m in range(nterms):
-            if self.H.real_term_flags[m]:
-                self.odd_y_strings[len(self.u_domains[m])] = None
+            # Initialize the keys for the odd y strings
+            for m in range(nterms):
+                if self.H.real_term_flags[m]:
+                    self.odd_y_strings[len(self.u_domains[m])] = None
+            
+            # Load the odd Y Pauli Strings
+            for y_len in self.odd_y_strings.keys():
+                self.odd_y_strings[y_len] = odd_y_pauli_strings(y_len)
+            print('Done')
         
-        # Load the odd Y Pauli Strings
-        for y_len in self.odd_y_strings.keys():
-            self.odd_y_strings[y_len] = odd_y_pauli_strings(y_len)
-        print('Done')
-        
-        print('Calculating Required Pauli Measurements...', end=' ', flush=True)
+        print('\tCalculating Required Pauli Measurements...', end=' ', flush=True)
 
         # Calculate the strings to measure for each term:
         for m in range(nterms):
@@ -165,7 +167,7 @@ class QITE_params:
             self.mix_measurements[m] = []
             ndomain = len(self.u_domains[m])
             # Populate the keys
-            domain_ops = self.odd_y_strings[ndomain] if self.H.real_term_flags[m] else list(range(4**ndomain))
+            domain_ops = self.odd_y_strings[ndomain] if reduce_dim and self.H.real_term_flags[m] else list(range(4**ndomain))
             self.load_measurement_keys(m, domain_ops)
         print('Done')
     
