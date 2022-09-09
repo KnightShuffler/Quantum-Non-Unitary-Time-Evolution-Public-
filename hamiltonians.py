@@ -3,23 +3,30 @@ import numpy as np
 from helpers import *
 
 # Format of the Hamiltonian:
-# hm_list is a list of terms: [hm]
-# hm is a term of the form: [ [pauli string ids], [amplitudes of pauli strings], [qubits that the pauli strings act on] ]
-#   hm[2] is an ordered list of integers that are qubit indices, say [a_0,a_1,...,a_n]
-#   hm[0] contains integers that when converted to a base-4 integer of n digits, the i-th digit tells us what pauli operator acts on qubit a_i
-#   hm[1] is a list of complex numbers with the same length as hm[0] that has the amplitudes of each pauli string described in hm[0]
-#   The term in the Hamiltonian is thus: Sum_i hm[1][i] * Pauli(hm[0][i]), which is an operator that acts on the qubits in hm[2]
-# The Hamiltonian is a sum of all of the terms hm in hm_list
+#   hm_list is a list of terms: [hm]
+#   hm is a term of the form: [ [pauli string ids], [amplitudes of pauli strings], [qubits that the pauli strings act on] ]
+#       hm[2] is an ordered list of integers or integer tuples that are qubit coordinates, say [a_0,a_1,...,a_n]
+#       hm[0] contains integers that when converted to a base-4 integer of n digits, the i-th digit tells us what pauli operator acts on qubit a_i
+#       hm[1] is a list of complex numbers with the same length as hm[0] that has the amplitudes of each pauli string described in hm[0]
+#       The term in the Hamiltonian is thus: Sum_i hm[1][i] * Pauli(hm[0][i]), which is an operator that acts on the qubits in hm[2]
+#   The Hamiltonian is a sum of all of the terms hm in hm_list
 #
-# Example: hm_list = [  [ [ 0, 3 ], [ 0.5, 0.75 ], [1] ],  
-#                       [ [ 1*1 + 2*4 ], [ 0.33 ], [0,2] ] 
+#   Example: hm_list = [ [ [ 0, 3 ], [ 0.5, 0.75 ], [1] ],  
+#                        [ [ 1*1 + 2*4 ], [ 0.33 ], [0,2] ] 
 #                    ]
-# represents the Hamiltonian:
-# H = (0.5 I_1 + 0.75 Z_1) + ( 0.33 X_0 Y_2 )
-
-####################
-# Helper Functions #
-####################
+#   represents the Hamiltonian:
+#   H = (0.5 I_1 + 0.75 Z_1) + ( 0.33 X_0 Y_2 )
+# 
+#   d = lattice_dim represents the number of dimensions that the qubits live in, 
+#   this dictates the dimension of the tuples in hm[2], if lattice_dim == 1, then
+#   hm[2] can be populated with integers
+#
+#   l = lattice_bound represents the side length of the bounding box of the qubit
+#   lattice. Coordinates in hm[2] can only be in the range 0 <= i < l
+#
+#   qubit_map: A dictionary that maps qubit coordinates to the index of the logical
+#   qubit in the circuit, for 1-D lattices, if the map is left None, it will map the
+#   coordinate directly to the logical qubit index
 
 class Hamiltonian:
     def __init__(self, hm_list, lattice_dim, lattice_bound, qubit_map=None):
@@ -56,6 +63,9 @@ class Hamiltonian:
         return True
 
     def print(self):
+        '''
+        Prints all the terms of the Hamiltonian
+        '''
         term = 0
         for hm in self.hm_list:
             term += 1
@@ -151,56 +161,12 @@ class Hamiltonian:
             return real_flags
     
     def multiply_scalar(self, scalar):
+        '''
+        multiplies a scalar value to the Hamiltonian
+        '''
         for i in range(len(self.hm_list)):
             for j in range(len(self.hm_list[i][1])):
                 self.hm_list[i][1][j] *= scalar
-
-# def get_k(hm_list):
-#     '''
-#     Given that hm_list describes a k-local Hamiltonian on a 
-#     linear qubit topology, this function returns what k is.
-#     '''
-#     k = 0
-#     for hm in hm_list:
-#         range = np.max(hm[2]) - np.min(hm[2]) + 1
-#         if k < range:
-#             k = range
-#     return k
-
-# def is_valid_domain(hm_list, D, nbits):
-#     '''
-#     Checks if D is a valid domain size for a k-local Hamiltonian
-#     on a linear qubit topology
-#     '''
-#     # domain size is restrited to the number of qubits
-#     if D > nbits:
-#         return False
-    
-#     k = get_k(hm_list)
-#     # Only a valid domain size if D and k have the same parity
-#     return k%2 == D%2
-
-# def is_real_hamiltonian(hm_list):
-#     '''
-#     returns whether the described hamiltonian is a real matrix in the Z basis
-#     '''
-#     real_flags = [True] * len(hm_list)
-#     for m in range(len(hm_list)):
-#         hm = hm_list[m]
-#         nactive = len(hm[2])
-#         odd_ys = odd_y_pauli_strings(nactive)
-#         for j in range(len(hm[0])):
-#             # If a term with odd Ys, the coefficient should be imaginary
-#             if hm[0][j] in odd_ys:
-#                 if np.abs(np.real(hm[1][j])) > TOLERANCE:
-#                     real_flags[m] = False
-#                     break
-#             # If a term with even Ys, the coefficient should be real
-#             else:
-#                 if np.abs(np.imag(hm[1][j])) > TOLERANCE:
-#                     real_flags[m] = False
-#                     break
-#     return real_flags
 
 ###################################
 # Hamiltonian of Different Models #
