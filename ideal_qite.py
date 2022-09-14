@@ -192,9 +192,9 @@ def update_alist(params: QITE_params, sigma_expectation, alist, term, scale):
     if not params.gpu_calc_flag:
         a = np.real(np.linalg.lstsq(np.real(S) + dalpha, b, rcond=-1)[0])
     else:
-        S = cp.asarray(np.real(S) + dalpha)
-        b = cp.asarray(b)
-        a = np.real(cp.linalg.lstsq(S,b,rcond=-1)[0].get())
+        S_ = cp.asarray(np.real(S) + dalpha)
+        b_ = cp.asarray(b)
+        a = np.real(cp.linalg.lstsq(S_,b_,rcond=-1)[0].get())
     
     # Update alist depending on the drift type of the run
     if params.drift_type == DRIFT_A:
@@ -217,21 +217,30 @@ def update_alist(params: QITE_params, sigma_expectation, alist, term, scale):
             theta_coeffs = thetas
     
     alist.append([theta_coeffs, u_domain, params.H.real_term_flags[term] and params.reduce_dimension_flag])
+    return S,b
 
 def qite_step(params: QITE_params, psi0):
     alist = []
+    S_list = []
+    b_list = []
     for i in range(params.H.num_terms - 1):
         sigma_expectation = tomography(params, psi0, alist, i)
-        update_alist(params, sigma_expectation, alist, i, 0.5)
+        S,b = update_alist(params, sigma_expectation, alist, i, 0.5)
+        S_list.append(S)
+        b_list.append(b)
     
     sigma_expectation = tomography(params, psi0, alist, params.H.num_terms-1)
-    update_alist(params, sigma_expectation, alist, params.H.num_terms-1, 1.0)
+    S,b = update_alist(params, sigma_expectation, alist, params.H.num_terms-1, 1.0)
+    S_list.append(S)
+    b_list.append(b)
 
     for i in range(params.H.num_terms - 2, -1, -1):
         sigma_expectation = tomography(params, psi0, alist, i)
-        update_alist(params, sigma_expectation, alist, i, 0.5)
+        S,b = update_alist(params, sigma_expectation, alist, i, 0.5)
+        S_list.append(S)
+        b_list.append(b)
     
-    return propagate(params, psi0, alist), alist
+    return propagate(params, psi0, alist), alist, S_list, b_list
 
 def qite(params: QITE_params):
     E = np.zeros(params.N + 1)
@@ -239,6 +248,8 @@ def qite(params: QITE_params):
     statevectors = np.zeros((params.N+1, 2**params.nbits), dtype=complex)
 
     alist = []
+    S_list = []
+    b_list = []
 
     E[0] = measure_energy(params, params.init_sv)
     statevectors[0] = params.init_sv.data
@@ -248,9 +259,10 @@ def qite(params: QITE_params):
         print('Iteration {}...'.format(i),end=' ',flush=True)
         start = time.time()
 
-        psi, next_alist = qite_step(params, Statevector(statevectors[i-1]))
-        for a in next_alist:
-            alist.append(a)
+        psi, next_alist, next_slist, next_blist = qite_step(params, Statevector(statevectors[i-1]))
+        alist += next_alist
+        S_list += next_slist
+        b_list += next_blist
 
         statevectors[i] = psi.data
         E[i] = measure_energy(params, psi)
@@ -260,4 +272,4 @@ def qite(params: QITE_params):
         times[i] = duration
         print('Done -- Iteration time = {:0.2f} {}'.format(duration if duration < 60 else duration / 60, 'seconds' if duration < 60 else 'minutes'))
     
-    return E, times, statevectors, alist
+    return E, times, statevectors, alist, S_list, b_list
