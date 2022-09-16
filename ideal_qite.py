@@ -190,11 +190,11 @@ def update_alist(params: QITE_params, sigma_expectation, alist, term, scale):
     dalpha = np.eye(nops) * params.delta
     
     if not params.gpu_calc_flag:
-        a = np.real(np.linalg.lstsq(np.real(S) + dalpha, b, rcond=-1)[0])
+        a = np.real(np.linalg.lstsq(2*np.real(S) + dalpha, b, rcond=-1)[0])
     else:
         S_ = cp.asarray(np.real(S) + dalpha)
         b_ = cp.asarray(b)
-        a = np.real(cp.linalg.lstsq(S_,b_,rcond=-1)[0].get())
+        a = np.real(cp.linalg.lstsq(2*S_,b_,rcond=-1)[0].get())
     
     # Update alist depending on the drift type of the run
     if params.drift_type == DRIFT_A:
