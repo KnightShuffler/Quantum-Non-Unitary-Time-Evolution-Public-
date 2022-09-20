@@ -242,7 +242,7 @@ def qite_step(params: QITE_params, psi0):
     
     return propagate(params, psi0, alist), alist, S_list, b_list
 
-def qite(params: QITE_params):
+def qite(params: QITE_params, logging: bool=True):
     E = np.zeros(params.N + 1)
     times = np.zeros(params.N + 1)
     statevectors = np.zeros((params.N+1, 2**params.nbits), dtype=complex)
@@ -254,9 +254,9 @@ def qite(params: QITE_params):
     E[0] = measure_energy(params, params.init_sv)
     statevectors[0] = params.init_sv.data
 
-    print('Starting Ideal QITE Simulation:')
+    if logging: print('Starting Ideal QITE Simulation:')
     for i in range(1, params.N + 1):
-        print('Iteration {}...'.format(i),end=' ',flush=True)
+        if logging: print('Iteration {}...'.format(i),end=' ',flush=True)
         start = time.time()
 
         psi, next_alist, next_slist, next_blist = qite_step(params, Statevector(statevectors[i-1]))
@@ -270,6 +270,6 @@ def qite(params: QITE_params):
         end = time.time()
         duration = end - start
         times[i] = duration
-        print('Done -- Iteration time = {:0.2f} {}'.format(duration if duration < 60 else duration / 60, 'seconds' if duration < 60 else 'minutes'))
+        if logging: print('Done -- Iteration time = {:0.2f} {}'.format(duration if duration < 60 else duration / 60, 'seconds' if duration < 60 else 'minutes'))
     
     return E, times, statevectors, alist, S_list, b_list
