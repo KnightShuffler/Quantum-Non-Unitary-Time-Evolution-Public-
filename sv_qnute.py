@@ -15,9 +15,6 @@ from qiskit.quantum_info import Statevector
 
 # Note: These methods implicitly assumes that the backend is the Statevector simulator
 
-# The tolerance for performing rotations
-TOLERANCE = 1e-5
-
 def evolve_statevector(params: QNUTE_params, qc, psi):
     '''
     Evolves the statevector psi through the circuit qc and returns the statevector
