@@ -8,7 +8,7 @@ except ImportError as e:
 import time
 
 from helpers import *
-from qite_params import QITE_params, DRIFT_NONE, DRIFT_A, DRIFT_THETA_2PI, DRIFT_THETA_PI_PI
+from qnute_params import QNUTE_params, DRIFT_NONE, DRIFT_A, DRIFT_THETA_2PI, DRIFT_THETA_PI_PI
 
 from qiskit import QuantumCircuit, execute
 from qiskit.quantum_info import Statevector
@@ -18,7 +18,7 @@ from qiskit.quantum_info import Statevector
 # The tolerance for performing rotations
 TOLERANCE = 1e-5
 
-def evolve_statevector(params: QITE_params, qc, psi):
+def evolve_statevector(params: QNUTE_params, qc, psi):
     '''
     Evolves the statevector psi through the circuit qc and returns the statevector
     '''
@@ -28,7 +28,7 @@ def evolve_statevector(params: QITE_params, qc, psi):
     result = execute(circ, params.backend).result()
     return result.get_statevector(circ)
 
-def pauli_expectation(params: QITE_params, psi, p, qbits, qubit_map):
+def pauli_expectation(params: QNUTE_params, psi, p, qbits, qubit_map):
     '''
     returns the theoretical expectation <psi|P|psi> where P is the pauli string acting on qbits, 
     described using a Pauli string dictionary
@@ -50,7 +50,7 @@ def pauli_expectation(params: QITE_params, psi, p, qbits, qubit_map):
     
     return np.real(np.vdot(psi.data, phi.data))
 
-def measure_energy(params: QITE_params, psi):
+def measure_energy(params: QNUTE_params, psi):
     '''
     returns the mean energy <psi|H|psi>
     '''
@@ -61,7 +61,7 @@ def measure_energy(params: QITE_params, psi):
             E += pauli_expectation(params, psi, params.h_measurements[m][j], params.h_domains[m], params.H.map) * hm[1][j]
     return E
 
-def propagate(params: QITE_params, psi0, alist):
+def propagate(params: QNUTE_params, psi0, alist):
     qc = QuantumCircuit(params.nbits)
     qc.initialize(psi0, list(range(params.nbits)))
     for t in range(len(alist)):
@@ -80,7 +80,7 @@ def propagate(params: QITE_params, psi0, alist):
     
     return evolve_statevector(params, qc, psi0)
 
-def tomography(params: QITE_params, psi0, alist, term):
+def tomography(params: QNUTE_params, psi0, alist, term):
     sigma_expectation = { 
         'c': {}, # acts on h_domains[m]
         'S': {}, # acts on u_domains[m]
@@ -102,7 +102,7 @@ def tomography(params: QITE_params, psi0, alist, term):
         
     return sigma_expectation
 
-def update_alist(params: QITE_params, sigma_expectation, alist, term, scale):
+def update_alist(params: QNUTE_params, sigma_expectation, alist, term, scale):
     hm = params.H.hm_list[term]
     num_terms = len(hm[0])
     u_domain = params.u_domains[term]
@@ -219,7 +219,7 @@ def update_alist(params: QITE_params, sigma_expectation, alist, term, scale):
     alist.append([theta_coeffs, u_domain, params.H.real_term_flags[term] and params.reduce_dimension_flag])
     return S,b
 
-def qite_step(params: QITE_params, psi0):
+def qnute_step(params: QNUTE_params, psi0):
     alist = []
     S_list = []
     b_list = []
@@ -242,7 +242,7 @@ def qite_step(params: QITE_params, psi0):
     
     return propagate(params, psi0, alist), alist, S_list, b_list
 
-def qite(params: QITE_params, logging: bool=True):
+def qnute(params: QNUTE_params, logging: bool=True):
     E = np.zeros(params.N + 1)
     times = np.zeros(params.N + 1)
     statevectors = np.zeros((params.N+1, 2**params.nbits), dtype=complex)
@@ -254,12 +254,12 @@ def qite(params: QITE_params, logging: bool=True):
     E[0] = measure_energy(params, params.init_sv)
     statevectors[0] = params.init_sv.data
 
-    if logging: print('Starting Ideal QITE Simulation:')
+    if logging: print('Starting Statevector QNUTE Simulation:')
     for i in range(1, params.N + 1):
         if logging: print('Iteration {}...'.format(i),end=' ',flush=True)
         start = time.time()
 
-        psi, next_alist, next_slist, next_blist = qite_step(params, Statevector(statevectors[i-1]))
+        psi, next_alist, next_slist, next_blist = qnute_step(params, Statevector(statevectors[i-1]))
         alist += next_alist
         S_list += next_slist
         b_list += next_blist

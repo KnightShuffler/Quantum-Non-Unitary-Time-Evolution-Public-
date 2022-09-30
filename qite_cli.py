@@ -1,7 +1,7 @@
 #!/home/ADS/cmp3kumars/miniconda3/envs/qiskit/bin/python
-from ideal_qite import CP_IMPORT_FLAG
-from ideal_qite import qite as ideal_qite
-from qite_params import *
+from sv_qnute import CP_IMPORT_FLAG
+from sv_qnute import qnute as ideal_qite
+from qnute_params import *
 import hamiltonians
 from helpers import *
 from log_data import log_data, plot_data, plot_all_drifts
@@ -189,7 +189,7 @@ def main() -> None:
     hm_list,h_name,h_params = get_hamiltonian_list(args)    
 
     # Load the Hamiltonian Params
-    params = QITE_params()
+    params = QNUTE_params()
     params.load_hamiltonian_params(hm_list, args.nbits, args.domain_size)
     # Load the Run Params
     backend = get_backend(args)

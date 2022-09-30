@@ -12,7 +12,7 @@ DRIFT_A = 1
 DRIFT_THETA_2PI = 2
 DRIFT_THETA_PI_PI = 3
 
-class QITE_params:
+class QNUTE_params:
     def __init__(self, Ham: Hamiltonian):
         self.H = Ham
         self.odd_y_strings = {}
@@ -32,7 +32,7 @@ class QITE_params:
         self.nbits = Ham.nbits
         self.D = 0
 
-        # QITE Run Parameters
+        # QNUTE Run Parameters
         self.db = 0.0
         self.delta = 0.0
         self.N = 0
@@ -128,7 +128,7 @@ class QITE_params:
 
     def load_hamiltonian_params(self, D: int, reduce_dim: bool =True):
         '''
-        Performs the precalculations to run QITE at a unitary domain diameter of
+        Performs the precalculations to run QNUTE at a unitary domain diameter of
         '''
         print('Performing Hamiltonian precalculations...')
         hm_list = self.H.hm_list
@@ -139,7 +139,7 @@ class QITE_params:
         print('\tCalculating Unitary Domains...',end=' ',flush=True)
         # Calculate the domains of the unitaries simulating each term
         for hm in hm_list:
-            self.u_domains.append(QITE_params.get_new_domain(hm[2], D, self.H.d, self.H.l))
+            self.u_domains.append(QNUTE_params.get_new_domain(hm[2], D, self.H.d, self.H.l))
             self.mix_domains.append( list(set(hm[2]) | set(self.u_domains[-1])) )
         print('Done')
 

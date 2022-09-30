@@ -1,7 +1,7 @@
 import numpy as np
 
-from ideal_qite import qite, CP_IMPORT_FLAG
-from qite_params import QITE_params, DRIFT_NONE, DRIFT_A, DRIFT_THETA_2PI, DRIFT_THETA_PI_PI
+from sv_qnute import qnute, CP_IMPORT_FLAG
+from qnute_params import QNUTE_params, DRIFT_NONE, DRIFT_A, DRIFT_THETA_2PI, DRIFT_THETA_PI_PI
 import hamiltonians
 from log_data import log_data, plot_data
 
@@ -10,7 +10,7 @@ from qiskit.quantum_info import Statevector
 from qiskit.providers.aer import AerError
 
 ###############################
-#       QITE Parameters       #
+#       QNUTE Parameters       #
 # update these per your needs #
 ###############################
 
@@ -52,7 +52,7 @@ run_name = 'run'
 run_id = '001'
 
 # Load the Parameters of QITE and run the pre-computations
-params = QITE_params()
+params = QNUTE_params()
 params.load_hamiltonian_params(hm_list, nbits, D)
 params.set_run_params(db, delta, N, 0, 
 Aer.get_backend('statevector_simulator'), init_circ, init_sv,drift_type,
@@ -68,8 +68,8 @@ time_flag = True # True if you want to log the iteration times
 gs_flag = True   # True if you want to plot the ground state energy of the Hamiltonian
 prob_flag = False # True if you want to plot the ground state probability during the run
 
-# Run QITE
-E,times,statevectors,alist = qite(params)
+# Run QNUTE
+E,times,statevectors,alist = qnute(params)
 
 # Plot and Log Data
 plot_data('{}\n{}'.format(h_name,h_params), run_id, params, E, statevectors, gs_flag, prob_flag)

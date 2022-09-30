@@ -1,6 +1,6 @@
 #!/home/ADS/cmp3kumars/miniconda3/envs/qiskit/bin/python
-from ideal_qite import qite, CP_IMPORT_FLAG
-from qite_params import *
+from sv_qnute import qnute, CP_IMPORT_FLAG
+from qnute_params import *
 import hamiltonians
 from log_data import log_data, plot_data, plot_all_drifts
 
@@ -39,7 +39,7 @@ padding = int(np.floor(np.log10(run_cap)))
 gs_flag = True
 prob_flag = False
 
-params = QITE_params()
+params = QNUTE_params()
 
 drift_types = [DRIFT_NONE, DRIFT_A, DRIFT_THETA_2PI, DRIFT_THETA_PI_PI]
 
@@ -81,7 +81,7 @@ for nbits in num_bits:
                 run_id = str(run).zfill(padding)
 
                 print('Starting QITE run {}-{}, D={}:'.format(run_name, run_id, D))
-                E,times,statevectors,alist = qite(params)
+                E,times,statevectors,alist = qnute(params)
 
                 log_data(run_id, params, E, times, alist)
                 # plot_data('{}\n{}'.format(h_name,h_params), run_id, params, E, statevectors, gs_flag, prob_flag)
