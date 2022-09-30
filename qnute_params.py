@@ -33,7 +33,7 @@ class QNUTE_params:
         self.D = 0
 
         # QNUTE Run Parameters
-        self.db = 0.0
+        self.dt = 0.0
         self.delta = 0.0
         self.N = 0
         self.num_shots = 0
@@ -174,7 +174,7 @@ class QNUTE_params:
     def set_run_params(self, db, delta, N, num_shots, 
     backend, init_circ=None, init_sv=None, drift_type=DRIFT_NONE,
     gpu_sim_flag=False, gpu_calc_flag=False):
-        self.db = db
+        self.dt = db
         self.delta = delta
         self.N = N
         self.num_shots = num_shots
@@ -211,7 +211,7 @@ class QNUTE_params:
         self.fig_path = fig_path
         self.run_name = run_name
 
-        run_id_string = 'db={:0.2f}/delta={:0.2f}/D={}/N={}/'.format(self.db, self.delta, self.D, self.N)
+        run_id_string = 'db={:0.2f}/delta={:0.2f}/D={}/N={}/'.format(self.dt, self.delta, self.D, self.N)
         
         # Make sure the path name ends in /
         if log_path[-1] != '/':

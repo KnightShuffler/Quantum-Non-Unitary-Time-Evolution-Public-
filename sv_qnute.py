@@ -133,7 +133,7 @@ def update_alist(params: QNUTE_params, sigma_expectation, alist, term, scale):
             key2 = full_pauli_index(params.h_measurements[term][j], 
                                     params.h_domains[term], 
                                     params.u_domains[term])
-        c += 2*scale * params.db * np.real(hm[1][j]) * sigma_expectation[key1][key2]
+        c += 2*scale * params.dt * np.real(hm[1][j]) * sigma_expectation[key1][key2]
     
     # Load S
     if params.H.real_term_flags[term] and params.reduce_dimension_flag:
@@ -195,9 +195,9 @@ def update_alist(params: QNUTE_params, sigma_expectation, alist, term, scale):
     
     # Update alist depending on the drift type of the run
     if params.drift_type == DRIFT_A:
-        theta_coeffs = 2.0 * params.db* sample_from_a(a)
+        theta_coeffs = 2.0 * params.dt* sample_from_a(a)
     else:
-        thetas = 2.0 * params.db * a
+        thetas = 2.0 * params.dt * a
         
         if params.drift_type == DRIFT_THETA_2PI:
             # Fix the angles between [0,2pi)
