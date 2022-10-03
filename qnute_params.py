@@ -126,9 +126,13 @@ class QNUTE_params:
                     power += 1
                 self.mix_measurements[m].append(pauli_id)
 
-    def load_hamiltonian_params(self, D: int, reduce_dim: bool =True):
+    def load_hamiltonian_params(self, D: int, reduce_dim: bool =True, 
+                                load_measurements: bool=True):
         '''
-        Performs the precalculations to run QNUTE at a unitary domain diameter of
+        Performs the precalculations to run QNUTE
+        D: Diameter of the unitary domains
+        reduce_dim: Flag for whether to use reduced dimension linear system
+        load_measurements: Flag for whether to calculate the required measurements
         '''
         print('Performing Hamiltonian precalculations...')
         hm_list = self.H.hm_list
@@ -157,18 +161,19 @@ class QNUTE_params:
                 self.odd_y_strings[y_len] = odd_y_pauli_strings(y_len)
             print('Done')
         
-        print('\tCalculating Required Pauli Measurements...', end=' ', flush=True)
+        if load_measurements:
+            print('\tCalculating Required Pauli Measurements...', end=' ', flush=True)
 
-        # Calculate the strings to measure for each term:
-        for m in range(nterms):
-            # Initialize list of keys for the m-th term
-            self.h_measurements[m] = []
-            self.u_measurements[m] = []
-            self.mix_measurements[m] = []
-            ndomain = len(self.u_domains[m])
-            # Populate the keys
-            domain_ops = self.odd_y_strings[ndomain] if reduce_dim and self.H.real_term_flags[m] else list(range(4**ndomain))
-            self.load_measurement_keys(m, domain_ops)
+            # Calculate the strings to measure for each term:
+            for m in range(nterms):
+                # Initialize list of keys for the m-th term
+                self.h_measurements[m] = []
+                self.u_measurements[m] = []
+                self.mix_measurements[m] = []
+                ndomain = len(self.u_domains[m])
+                # Populate the keys
+                domain_ops = self.odd_y_strings[ndomain] if reduce_dim and self.H.real_term_flags[m] else list(range(4**ndomain))
+                self.load_measurement_keys(m, domain_ops)
         print('Done')
     
     def set_run_params(self, db, delta, N, num_shots, 
