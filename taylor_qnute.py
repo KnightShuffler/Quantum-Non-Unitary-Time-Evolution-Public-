@@ -22,7 +22,7 @@ def exp_mat_psi(mat, psi, truncate:int=-1):
         i += 1
     return phi
 
-def update_alist(params: QNUTE_params, term, psi0, truncate:int=-1):  
+def update_alist(params: QNUTE_params, alist, term, psi0, truncate:int=-1):  
     H = params.H
     hm = H.hm_list[term]
     h_mat = H.get_term_submatrix(term)
@@ -45,7 +45,10 @@ def update_alist(params: QNUTE_params, term, psi0, truncate:int=-1):
                 p_mat = np.kron(sigma_matrices[full_pstring[k]], p_mat)
             
             S[i,j] = np.vdot(psi0, p_mat@psi0) * c_
+            # S is Hermitian, so we know the upper triangle
             S[j,i] = S[i,j].conjugate()
+        # The diagonal is full of 1s: <psi|I|psi>
+        S[i,i] = 1.0
     
     psi_prime = exp_mat_psi(h_mat*params.dt, psi0, truncate=truncate)
     c = np.linalg.norm(psi_prime)
@@ -57,9 +60,9 @@ def update_alist(params: QNUTE_params, term, psi0, truncate:int=-1):
         p_mat = sigma_matrices[full_pstring[0]]
         for k in range(1,nbits):
             p_mat = np.kron(sigma_matrices[full_pstring[k]], p_mat)
-        b[i] = -2/(params.dt*c) * np.imag( np.vdot(psi0, p_mat @ psi_prime) )
+        b[i] = 2/(params.dt*c) * np.imag( np.vdot(psi0, p_mat @ psi_prime) )
     
-    a = np.linalg.lstsq( np.real(S), b, rcond=-1 )[0]
+    a = np.linalg.lstsq( 2*np.real(S), -b, rcond=-1 )[0]
     
     return a, S, b
 
@@ -71,8 +74,7 @@ def qnute_step(params:QNUTE_params, psi0, truncate:int=-1, trotter_update:bool=F
     H = params.H
     nbits = H.nbits
     for term in range(H.num_terms):
-        a,S,b = update_alist(H, term, psi, truncate)
-        alist.append(a)
+        S,b = update_alist(H, alist, term, psi, truncate)
         slist.append(S)
         blist.append(b)
         
