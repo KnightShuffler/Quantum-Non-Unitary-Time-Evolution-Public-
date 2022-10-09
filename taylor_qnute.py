@@ -98,24 +98,31 @@ def qnute_step(params:QNUTE_params, psi0, truncate:int=-1, trotter_update:bool=F
     
     return alist, slist, blist, psi
 
-def qnute(params:QNUTE_params, psi0, N, logging:bool=True, truncate:int=-1, trotter_update: bool=False):
+def qnute(params:QNUTE_params, logging:bool=True, truncate:int=-1, trotter_update: bool=False):
+    times = np.zeros(params.N+1)
+    svs = np.zeros((params.N+1,2**params.nbits), dtype=complex)
+    svs[0,:] = params.init_sv.data
+
     alist = []
-    slist = []
-    blist = []
-    svs = np.zeros((N+1,psi0.shape[0]), dtype=complex)
-    svs[0,:] = psi0
+    S_list = []
+    b_list = []
 
     H = params.H
     
-    for i in range(1,N+1):
+    for i in range(1,params.N+1):
         if logging: print('Iteration {}...'.format(i),end=' ', flush=True)
+        
         t0 = time.time()
-        n_a, n_s, n_b, phi = qnute_step(H, svs[i-1], truncate, trotter_update)
-        alist += n_a
-        slist += n_s
-        blist += n_b
+        
+        next_alist, next_slist, next_blist, phi = qnute_step(H, svs[i-1], truncate, trotter_update)
+        alist += next_alist
+        S_list += next_slist
+        b_list += next_blist
         svs[i,:] = phi
+        
         t1 = time.time()
         duration = t1-t0
+        times[i] = duration
+        
         if logging: print('Done -- Iteration time = {:0.2f} {}'.format(duration if duration < 60 else duration/60, 'seconds' if duration < 60 else 'minutes'))
-    return alist, slist, blist, svs
+    return times, svs, alist, S_list, b_list

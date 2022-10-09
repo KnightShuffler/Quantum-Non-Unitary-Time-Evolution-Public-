@@ -240,33 +240,30 @@ def qnute_step(params: QNUTE_params, psi0):
     return propagate(params, psi0, alist), alist, S_list, b_list
 
 def qnute(params: QNUTE_params, logging: bool=True):
-    E = np.zeros(params.N + 1)
     times = np.zeros(params.N + 1)
-    statevectors = np.zeros((params.N+1, 2**params.nbits), dtype=complex)
+    svs = np.zeros((params.N+1, 2**params.nbits), dtype=complex)
+    svs[0,:] = params.init_sv.data
 
     alist = []
     S_list = []
     b_list = []
 
-    E[0] = measure_energy(params, params.init_sv)
-    statevectors[0] = params.init_sv.data
-
     if logging: print('Starting Statevector QNUTE Simulation:')
     for i in range(1, params.N + 1):
         if logging: print('Iteration {}...'.format(i),end=' ',flush=True)
-        start = time.time()
+        
+        t0 = time.time()
 
-        psi, next_alist, next_slist, next_blist = qnute_step(params, Statevector(statevectors[i-1]))
+        psi, next_alist, next_slist, next_blist = qnute_step(params, Statevector(svs[i-1]))
         alist += next_alist
         S_list += next_slist
         b_list += next_blist
+        svs[i,:] = psi.data
 
-        statevectors[i] = psi.data
-        E[i] = measure_energy(params, psi)
-
-        end = time.time()
-        duration = end - start
+        t1 = time.time()
+        duration = t1 - t0
         times[i] = duration
+        
         if logging: print('Done -- Iteration time = {:0.2f} {}'.format(duration if duration < 60 else duration / 60, 'seconds' if duration < 60 else 'minutes'))
     
-    return E, times, statevectors, alist, S_list, b_list
+    return times, svs, alist, S_list, b_list
