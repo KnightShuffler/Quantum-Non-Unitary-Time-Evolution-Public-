@@ -47,17 +47,6 @@ def pauli_expectation(params: QNUTE_params, psi, p, qbits, qubit_map):
     
     return np.real(np.vdot(psi.data, phi.data))
 
-def measure_energy(params: QNUTE_params, psi):
-    '''
-    returns the mean energy <psi|H|psi>
-    '''
-    E = 0.0
-    for m in range(params.H.num_terms):
-        hm = params.H.hm_list[m]
-        for j in range(len(hm[0])):
-            E += pauli_expectation(params, psi, params.h_measurements[m][j], params.h_domains[m], params.H.map) * hm[1][j]
-    return E
-
 def propagate(params: QNUTE_params, psi0, alist):
     qc = QuantumCircuit(params.nbits)
     qc.initialize(psi0, list(range(params.nbits)))
