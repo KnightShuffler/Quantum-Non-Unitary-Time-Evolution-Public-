@@ -220,22 +220,37 @@ def qnute_step(params: QNUTE_params, psi0):
     alist = []
     S_list = []
     b_list = []
-    for i in range(params.H.num_terms - 1):
-        sigma_expectation = tomography(params, psi0, alist, i)
-        S,b = update_alist(params, sigma_expectation, alist, i, 0.5)
-        S_list.append(S)
-        b_list.append(b)
-    
-    sigma_expectation = tomography(params, psi0, alist, params.H.num_terms-1)
-    S,b = update_alist(params, sigma_expectation, alist, params.H.num_terms-1, 1.0)
-    S_list.append(S)
-    b_list.append(b)
 
-    for i in range(params.H.num_terms - 2, -1, -1):
-        sigma_expectation = tomography(params, psi0, alist, i)
-        S,b = update_alist(params, sigma_expectation, alist, i, 0.5)
+    H = params.H
+
+    #################################
+    # 1st Order Trotterization Code #
+    #################################
+    for term in range(H.num_terms):
+        sigma_expectation = tomography(params, psi0, alist, term)
+        S,b = update_alist(params, sigma_expectation, alist, term, 1.0)
         S_list.append(S)
         b_list.append(b)
+
+    #################################
+    # 2nd Order Trotterization Code #
+    #################################
+    # for i in range(params.H.num_terms - 1):
+    #     sigma_expectation = tomography(params, psi0, alist, i)
+    #     S,b = update_alist(params, sigma_expectation, alist, i, 0.5)
+    #     S_list.append(S)
+    #     b_list.append(b)
+    
+    # sigma_expectation = tomography(params, psi0, alist, params.H.num_terms-1)
+    # S,b = update_alist(params, sigma_expectation, alist, params.H.num_terms-1, 1.0)
+    # S_list.append(S)
+    # b_list.append(b)
+
+    # for i in range(params.H.num_terms - 2, -1, -1):
+    #     sigma_expectation = tomography(params, psi0, alist, i)
+    #     S,b = update_alist(params, sigma_expectation, alist, i, 0.5)
+    #     S_list.append(S)
+    #     b_list.append(b)
     
     return propagate(params, psi0, alist), alist, S_list, b_list
 
