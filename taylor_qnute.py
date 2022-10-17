@@ -27,8 +27,10 @@ def update_alist(params: QNUTE_params, alist, term, psi0, truncate:int=-1):
     hm = H.hm_list[term]
     h_mat = H.get_term_submatrix(term)
     nbits = H.nbits
-    active = hm[2]
     nactive = len(hm[2])
+    active = [0] * nactive
+    for t in range(nactive):
+        active[t] = H.map[ hm[2][t] ]
     nops = 4**nactive
     
     S = np.eye(nops, dtype=complex)
@@ -84,8 +86,10 @@ def qnute_step(params:QNUTE_params, psi0, truncate:int=-1, trotter_update:bool=F
         
         #update the state
         hm = H.hm_list[term]
-        active = hm[2]
-        nactive = len(active)
+        nactive = len(hm[2])
+        active = [0] * nactive
+        for t in range(nactive):
+            active[t] = H.map[hm[2][t]]
         nops = 4**nactive
         A = np.zeros((2**nbits, 2**nbits), dtype=complex)
         for i in range(nops):
