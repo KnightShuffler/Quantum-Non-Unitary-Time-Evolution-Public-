@@ -64,7 +64,9 @@ def update_alist(params: QNUTE_params, alist, term, psi0, truncate:int=-1):
     
     a = np.linalg.lstsq( 2*np.real(S), -b, rcond=-1 )[0]
     
-    return a, S, b
+    alist.append(a)
+
+    return S, b
 
 def qnute_step(params:QNUTE_params, psi0, truncate:int=-1, trotter_update:bool=False):
     alist = []
@@ -74,9 +76,11 @@ def qnute_step(params:QNUTE_params, psi0, truncate:int=-1, trotter_update:bool=F
     H = params.H
     nbits = H.nbits
     for term in range(H.num_terms):
-        S,b = update_alist(H, alist, term, psi, truncate)
+        S,b = update_alist(params, alist, term, psi, truncate)
         slist.append(S)
         blist.append(b)
+
+        a = alist[-1]
         
         #update the state
         hm = H.hm_list[term]
@@ -116,7 +120,7 @@ def qnute(params:QNUTE_params, logging:bool=True, truncate:int=-1, trotter_updat
         
         t0 = time.time()
         
-        next_alist, next_slist, next_blist, phi = qnute_step(H, svs[i-1], truncate, trotter_update)
+        next_alist, next_slist, next_blist, phi = qnute_step(params, svs[i-1], truncate, trotter_update)
         alist += next_alist
         S_list += next_slist
         b_list += next_blist
