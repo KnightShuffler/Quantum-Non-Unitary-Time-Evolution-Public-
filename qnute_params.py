@@ -176,10 +176,10 @@ class QNUTE_params:
                 self.load_measurement_keys(m, domain_ops)
         print('Done')
     
-    def set_run_params(self, db, delta, N, num_shots, 
+    def set_run_params(self, dt, delta, N, num_shots, 
     backend, init_circ=None, init_sv=None, drift_type=DRIFT_NONE,
     gpu_sim_flag=False, gpu_calc_flag=False):
-        self.dt = db
+        self.dt = dt
         self.delta = delta
         self.N = N
         self.num_shots = num_shots
