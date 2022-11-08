@@ -49,6 +49,13 @@ def exp_mat_psi(mat, psi, truncate:int=-1):
         i += 1
     return phi
 
+def fidelity(psi, phi):
+    '''
+    Returns the fidelity between two pure states psi and phi
+    F = | <psi|phi> |^2
+    '''
+    return np.abs(np.vdot(psi, phi))**2
+
 #----------------------------#
 # Manhattan Distance Helpers #
 #----------------------------#
