@@ -32,6 +32,23 @@ def base_to_int(digits, b):
         x += digits[i] * (b**i)
     return x
 
+def exp_mat_psi(mat, psi, truncate:int=-1):
+    '''
+    Calculates exp(mat)|psi> using the Taylor series of exp(mat)
+    if truncate == -1, it will calculate the series up until the norm 
+    the previous term above the accepted tolerance,
+    else, if truncate == k > 0, it will calculate up to the k-th term of
+    the Taylor series (mat)^k / k!
+    '''
+    chi = psi.copy()
+    phi = psi.copy()
+    i = 1
+    while (truncate < 0 and np.linalg.norm(chi) > TOLERANCE) or (truncate >= 0 and i <= truncate) :
+        chi = 1/i * (mat @ chi)
+        phi += chi
+        i += 1
+    return phi
+
 #----------------------------#
 # Manhattan Distance Helpers #
 #----------------------------#
