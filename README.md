@@ -37,9 +37,9 @@ The Hamiltonian constructor takes 4 inputs:
 * `hm_list` - The Hamiltonian is described as a sum of terms $\hat{H}=\sum_m\hat{H}_m$, where each $\hat{H}_m$ acts on distinct subsets of the qubits in the lattice. Each of these $\hat{H}_m$ terms is described using a list `hm` containing 3 lists:
     * `hm[2]` - List of qubits that $\hat{H}_m$ acts on. This list contains the lattice coordinates of all of the qubits that $\hat{H}_m$ acts on. The coordinates must be tuples of integers. The order of the coordinates in this list matters.
     * `hm[0]` - List of Pauli operator products. This list contains integers corresponding to Pauli operator tensor products when converted to base-4 integers. The digits 0,1,2,3 corresponding to the Pauli operators $\hat{I},\hat{X},\hat{Y},\hat{Z}$ respectively. For example, the Pauli operator product
-    $\hat{X}\_{0} \otimes \hat{Y} \otimes \hat{Z}$
+    $\hat{X}\_{0} \otimes \hat{Y}\_{1} \otimes \hat{Z}\_{2}$
     corresponds to the integer
-    $$(321)_{4} = 3\cdot 4^2 + 2\cdot 4^1 + 1 \cdot 4^0 =(57)_{10}.$$
+    $$(321)\_{4} = 3\cdot 4^2 + 2\cdot 4^1 + 1 \cdot 4^0 =(57)\_{10}.$$
     The subscripts $0,1,2$ here correspond to the qubit coordinates `hm[2][0], hm[2][1], hm[2][3]`.
     * `hm[1]` - List of linear combination coefficients of Pauli operators. $\hat{H}_m = \sum_i \alpha_i \hat{\sigma}_i.$ For each Pauli operator product `hm[0][i]`$\equiv\hat{\sigma}_i$, the complex coefficient in the linear combination is provided in this list, `hm[1][i]`$=\alpha_i$.
 * `lattice_dim` - The dimension $d$ of the qubit lattice.
@@ -47,7 +47,7 @@ The Hamiltonian constructor takes 4 inputs:
 * `qubit_map` - A dictionary mapping the lattice coordinates to physical qubit indices. Is `None` by default, but this is only valid for $d=1$.
 
 For example, consider a 2-dimensional qubit lattice of size 2, with the lattice mapping shown earlier. The effective Hamiltonian
-$$\hat{H} = \left[\hat{Z}_{(0,0)}\otimes\hat{X}_{(1,1)} - \hat{X}_{(0,0)}\otimes\hat{Z}_{(1,1)}\right] + \left[i\ \hat{I}_{(0,1)}\otimes\hat{Y}_{(1,0)}\right]$$
+$$\hat{H} = \left[\hat{Z}\_{(0,0)}\otimes\hat{X}\_{(1,1)} - \hat{X}\_{(0,0)}\otimes\hat{Z}\_{(1,1)}\right] + \left[i\ \hat{I}\_{(0,1)}\otimes\hat{Y}\_{(1,0)}\right]$$
 is represented by
 ```
 H = Hamiltonian(
