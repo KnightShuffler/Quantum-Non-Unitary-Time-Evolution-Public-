@@ -1,7 +1,7 @@
 # Quantum Non-Unitary Time Evolution
 
 Numerical and Qiskit implementations of the Quantum Non-Unitary Time Evolution (QNUTE) algorithm. This is an extension of the [Quantum Imaginary Time Evolution algorithm](https://www.nature.com/articles/s41567-019-0704-4) that allows us to simulate the dynamics of any linear PDE of the form
-$$ \frac{\partial}{\partial t} f(\vec{x},t) = \hat{H} f(\vec{x},t) $$
+$$\frac{\partial}{\partial t} f(\vec{x},t) = \hat{H} f(\vec{x},t)$$
 where the effective Hamiltonian $\hat{H}$, can be an arbitrary, time-independent linear differential operator. 
 
 ## How to Run
@@ -31,7 +31,7 @@ Both functions return the values:
 ## Effective Hamiltonian Description
 Defined in `hamiltonians.py`, the `Hamiltonian` class provides a description of the effective Hamiltonian as a linear combination of Pauli operator tensor products.
 
-It is assumed that the qubits are connected in a $d$-dimensional cubic lattice of size $l$, i.e. each qubit can be indexed with $d$ integer coordinates $(x_1,\cdots,x_d)$ where $ 0\leq x_i < l$. A mapping between the lattice coordinates and the physical qubit indices of the quantum computer must be provided so the quantum circuits can be generated accordingly. For $d=1$, if a map is not provided, the program automatically maps the lattice coordinate to the same physical qubit index.
+It is assumed that the qubits are connected in a $d$-dimensional cubic lattice of size $l$, i.e. each qubit can be indexed with $d$ integer coordinates $(x_1,\cdots,x_d)$ where $0\leq x_i < l$. A mapping between the lattice coordinates and the physical qubit indices of the quantum computer must be provided so the quantum circuits can be generated accordingly. For $d=1$, if a map is not provided, the program automatically maps the lattice coordinate to the same physical qubit index.
 
 The Hamiltonian constructor takes 4 inputs:
 * `hm_list` - The Hamiltonian is described as a sum of terms $\hat{H}=\sum_m\hat{H}_m$, where each $\hat{H}_m$ acts on distinct subsets of the qubits in the lattice. Each of these $\hat{H}_m$ terms is described using a list `hm` containing 3 lists:
@@ -43,7 +43,7 @@ The Hamiltonian constructor takes 4 inputs:
 * `qubit_map` - A dictionary mapping the lattice coordinates to physical qubit indices. Is `None` by default, but this is only valid for $d=1$.
 
 For example, consider a 2-dimensional qubit lattice of size 2, with the lattice mapping shown earlier. The effective Hamiltonian
-$$ \hat{H} = \left[\hat{Z}_{(0,0)}\otimes\hat{X}_{(1,1)} - \hat{X}_{(0,0)}\otimes\hat{Z}_{(1,1)}\right] + \left[i\ \hat{I}_{(0,1)}\otimes\hat{Y}_{(1,0)}\right]$$
+$$\hat{H} = \left[\hat{Z}_{(0,0)}\otimes\hat{X}_{(1,1)} - \hat{X}_{(0,0)}\otimes\hat{Z}_{(1,1)}\right] + \left[i\ \hat{I}_{(0,1)}\otimes\hat{Y}_{(1,0)}\right]$$
 is represented by
 ```
 H = Hamiltonian(
@@ -62,7 +62,7 @@ Defined in `qnute_params.py`, the `QNUTE_params` class contains all of the param
 
 ### Hamiltonian Parameters
 For each term $e^{\hat{H}_m \tau}$, in the Trotter product approximation QNUTE calculates a Hermitian operator $\hat{A}$ that specifies the normalized evolution
-$$ e^{-i\hat{A}\tau} |\psi\rangle \approx \frac{e^{\hat{H}_m\tau}|\psi\rangle}{\|e^{\hat{H}_m\tau}|\psi\rangle\|}. $$
+$$e^{-i\hat{A}\tau} |\psi\rangle \approx \frac{e^{\hat{H}_m\tau}|\psi\rangle}{\|e^{\hat{H}_m\tau}|\psi\rangle\|}.$$
 
 QNUTE allows for approximations making use of the lattice topology of the simulated qubits by shrinking the domain of $\hat{A}$ to a (Manhattan distance) sphere of diameter $D$ around the center of the original domain of $\hat{H}_m$.
 * `D` - Maximum diameter of the unitary domains.
