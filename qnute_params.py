@@ -119,7 +119,7 @@ class QNUTE_params:
                     power += 1
                 self.mix_measurements[m].append(pauli_id)
 
-    def load_hamiltonian_params(self, D: int, reduce_dim: bool =True, 
+    def load_hamiltonian_params(self, D: int, reduce_dim: bool =False, 
                                 load_measurements: bool=True):
         '''
         Performs the precalculations to run QNUTE
