@@ -83,6 +83,9 @@ Parameter|Description|Default
 `backend`   | Which Qiskit backend to use. Currently only the statevector simulator is supported. Irrelevant for numerical implementation. | - 
 `init_circ` | A `qiskit.QuantumCircuit` object that generates the initial state from all qubits initialized to $\|0\rangle$. Leave as `None` if using numerical implementation or specifying initial state vector. | `None`
 `init_sv`   | Initial state vector for the QNUTE run. If both `init_circ` and `init_sv` are left as `None`, all qubits will be initialized to $\|0\rangle$. | `None`
-`taylor_truncate` | How many terms should be included in the Taylor series expansion of $e^{-i\hat{H}_m\tau}\|\psi\rangle$ for the numerical simulation. Set to -1 to keep adding terms until the norm of the last term is less than `helpers.TOLERANCE`. | `-1`
+`store_state_vector` | Set `True` to store the state vector during the simulation. Set `Fasle` when sending to real quantum computers or to not store the state vector in Qiskit simulations. The current implementation does not support `False`.| `True`
+`taylor_norm_flag` | Set `True` to calculate the norm of the non-unitary time step with a Taylor series. `False` for real quantum hardware. | `False`
+`taylor_truncate_h` | How many terms should be included in the Taylor series expansion of $e^{\hat{H}_m\tau}\|\psi\rangle$ for the numerical simulation. Set to -1 to keep adding terms until the norm of the last term is less than `helpers.TOLERANCE`. | `-1`
+`taylor_truncate_h` | How many terms should be included in the Taylor series expansion of $e^{-i\hat{A}\tau}\|\psi\rangle$ for the numerical simulation. Set to -1 to keep adding terms until the norm of the last term is less than `helpers.TOLERANCE`. | `-1`
 `num_trotter_flag` | Set `True` to use a Trotter product to calculate the time evolution operator in the numerical simulation, and `False` to use the Taylor series instead. | `False`
 
