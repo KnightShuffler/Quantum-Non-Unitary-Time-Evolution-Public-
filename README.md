@@ -5,28 +5,18 @@ $$\frac{\partial}{\partial t} f(\vec{x},t) = \hat{H} f(\vec{x},t)$$
 where the effective Hamiltonian $\hat{H}$, can be an arbitrary, time-independent linear differential operator. 
 
 ## How to Run
-### Numerical Implementation
-`qnute()` defined in `taylor_qnute.py`
-
+To run the simulation of the QNUTE algorithm, run the `qnute()` method defined in `qnute.py`. 
 Arguments:
 * `params` - A `QNUTE_params` object containing the run parameters for the QNUTE experiment. Details given below.
-* `logging` - Set `True` to display time logs of the QNUTE run in the terminal. Default `True`.
-* `truncate` - The maximum degree of the Taylor polynomial expansion of a matrix exponential. When set to `-1`, the code will keep calculating higher order terms until the norm of the final term is less than `TOLERANCE` defined in `helpers.py`, default value is `1e-5`.
-* `trotter_update` - Set `True` to implement the state updates using a Trotter product approximation instead of a Taylor series approximation. Default `False`.
-
-### Qiskit Statevector Simulator Implementation
-`qnute()` defined in `sv_qnute.py`
-
-Arguments:
-* `params` - A `QNUTE_params` object containing the run parameters for the QNUTE experiment. Details given below.
-* `logging` - Set `True` to display time logs of the QNUTE run in the terminal. Default `True`.
+* `log_to_console` - Set `True` to display time logs of the QNUTE run in the terminal. Default `True`.
 
 Both functions return the values:
 * `times` - A list containing the time to complete simulating each time step
 * `svs` - A 2-d numpy array containing the list of the state vectors calculated at each simulated time step.
-* `alist` - A list of all the vectors $\vec{a}$ calculated when solving the linear systems $S\vec{a}=\vec{b}$ in each Trotter step.
+* `a_list` - A list of all the vectors $\vec{a}$ calculated when solving the linear systems $S\vec{a}=\vec{b}$ in each Trotter step.
 * `S_list` - A list of all the matrices $S$ for the linear systems generated in each Trotter step.
 * `b_list` - A list of all the vectors $\vec{b}$ for the linear systems generated in each Trotter step.
+* `c_list` - A list of all the norms $c=\|e^{\hat{H}_m\tau}|\psi\rangle\|$ calculated in the simulation. The product of all these norms should approximate the final norm $\|e^{\hat{H}t}|\psi_0\rangle\|$.
 
 ## Effective Hamiltonian Description
 Defined in `hamiltonians.py`, the `Hamiltonian` class provides a description of the effective Hamiltonian as a linear combination of Pauli operator tensor products.
