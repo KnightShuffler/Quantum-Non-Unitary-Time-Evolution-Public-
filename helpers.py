@@ -284,6 +284,20 @@ def pauli_dict_product(p1_dict, p2_dict):
         prod_dict[key] = pauli_prod[0][p1_dict[key], p2_dict[key]]
     return prod_dict, coeff
 
+def get_full_pauli_product_matrix(p, active, nbits):
+    '''
+    Returns the full matrix of the the Pauli product index p acting on 
+    qubits indexed in active in system with number of qubits=nbits
+    '''
+    nactive = len(active)
+    partial_pstring = int_to_base(p, 4, nactive)
+    full_pstring = [0] * nbits
+    for k in range(nactive):
+        full_pstring[active[k]] = partial_pstring[k]
+    p_mat = sigma_matrices[full_pstring[0]]
+    for k in range(1,nbits):
+        p_mat = np.kron(sigma_matrices[full_pstring[k]], p_mat)
+    return p_mat
 #-------------------------#
 # Quantum Circuit Related #
 #-------------------------#
