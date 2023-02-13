@@ -38,8 +38,11 @@ class QNUTE_params:
         self.init_circ = None
 
         self.circuit_flag = True
-        self.taylor_truncate = -1
-        self.num_trotter_flag = False
+        self.store_state_vector = True
+        self.taylor_norm_flag = False
+        self.taylor_truncate_h = -1
+        self.taylor_truncate_a = -1
+        self.trotter_flag = False
 
         # GPU usage Flags
         self.gpu_simulator_flag = False
@@ -174,16 +177,20 @@ class QNUTE_params:
         print('Done')
     
     def set_run_params(self, dt, delta, N, num_shots, 
-    backend, init_circ=None, init_sv=None, 
-    taylor_truncate=-1, num_trotter_flag=False,
+    backend, init_circ=None, init_sv=None, store_state_vector=True,
+    taylor_norm_flag=False, taylor_truncate_h=-1, taylor_truncate_a=-1, 
+    trotter_flag=False,
     gpu_sim_flag=False, gpu_calc_flag=False):
         self.dt = dt
         self.delta = delta
         self.N = N
         self.num_shots = num_shots
         self.backend = backend
-        self.taylor_truncate = taylor_truncate
-        self.num_trotter_flag = num_trotter_flag
+        self.store_state_vector = store_state_vector
+        self.taylor_norm_flag = taylor_norm_flag
+        self.taylor_truncate_h = taylor_truncate_h
+        self.taylor_truncate_a = taylor_truncate_a
+        self.trotter_flag = trotter_flag
         self.gpu_simulator_flag = gpu_sim_flag
         self.gpu_calc_flag = gpu_calc_flag
 
