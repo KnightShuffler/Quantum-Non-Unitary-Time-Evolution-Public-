@@ -182,27 +182,10 @@ def update_alist(params: QNUTE_params, sigma_expectation, alist, term, scale):
         b_ = cp.asarray(b)
         a = np.real(cp.linalg.lstsq(S_,b_,rcond=-1)[0].get())
     
-    # Update alist depending on the drift type of the run
-    if params.drift_type == DRIFT_A:
-        theta_coeffs = 2.0 * params.dt* sample_from_a(a)
-    else:
-        thetas = 2.0 * params.dt * a
-        
-        if params.drift_type == DRIFT_THETA_2PI:
-            # Fix the angles between [0,2pi)
-            thetas = np.mod(thetas, 2.0*np.pi)
-            # Sample from this
-            theta_coeffs = sample_from_a(thetas)
-        elif params.drift_type == DRIFT_THETA_PI_PI:
-            # Fix the angles between [-pi, pi)
-            thetas = np.mod(thetas, 2.0*np.pi)
-            thetas = np.where(thetas <= np.pi, thetas, thetas - 2.0*np.pi)
-            # Sample from this            
-            theta_coeffs = sample_from_a(thetas)
-        elif params.drift_type == DRIFT_NONE:
-            theta_coeffs = thetas
+    # Update alist with the rotation angles
+    thetas = 2.0 * params.dt * a
     
-    alist.append([theta_coeffs, u_domain, params.H.real_term_flags[term] and params.reduce_dimension_flag])
+    alist.append([thetas, u_domain, params.H.real_term_flags[term] and params.reduce_dimension_flag])
     return S,b
 
 def qnute_step(params: QNUTE_params, psi0):

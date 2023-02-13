@@ -7,11 +7,6 @@ import os
 from hamiltonians import Hamiltonian
 from helpers import *
 
-DRIFT_NONE = 0
-DRIFT_A = 1
-DRIFT_THETA_2PI = 2
-DRIFT_THETA_PI_PI = 3
-
 class QNUTE_params:
     def __init__(self, Ham: Hamiltonian):
         self.H = Ham
@@ -41,8 +36,6 @@ class QNUTE_params:
         self.backend = None
         self.init_sv = None
         self.init_circ = None
-
-        self.drift_type = DRIFT_NONE
 
         # GPU usage Flags
         self.gpu_simulator_flag = False
@@ -177,14 +170,13 @@ class QNUTE_params:
         print('Done')
     
     def set_run_params(self, dt, delta, N, num_shots, 
-    backend, init_circ=None, init_sv=None, drift_type=DRIFT_NONE,
+    backend, init_circ=None, init_sv=None,
     gpu_sim_flag=False, gpu_calc_flag=False):
         self.dt = dt
         self.delta = delta
         self.N = N
         self.num_shots = num_shots
         self.backend = backend
-        self.drift_type = drift_type
         self.gpu_simulator_flag = gpu_sim_flag
         self.gpu_calc_flag = gpu_calc_flag
 
