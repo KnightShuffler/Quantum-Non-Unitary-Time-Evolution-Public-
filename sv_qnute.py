@@ -155,16 +155,16 @@ def update_alist(params: QNUTE_params, sigma_expectation, alist, term, scale):
             key1 = 'S'
             I = ops[i]
         for j in range(num_terms):
-            if not params.small_u_domain_flags[term]:
+            if params.small_u_domain_flags[term]:
                 J = full_pauli_index(params.h_measurements[term][j], 
                                     params.h_domains[term], 
                                     params.mix_domains[term])
             else:
-                J = full_pauli_index(params.h_measurements[j],
+                J = full_pauli_index(params.h_measurements[term][j],
                                     params.h_domains[term],
                                     u_domain)
 
-            if not params.small_u_domain_flags[term]:
+            if params.small_u_domain_flags[term]:
                 p_,c_ = pauli_string_prod(I, J, len(params.mix_domains[term]))
             else:
                 p_,c_ = pauli_string_prod(I, J, ndomain)
