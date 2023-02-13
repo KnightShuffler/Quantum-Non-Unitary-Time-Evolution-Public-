@@ -44,10 +44,6 @@ class QNUTE_params:
         self.taylor_truncate_a = -1
         self.trotter_flag = False
 
-        # GPU usage Flags
-        self.gpu_simulator_flag = False
-        self.gpu_calculation_flag = False
-
         # Logging Information
         self.log_path = ''
         self.fig_path = ''
@@ -179,8 +175,7 @@ class QNUTE_params:
     def set_run_params(self, dt, delta, N, num_shots, 
     backend, init_circ=None, init_sv=None, store_state_vector=True,
     taylor_norm_flag=False, taylor_truncate_h=-1, taylor_truncate_a=-1, 
-    trotter_flag=False,
-    gpu_sim_flag=False, gpu_calc_flag=False):
+    trotter_flag=False):
         self.dt = dt
         self.delta = delta
         self.N = N
@@ -191,8 +186,6 @@ class QNUTE_params:
         self.taylor_truncate_h = taylor_truncate_h
         self.taylor_truncate_a = taylor_truncate_a
         self.trotter_flag = trotter_flag
-        self.gpu_simulator_flag = gpu_sim_flag
-        self.gpu_calc_flag = gpu_calc_flag
 
         # Determine if the calculation is matrix based or QuantumCircuit based
         if backend is None:
@@ -217,14 +210,6 @@ class QNUTE_params:
             # Raise an exception if the user inputted an initializing circuit in a simulation that doesn't use QuantumCircuits
             if not self.circuit_flag:
                 raise ValueError('Provided init_circ instead of init_sv for a simulation that does not use QuantumCircuit')
-        
-        if self.gpu_simulator_flag:
-            try:
-                self.backend.set_options(device='GPU')
-            except AerError as e:
-                print(e)
-                print('Unable to set simulation device to GPU, proceeding with CPU simulation')
-                self.gpu_simulator_flag = False
 
     def set_identifiers(self, log_path, fig_path, run_name):
         self.log_path = log_path
@@ -244,9 +229,6 @@ class QNUTE_params:
 
         if run_name[-1] != '-':
             self.run_name += '-'
-        
-        # if self.gpu_simulator_flag:
-        #     self.run_name += 'GPU-'
 
         if not os.path.exists(self.log_path):
             os.makedirs(self.log_path)
