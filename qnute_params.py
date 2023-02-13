@@ -182,6 +182,8 @@ class QNUTE_params:
         self.num_shots = num_shots
         self.backend = backend
         self.store_state_vector = store_state_vector
+        if not self.store_state_vector:
+            raise ValueError('params.store_state_vector=False is not supported yet.')
         self.taylor_norm_flag = taylor_norm_flag
         self.taylor_truncate_h = taylor_truncate_h
         self.taylor_truncate_a = taylor_truncate_a
