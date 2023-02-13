@@ -37,6 +37,10 @@ class QNUTE_params:
         self.init_sv = None
         self.init_circ = None
 
+        self.circuit_flag = True
+        self.taylor_truncate = -1
+        self.num_trotter_flag = False
+
         # GPU usage Flags
         self.gpu_simulator_flag = False
         self.gpu_calculation_flag = False
@@ -170,15 +174,24 @@ class QNUTE_params:
         print('Done')
     
     def set_run_params(self, dt, delta, N, num_shots, 
-    backend, init_circ=None, init_sv=None,
+    backend, init_circ=None, init_sv=None, 
+    taylor_truncate=-1, num_trotter_flag=False,
     gpu_sim_flag=False, gpu_calc_flag=False):
         self.dt = dt
         self.delta = delta
         self.N = N
         self.num_shots = num_shots
         self.backend = backend
+        self.taylor_truncate = taylor_truncate
+        self.num_trotter_flag = num_trotter_flag
         self.gpu_simulator_flag = gpu_sim_flag
         self.gpu_calc_flag = gpu_calc_flag
+
+        # Determine if the calculation is matrix based or QuantumCircuit based
+        if backend is None:
+            self.circuit_flag = False
+        else:
+            self.circuit_flag = True
 
         # Set the initializing circuit
         if init_circ is None:
@@ -194,6 +207,9 @@ class QNUTE_params:
                 self.init_circ.initialize(self.init_sv, list(range(self.nbits)))
         else:
             self.init_circ = init_circ
+            # Raise an exception if the user inputted an initializing circuit in a simulation that doesn't use QuantumCircuits
+            if not self.circuit_flag:
+                raise ValueError('Provided init_circ instead of init_sv for a simulation that does not use QuantumCircuit')
         
         if self.gpu_simulator_flag:
             try:
