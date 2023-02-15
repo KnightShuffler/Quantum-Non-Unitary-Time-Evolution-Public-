@@ -218,18 +218,9 @@ def qnute_step(params: Params, output:Output, step):
     for m in params.objective_measurements:
         output.measurements[m[0]][step] = pauli_expectation(params, Statevector(output.svs[step]), m[1], m[2])
 
-    # return a_list, S_list, b_list, c_list, propagate(params, psi0, a_list)
-
 def qnute(params:Params, log_to_console:bool=True):
     output = Output(params)
-    # times = np.zeros(params.N + 1)
-    # svs = np.zeros((params.N+1, 2**params.nbits), dtype=complex)
     output.svs[0,:] = params.init_sv.data
-
-    # a_list = []
-    # S_list = []
-    # b_list = []
-    # c_list = []
     
     if log_to_console: print('Starting QNUTE Iterations:')
     
@@ -238,14 +229,8 @@ def qnute(params:Params, log_to_console:bool=True):
         
         t0 = time.time()
         
-        # next_alist, next_slist, next_blist, next_clist, phi =
         qnute_step(params, output, i)
-        # a_list += next_alist
-        # S_list += next_slist
-        # b_list += next_blist
-        # c_list += next_clist
-        # svs[i,:] = phi.data
-        
+                
         t1 = time.time()
         duration = t1-t0
         output.times[i-1] = duration
