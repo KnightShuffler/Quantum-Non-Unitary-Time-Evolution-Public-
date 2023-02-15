@@ -32,8 +32,10 @@ class QNUTE_output:
             c = pd.DataFrame(self.c_list)
             c.to_csv(path+run_id+'_norms.csv', header=False, index=False)
         if sv_flag:
-            psis = pd.DataFrame(self.svs)
-            psis.to_csv(path+run_id+'_statevectors.csv',header=False,index=False)
+            r_psis = pd.DataFrame(np.real(self.svs))
+            r_psis.to_csv(path+run_id+'_statevectors_real.csv',header=False,index=False)
+            i_psis = pd.DataFrame(np.imag(self.svs))
+            i_psis.to_csv(path+run_id+'_statevectors_imag.csv',header=False,index=False)
         if meas_flag:
             meas = pd.DataFrame(self.measurements)
             meas.to_csv(path+run_id+'_measurements.csv',index=False)
