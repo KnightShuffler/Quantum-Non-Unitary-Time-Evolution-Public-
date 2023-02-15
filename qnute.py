@@ -38,7 +38,7 @@ def propagate(params: Params, psi0, a_list):
                     pauli_string_exp(qc, p_dict, params.H.map, angle)
         return evolve_statevector(params, qc, psi0)
     else:
-        psi = np.array(psi0.data,dtype=complex) if params.circuit_flag else psi0.copy()
+        psi = psi0.copy()
         for t in range(len(a_list)):
             active = [ params.H.map[k] for k in a_list[t][1]]
             nactive = len(active)
@@ -51,7 +51,7 @@ def propagate(params: Params, psi0, a_list):
                     psi = exp_mat_psi(-1j*a_list[t][0][i]*params.dt*p_mat, psi, truncate=params.taylor_truncate_a)
             if not params.trotter_flag:
                 psi = exp_mat_psi(-1j*params.dt*A, psi, truncate=params.taylor_truncate_a)
-        return Statevector(psi) if params.circuit_flag else psi
+        return Statevector(psi)
 
 def pauli_expectation(params: Params, psi, p, qbits):
     '''
@@ -120,7 +120,7 @@ def update_alist(params: Params, sigma_expectation, a_list, term, psi0, scale):
     # Load c
     if params.taylor_norm_flag:
         h_mat = params.H.get_term_submatrix(term)
-        psi_prime = exp_mat_psi(params.dt*h_mat, psi0, truncate=params.taylor_truncate_h)
+        psi_prime = exp_mat_psi(params.dt*h_mat, psi0.data, truncate=params.taylor_truncate_h)
         c = np.linalg.norm(psi_prime)
     else:
         c = 1.0
