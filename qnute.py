@@ -1,5 +1,6 @@
 from hamiltonians import Hamiltonian
 from qnute_params import QNUTE_params as Params
+from qnute_output import QNUTE_output as Output
 from helpers import *
 
 from qiskit import QuantumCircuit
@@ -192,12 +193,13 @@ def update_alist(params: Params, sigma_expectation, a_list, term, psi0, scale):
     a_list.append([a, u_domain, params.H.real_term_flags[term] and params.reduce_dimension_flag])
     return S,b,c
 
-def qnute_step(params: Params, psi0):
+def qnute_step(params: Params, output:Output, step):
     a_list = []
     S_list = []
     b_list = []
     c_list = []
     
+    psi0 = output.svs[step-1]
     H = params.H
     
     for term in range(H.num_terms):
@@ -206,18 +208,28 @@ def qnute_step(params: Params, psi0):
         S_list.append(S)
         b_list.append(b)
         c_list.append(c)
+    
+    output.a_list += a_list
+    output.S_list += S_list
+    output.b_list += b_list
+    output.c_list += c_list
+    output.svs[step,:] = propagate(params, psi0, a_list).data
 
-    return a_list, S_list, b_list, c_list, propagate(params, psi0, a_list)
+    for m in params.objective_measurements:
+        output.measurements[m[0]][step] = pauli_expectation(params, Statevector(output.svs[step]), m[1], m[2])
+
+    # return a_list, S_list, b_list, c_list, propagate(params, psi0, a_list)
 
 def qnute(params:Params, log_to_console:bool=True):
-    times = np.zeros(params.N + 1)
-    svs = np.zeros((params.N+1, 2**params.nbits), dtype=complex)
-    svs[0,:] = params.init_sv.data
+    output = Output(params)
+    # times = np.zeros(params.N + 1)
+    # svs = np.zeros((params.N+1, 2**params.nbits), dtype=complex)
+    output.svs[0,:] = params.init_sv.data
 
-    a_list = []
-    S_list = []
-    b_list = []
-    c_list = []
+    # a_list = []
+    # S_list = []
+    # b_list = []
+    # c_list = []
     
     if log_to_console: print('Starting QNUTE Iterations:')
     
@@ -226,17 +238,18 @@ def qnute(params:Params, log_to_console:bool=True):
         
         t0 = time.time()
         
-        next_alist, next_slist, next_blist, next_clist, phi = qnute_step(params, svs[i-1])
-        a_list += next_alist
-        S_list += next_slist
-        b_list += next_blist
-        c_list += next_clist
-        svs[i,:] = phi.data
+        # next_alist, next_slist, next_blist, next_clist, phi =
+        qnute_step(params, output, i)
+        # a_list += next_alist
+        # S_list += next_slist
+        # b_list += next_blist
+        # c_list += next_clist
+        # svs[i,:] = phi.data
         
         t1 = time.time()
         duration = t1-t0
-        times[i] = duration
+        output.times[i-1] = duration
         
         if log_to_console: print('Done -- Iteration time = {:0.2f} {}'.format(duration if duration < 60 else duration/60, 'seconds' if duration < 60 else 'minutes'))
     
-    return times, svs, a_list, S_list, b_list, c_list
+    return output
