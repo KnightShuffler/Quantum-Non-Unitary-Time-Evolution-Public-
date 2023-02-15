@@ -55,15 +55,19 @@ H = Hamiltonian(
 Defined in `qnute_params.py`, the `QNUTE_params` class contains all of the parameters that QNUTE needs to run an experiment. The constructor takes a `Hamiltonian` object as input, and it will perform all the necessary pre-calculations when the user calls the methods `load_hamiltonian_params()` and `set_run_params()`.
 
 ### Hamiltonian Parameters
+`QNUTE_params.load_hamiltonian_params()`
 For each term $e^{\hat{H}_m \tau}$, in the Trotter product approximation QNUTE calculates a Hermitian operator $\hat{A}$ that specifies the normalized evolution
 $$e^{-i\hat{A}\tau} |\psi\rangle \approx \frac{e^{\hat{H}_m\tau}|\psi\rangle}{\|e^{\hat{H}_m\tau}|\psi\rangle\|}.$$
 
 QNUTE allows for approximations making use of the lattice topology of the simulated qubits by shrinking the domain of $\hat{A}$ to a (Manhattan distance) sphere of diameter $D$ around the center of the original domain of $\hat{H}_m$.
-* `D` - Maximum diameter of the unitary domains.
-* `reduce_dim` - `True` if it is known that the state vector and Hamiltonian terms are all real-valued in the $\hat{Z}$ basis. This roughly halves the dimensionality of the system of linear equations to solve for $\hat{A}$. Default `False`.
-* `load_measurements` - Set `True` to pre-calculate which Pauli measurements are required for each $\hat{H}_m$ to generate $\hat{A}$. Default `False`. Set `True` for Qiskit implementation.
+Parameter|Description|Default
+---------|-----------|-------
+`D` | Maximum diameter of the unitary domains.| -
+`reduce_dim` | `True` if it is known that the state vector and Hamiltonian terms are all real-valued in the $\hat{Z}$ basis. This roughly halves the dimensionality of the system of linear equations to solve for $\hat{A}$. | `False`
+`load_measurements` | Set `True` to pre-calculate which Pauli measurements are required for each $\hat{H}_m$ to generate $\hat{A}$. Set `True` for Qiskit implementation. | `True`
 
 ### Run Parameters
+`QNUTE_params.set_run_params()`
 Parameter|Description|Default
 ------------|--------|-----
 `dt`        | Size of time step $\tau$ | -
@@ -77,5 +81,5 @@ Parameter|Description|Default
 `taylor_norm_flag` | Set `True` to calculate the norm of the non-unitary time step with a Taylor series. `False` for real quantum hardware. | `False`
 `taylor_truncate_h` | How many terms should be included in the Taylor series expansion of $e^{\hat{H}_m\tau}\|\psi\rangle$ for the numerical simulation. Set to -1 to keep adding terms until the norm of the last term is less than `helpers.TOLERANCE`. | `-1`
 `taylor_truncate_h` | How many terms should be included in the Taylor series expansion of $e^{-i\hat{A}\tau}\|\psi\rangle$ for the numerical simulation. Set to -1 to keep adding terms until the norm of the last term is less than `helpers.TOLERANCE`. | `-1`
-`num_trotter_flag` | Set `True` to use a Trotter product to calculate the time evolution operator in the numerical simulation, and `False` to use the Taylor series instead. | `False`
+`trotter_flag` | Set `True` to use a Trotter product to calculate the time evolution operator in the numerical simulation, and `False` to use the Taylor series instead. | `False`
 
