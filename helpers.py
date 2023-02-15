@@ -65,6 +65,8 @@ def in_lattice(point, d, l):
     Returns True if the point is within a d-dimensional lattice
     with non-negative coordinates, of side length l
     '''
+    if type(point) is not tuple:
+        point = (point,)
     for i in range(d):
         if point[i] < 0 or point[i] >= l:
             return False
