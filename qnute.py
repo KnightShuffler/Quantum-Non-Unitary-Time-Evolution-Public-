@@ -157,7 +157,7 @@ def update_alist(params: Params, sigma_expectation, a_list, term, psi0, scale):
         S[i,i] = 1.0
     
     # Load b
-    b = np.zeros(nops, dtype=complex)
+    b = np.zeros(nops, dtype=float)
     for i in range(nops):
         if params.small_u_domain_flags[term]:
             key1 = 'b'
@@ -191,12 +191,13 @@ def update_alist(params: Params, sigma_expectation, a_list, term, psi0, scale):
     a = np.real(np.linalg.lstsq(2*np.real(S) + dalpha, b, rcond=-1)[0])
     
     a_list.append([a, u_domain, params.H.real_term_flags[term] and params.reduce_dimension_flag])
-    return S,b,c
+    # return S,b,c
+    return c
 
 def qnute_step(params: Params, output:Output, step):
     a_list = []
-    S_list = []
-    b_list = []
+    # S_list = []
+    # b_list = []
     c_list = []
     
     psi0 = output.svs[step-1]
@@ -204,14 +205,15 @@ def qnute_step(params: Params, output:Output, step):
     
     for term in range(H.num_terms):
         sigma_expectation = tomography(params, psi0, a_list, term)
-        S,b,c = update_alist(params, sigma_expectation, a_list, term, propagate(params, psi0, a_list), 1.0)
-        S_list.append(S)
-        b_list.append(b)
+        # S,b,
+        c = update_alist(params, sigma_expectation, a_list, term, propagate(params, psi0, a_list), 1.0)
+        # S_list.append(S)
+        # b_list.append(b)
         c_list.append(c)
     
     output.a_list += a_list
-    output.S_list += S_list
-    output.b_list += b_list
+    # output.S_list += S_list
+    # output.b_list += b_list
     output.c_list += c_list
     output.svs[step,:] = propagate(params, psi0, a_list).data
 
