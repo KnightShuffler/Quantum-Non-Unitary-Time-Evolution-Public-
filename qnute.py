@@ -223,6 +223,11 @@ def qnute_step(params: Params, output:Output, step):
 def qnute(params:Params, log_to_console:bool=True):
     output = Output(params)
     output.svs[0,:] = params.init_sv.data
+
+    if log_to_console: print('Performing initial measurements:...',end=' ',flush=True)
+    for m in params.objective_measurements:
+        output.measurements[m[0]][0] = pauli_expectation(params, params.init_sv, m[1],m[2])
+    if log_to_console: print('Done')
     
     if log_to_console: print('Starting QNUTE Iterations:')
     
