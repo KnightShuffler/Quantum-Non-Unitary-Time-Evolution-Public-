@@ -44,6 +44,9 @@ class QNUTE_params:
         self.taylor_truncate_a = -1
         self.trotter_flag = False
 
+        # Measurements to be made at the end of each QNUTE step
+        self.objective_measurements = []
+
         # Logging Information
         self.log_path = ''
         self.fig_path = ''
@@ -175,7 +178,8 @@ class QNUTE_params:
     def set_run_params(self, dt, delta, N, num_shots, 
     backend, init_circ=None, init_sv=None, store_state_vector=True,
     taylor_norm_flag=False, taylor_truncate_h=-1, taylor_truncate_a=-1, 
-    trotter_flag=False):
+    trotter_flag=False,
+    objective_meas_list=None):
         self.dt = dt
         self.delta = delta
         self.N = N
@@ -212,6 +216,23 @@ class QNUTE_params:
             # Raise an exception if the user inputted an initializing circuit in a simulation that doesn't use QuantumCircuits
             if not self.circuit_flag:
                 raise ValueError('Provided init_circ instead of init_sv for a simulation that does not use QuantumCircuit')
+        
+        # Set the list of objective measurements to be made
+        if objective_meas_list is not None:
+            for m_list in objective_meas_list:
+                qbits = m_list[1]
+                for p in m_list[0]:
+                    pstring = int_to_base(p, 4, len(qbits))
+                    m_name=''
+                    for i in range(len(qbits)):
+                        if pstring[i] == 0: m_name += 'I'
+                        else: m_name += chr(ord('X')+pstring[i]-1)
+                        m_name += '_'
+                        m_name += str(qbits[i])
+                        if i < len(qbits) - 1:
+                            m_name += ' '
+                    self.objective_measurements.append([m_name, p, qbits])
+
 
     def set_identifiers(self, log_path, fig_path, run_name):
         self.log_path = log_path
