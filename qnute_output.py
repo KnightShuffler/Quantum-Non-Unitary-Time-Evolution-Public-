@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from qnute_params import QNUTE_params
 
 class QNUTE_output:
@@ -17,3 +18,22 @@ class QNUTE_output:
         for m in params.objective_measurements:
             self.measurements[m[0]] = np.zeros(params.N+1,dtype=float)
     
+    def log_output(self, run_id:str, path:str='./logs/', 
+    a_list_flag:bool=True, c_list_flag:bool=True, 
+    sv_flag:bool=True, meas_flag:bool=True):
+        if path[-1] != '/':
+            path += '/'
+
+        if a_list_flag:
+            df = pd.DataFrame(self.a_list)
+            df.rename(columns={0:'a', 1:'Qubit Domain', 2:'Reduced Dimension'})
+            df.to_csv(path+run_id+'_a_list.csv', index=False)
+        if c_list_flag:
+            c = pd.DataFrame(self.c_list)
+            c.to_csv(path+run_id+'_norms.csv', header=False, index=False)
+        if sv_flag:
+            psis = pd.DataFrame(self.svs)
+            psis.to_csv(path+run_id+'_statevectors.csv',header=False,index=False)
+        if meas_flag:
+            meas = pd.DataFrame(self.measurements)
+            meas.to_csv(path+run_id+'_measurements.csv',index=False)
