@@ -80,6 +80,6 @@ Parameter|Description|Default
 `store_state_vector` | Set `True` to store the state vector during the simulation. Set `Fasle` when sending to real quantum computers or to not store the state vector in Qiskit simulations. The current implementation does not support `False`.| `True`
 `taylor_norm_flag` | Set `True` to calculate the norm of the non-unitary time step with a Taylor series. `False` for real quantum hardware. | `False`
 `taylor_truncate_h` | How many terms should be included in the Taylor series expansion of $e^{\hat{H}_m\tau}\|\psi\rangle$ for the numerical simulation. Set to -1 to keep adding terms until the norm of the last term is less than `helpers.TOLERANCE`. | `-1`
-`taylor_truncate_h` | How many terms should be included in the Taylor series expansion of $e^{-i\hat{A}\tau}\|\psi\rangle$ for the numerical simulation. Set to -1 to keep adding terms until the norm of the last term is less than `helpers.TOLERANCE`. | `-1`
+`taylor_truncate_a` | How many terms should be included in the Taylor series expansion of $e^{-i\hat{A}\tau}\|\psi\rangle$ for the numerical simulation. Set to -1 to keep adding terms until the norm of the last term is less than `helpers.TOLERANCE`. | `-1`
 `trotter_flag` | Set `True` to use a Trotter product to calculate the time evolution operator in the numerical simulation, and `False` to use the Taylor series instead. | `False`
 
