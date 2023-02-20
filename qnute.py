@@ -204,6 +204,9 @@ def qnute_step(params: Params, output:Output, step):
     H = params.H
     
     for term in range(H.num_terms):
+        # Ignore terms of empty unitary domains
+        if len(params.u_domains[term]) == 0:
+            continue
         sigma_expectation = tomography(params, psi0, a_list, term)
         # S,b,
         c = update_alist(params, sigma_expectation, a_list, term, propagate(params, psi0, a_list), 1.0)
