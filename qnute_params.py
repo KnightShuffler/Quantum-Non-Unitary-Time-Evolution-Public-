@@ -218,7 +218,9 @@ class QNUTE_params:
                 raise ValueError('Provided init_circ instead of init_sv for a simulation that does not use QuantumCircuit')
         
         # Set the list of objective measurements to be made
-        if objective_meas_list is not None:
+        if objective_meas_list is None:
+            self.objective_measurements = []
+        else:
             for m_list in objective_meas_list:
                 qbits = m_list[1]
                 for p in m_list[0]:
