@@ -1,4 +1,6 @@
 import numpy as np
+import pandas as pd
+from ast import literal_eval
 
 from helpers import *
 
@@ -209,6 +211,32 @@ class Hamiltonian:
         for i in range(len(self.hm_list)):
             for j in range(len(self.hm_list[i][1])):
                 self.hm_list[i][1][j] *= scalar
+    
+    def to_csv(self, file:str):
+        H_dict = { 'Qubits':[], 'Pauli Index': [], 'Coefficient Real Part': [], 'Coefficient Imag Part': [] }
+        for hm in self.hm_list:
+            for i in range(len(hm[0])):
+                    H_dict['Qubits'].append(hm[2])
+                    H_dict['Pauli Index'].append(hm[0][i])
+                    H_dict['Coefficient Real Part'].append(np.real(hm[1][i]))
+                    H_dict['Coefficient Imag Part'].append(np.imag(hm[1][i]))
+        hdf = pd.DataFrame(H_dict)
+        hdf.to_csv(file,index=False)
+
+def hm_list_from_csv(file:str):
+    hdf = pd.read_csv(file,converters={'Qubits': literal_eval})
+    domain = None
+    hm_list = []
+    hm = None
+    for index,row in hdf.iterrows():
+        if row['Qubits'] != domain:
+            print('New Term', index)
+            domain = row['Qubits']
+            hm = [ [], [], domain ]
+            hm_list.append(hm)
+        hm[0].append(row['Pauli Index'])
+        hm[1].append(row['Coefficient Real Part'] + 1j*row['Coefficient Imag Part'])
+    return hm_list
 
 ###################################
 # Hamiltonian of Different Models #
