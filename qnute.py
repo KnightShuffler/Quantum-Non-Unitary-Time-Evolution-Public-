@@ -190,7 +190,7 @@ def update_alist(params: Params, sigma_expectation, a_list, term, psi0, scale):
     
     a = np.real(np.linalg.lstsq(2*np.real(S) + dalpha, b, rcond=-1)[0])
     
-    a_list.append([a, u_domain, params.H.real_term_flags[term] and params.reduce_dimension_flag])
+    a_list.append([list(a), u_domain, params.H.real_term_flags[term] and params.reduce_dimension_flag])
     # return S,b,c
     return c
 
