@@ -220,7 +220,7 @@ def qnute_step(params: Params, output:Output, step):
     for m in params.objective_measurements:
         output.measurements[m[0]][step] = pauli_expectation(params, Statevector(output.svs[step]), m[1], m[2])
 
-def qnute(params:Params, log_to_console:bool=True):
+def qnute(params:Params, log_to_console:bool=True, log_frequency:int=10):
     output = Output(params)
     output.svs[0,:] = params.init_sv.data
 
@@ -232,7 +232,9 @@ def qnute(params:Params, log_to_console:bool=True):
     if log_to_console: print('Starting QNUTE Iterations:')
     
     for i in range(1, params.N+1):
-        if log_to_console: print('Iteration {}...'.format(i),end=' ',flush=True)
+        if log_to_console:
+            if i % log_frequency == 0 or i == params.N or i == 1:
+                print('Iteration {}...'.format(i),end=' ',flush=True)
         
         t0 = time.time()
         
@@ -242,6 +244,8 @@ def qnute(params:Params, log_to_console:bool=True):
         duration = t1-t0
         output.times[i-1] = duration
         
-        if log_to_console: print('Done -- Iteration time = {:0.2f} {}'.format(duration if duration < 60 else duration/60, 'seconds' if duration < 60 else 'minutes'))
+        if log_to_console: 
+            if i % log_frequency == 0 or i == params.N or i == 1:
+                print('Done -- Iteration time = {:0.2f} {}'.format(duration if duration < 60 else duration/60, 'seconds' if duration < 60 else 'minutes'))
     
     return output
