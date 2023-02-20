@@ -19,7 +19,7 @@ class QNUTE_output:
             self.measurements[m[0]] = np.zeros(params.N+1,dtype=float)
     
     def log_output(self, run_id:str, path:str='./logs/', 
-    a_list_flag:bool=True, c_list_flag:bool=True, 
+    a_list_flag:bool=False, c_list_flag:bool=True, 
     sv_flag:bool=True, meas_flag:bool=True):
         if path[-1] != '/':
             path += '/'
@@ -36,6 +36,6 @@ class QNUTE_output:
             r_psis.to_csv(path+run_id+'_statevectors_real.csv',header=False,index=False)
             i_psis = pd.DataFrame(np.imag(self.svs))
             i_psis.to_csv(path+run_id+'_statevectors_imag.csv',header=False,index=False)
-        if meas_flag:
+        if meas_flag and len(self.measurements) > 0:
             meas = pd.DataFrame(self.measurements)
             meas.to_csv(path+run_id+'_measurements.csv',index=False)
