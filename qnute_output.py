@@ -11,8 +11,10 @@ class QNUTE_output:
         self.c_list = []
         if params.store_state_vector:
             self.svs = np.zeros((params.N+1, 2**params.nbits),dtype=complex)
+            self.dt = params.dt
         else:
             self.svs = None
+            self.dt = None
         
         self.measurements = {}
         for m in params.objective_measurements:
@@ -32,10 +34,16 @@ class QNUTE_output:
             c = pd.DataFrame(self.c_list)
             c.to_csv(path+run_id+'_norms.csv', header=False, index=False)
         if sv_flag:
+            t = np.arange(0,self.svs.shape[0],1)*self.dt
+
             r_psis = pd.DataFrame(np.real(self.svs))
-            r_psis.to_csv(path+run_id+'_statevectors_real.csv',header=False,index=False)
+            r_psis.insert(0,'t',t)
+            r_psis.to_csv(path+run_id+'_statevectors_real.csv',index=False)
+            
             i_psis = pd.DataFrame(np.imag(self.svs))
-            i_psis.to_csv(path+run_id+'_statevectors_imag.csv',header=False,index=False)
+            i_psis.insert(0,'t',t)
+            i_psis.to_csv(path+run_id+'_statevectors_imag.csv',index=False)
+
         if meas_flag and len(self.measurements) > 0:
             meas = pd.DataFrame(self.measurements)
             meas.to_csv(path+run_id+'_measurements.csv',index=False)
