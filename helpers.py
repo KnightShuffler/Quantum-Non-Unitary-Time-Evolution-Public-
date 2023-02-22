@@ -286,13 +286,14 @@ def pauli_dict_product(p1_dict, p2_dict):
         prod_dict[key] = pauli_prod[0][p1_dict[key], p2_dict[key]]
     return prod_dict, coeff
 
-def get_full_pauli_product_matrix(p, active, nbits):
+def get_full_pauli_product_matrix(partial_pstring, active, nbits):
     '''
     Returns the full matrix of the the Pauli product index p acting on 
     qubits indexed in active in system with number of qubits=nbits
     '''
     nactive = len(active)
-    partial_pstring = int_to_base(p, 4, nactive)
+    assert len(partial_pstring) == nactive, 'partial_pstring must have the same length as active'
+    # partial_pstring = int_to_base(p, 4, nactive)
     full_pstring = [0] * nbits
     for k in range(nactive):
         full_pstring[active[k]] = partial_pstring[k]

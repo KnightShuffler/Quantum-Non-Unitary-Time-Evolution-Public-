@@ -46,7 +46,7 @@ def propagate(params: Params, psi0, a_list):
             ops = params.odd_y_strings[ndomain] if a_list[t][2] else list(range(4**nactive))
             A = np.zeros((2**params.nbits, 2**params.nbits),dtype=complex)
             for i in range(len(ops)):
-                p_mat = get_full_pauli_product_matrix(i, active, params.nbits)
+                p_mat = get_full_pauli_product_matrix(int_to_base(ops[i],4,nactive), active, params.nbits)
                 A += a_list[t][0][i] * p_mat
                 if params.trotter_flag:
                     psi = exp_mat_psi(-1j*a_list[t][0][i]*params.dt*p_mat, psi, truncate=params.taylor_truncate_a)
@@ -70,7 +70,7 @@ def pauli_expectation(params: Params, psi, p, qbits):
     else:
         bases = get_qc_bases_from_pauli_dict(p_dict, params.H.map)
         active = list(bases.keys())
-        p_mat = get_full_pauli_product_matrix(p, active, params.nbits)
+        p_mat = get_full_pauli_product_matrix([bases[q] for q in active], active, params.nbits)
         return np.real(np.vdot(psi.data, p_mat @ psi.data))
 
 def tomography(params: Params, psi0, a_list, term):
