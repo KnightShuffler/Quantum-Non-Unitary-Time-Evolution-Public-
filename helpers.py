@@ -301,6 +301,12 @@ def get_full_pauli_product_matrix(partial_pstring, active, nbits):
     for k in range(1,nbits):
         p_mat = np.kron(sigma_matrices[full_pstring[k]], p_mat)
     return p_mat
+
+def get_pauli_eigenspace(partial_pstring, active, nbits, eigval):
+    w,v = np.linalg.eig(get_full_pauli_product_matrix(partial_pstring, active, nbits))
+    ind = np.where(np.abs(w-eigval) < TOLERANCE)[0]
+    return v[:,ind].T
+
 #-------------------------#
 # Quantum Circuit Related #
 #-------------------------#
