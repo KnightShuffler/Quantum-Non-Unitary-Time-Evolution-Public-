@@ -59,6 +59,8 @@ def pauli_expectation(params: Params, psi, p, qbits):
     returns the expectation <psi|P|psi> where P is the pauli string acting on qbits, 
     described using a Pauli string dictionary
     '''
+    if p == 0:
+        return 1.0
     p_dict = pauli_index_to_dict(p, qbits)
     if params.circuit_flag:
         assert params.num_shots > 0, 'params.num_shots must be > 0 when using QuantumCircuits'
@@ -69,8 +71,8 @@ def pauli_expectation(params: Params, psi, p, qbits):
     active = list(bases.keys())
     if params.num_shots > 0:
         pos_eigenspace = get_pauli_eigenspace([bases[q] for q in active], active, params.nbits, 1.0)
-        pos_prob = np.sum(np.abs(pos_eigenspace.conj() @ psi.data)**2)
-        pos_meas = np.random.binomial(params.shots, pos_prob)
+        pos_prob = np.clip(np.sum(np.abs(pos_eigenspace.conj() @ psi.data)**2), 0.0, 1.0)
+        pos_meas = np.random.binomial(params.num_shots, pos_prob)
         return 2.0*pos_meas/params.num_shots - 1.0
     else:
         p_mat = get_full_pauli_product_matrix([bases[q] for q in active], active, params.nbits)
