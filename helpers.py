@@ -431,3 +431,48 @@ def pauli_string_exp(qc, p_dict, qubit_map, theta):
             # Apply Rx(-pi/2) to go from Z to Y basis
             elif bases[i] == 2:
                 qc.rx(-np.pi/2, i)
+
+#------------------------#
+# k-local Domain Related #
+#------------------------#
+def get_lattice_paths(start, depth,d,l, illegal_dir=None):
+    '''
+    returns all paths of depth=depth originating from the point start in the l^d lattice using depth first search
+    the paths are sorted coordinate wise
+    '''
+    if type(start) is not tuple:
+        start = (start, )
+    assert len(start) == d, 'start must be a d-dimensional tuple'
+    
+    if depth == 0:
+        return [[start]]  if d > 1 else [[start[0]]]
+    
+    paths = []
+    for i in range(d):
+        for j in range(2):
+            if illegal_dir == (i,(-1)**j):
+                continue
+            n_node = list(start)
+            n_node[i] += (-1)**j
+            n_node = tuple(n_node)
+            if in_lattice(n_node,d,l):
+                n_paths = get_lattice_paths(n_node, depth-1, d,l, illegal_dir=(i,(-1)**(j+1)))
+                for path in n_paths:
+                    paths.append( [start if d > 1 else start[0]]+path )
+                    
+    return paths
+
+def get_k_local_domains(k,d,l):
+    '''
+    returns a list of all possible geometric k-local domains (lattice coordinates lists) for a given lattice.
+    '''
+    domains = set()
+    for i in range(l**d):
+        point = tuple(int_to_base(i,l,d))
+        for k_ in range(k):
+            n_paths = get_lattice_paths(point,k_,d,l)
+            for path in n_paths:
+                s_path = sorted(path)
+                domains.add(tuple(s_path))
+    return sorted(list(domains))
+    
