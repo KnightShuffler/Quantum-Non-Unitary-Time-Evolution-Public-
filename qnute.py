@@ -195,9 +195,9 @@ def update_alist(params: Params, sigma_expectation, a_list, term, psi0, scale):
     
     a = np.real(np.linalg.lstsq(2*np.real(S) + dalpha, b, rcond=-1)[0])
     
-    a_list.append([list(a), u_domain, params.H.real_term_flags[term] and params.reduce_dimension_flag])
+    # a_list.append([list(a), u_domain, params.H.real_term_flags[term] and params.reduce_dimension_flag])
     # return S,b,c
-    return c
+    return a, c
 
 def qnute_step(params: Params, output:Output, step):
     a_list = []
@@ -212,9 +212,14 @@ def qnute_step(params: Params, output:Output, step):
         # Ignore terms of empty unitary domains
         if len(params.u_domains[term]) == 0:
             continue
-        sigma_expectation = tomography(params, psi0, a_list, term)
-        # S,b,
-        c = update_alist(params, sigma_expectation, a_list, term, propagate(params, psi0, a_list), 1.0)
+        a = 10.0
+        while np.linalg.norm(a) > 5.0:
+            sigma_expectation = tomography(params, psi0, a_list, term)
+            # S,b,
+            a, c = update_alist(params, sigma_expectation, a_list, term, propagate(params, psi0, a_list), 1.0)
+
+        # output.exp.append(sigma_expectation)
+        a_list.append([list(a), params.u_domains[term], params.H.real_term_flags[term] and params.reduce_dimension_flag])
         # S_list.append(S)
         # b_list.append(b)
         c_list.append(c)
