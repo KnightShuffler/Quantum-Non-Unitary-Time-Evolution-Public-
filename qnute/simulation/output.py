@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from qnute_params import QNUTE_params
+from .parameters import QNUTE_params
 
 class QNUTE_output:
     def __init__(self, params: QNUTE_params):
