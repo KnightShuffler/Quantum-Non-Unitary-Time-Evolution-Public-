@@ -1,8 +1,10 @@
-import numpy as np
-import pandas as pd
 from ast import literal_eval
-
-from helpers import *
+import numpy as np
+from qnute.helpers import int_to_base
+from qnute.helpers import TOLERANCE
+from qnute.helpers.lattice import in_lattice
+from qnute.helpers.pauli import sigma_matrices
+from qnute.helpers.pauli import odd_y_pauli_strings
 
 # Format of the Hamiltonian:
 #   hm_list is a list of terms: [hm]
@@ -211,93 +213,3 @@ class Hamiltonian:
         for i in range(len(self.hm_list)):
             for j in range(len(self.hm_list[i][1])):
                 self.hm_list[i][1][j] *= scalar
-    
-    def to_csv(self, file:str):
-        H_dict = { 'Qubits':[], 'Pauli Index': [], 'Coefficient Real Part': [], 'Coefficient Imag Part': [] }
-        for hm in self.hm_list:
-            for i in range(len(hm[0])):
-                    H_dict['Qubits'].append(hm[2])
-                    H_dict['Pauli Index'].append(hm[0][i])
-                    H_dict['Coefficient Real Part'].append(np.real(hm[1][i]))
-                    H_dict['Coefficient Imag Part'].append(np.imag(hm[1][i]))
-        hdf = pd.DataFrame(H_dict)
-        hdf.to_csv(file,index=False)
-
-def hm_list_from_csv(file:str):
-    hdf = pd.read_csv(file,converters={'Qubits': literal_eval})
-    domain = None
-    hm_list = []
-    hm = None
-    for index,row in hdf.iterrows():
-        if row['Qubits'] != domain:
-            print('New Term', index)
-            domain = row['Qubits']
-            hm = [ [], [], domain ]
-            hm_list.append(hm)
-        hm[0].append(row['Pauli Index'])
-        hm[1].append(row['Coefficient Real Part'] + 1j*row['Coefficient Imag Part'])
-    return hm_list
-
-###################################
-# Hamiltonian of Different Models #
-###################################
-
-class ShortRangeHeisenberg(Hamiltonian):
-    def __init__(self, n_spins, J, B=0, n_dim=1):
-        hm_list = []
-        
-        if n_dim != 1:
-            raise ValueError('Short Range Heisenberg Model not implemented for more than 1D')
-
-        if n_dim == 1:
-            qubit_map = None
-            bound = n_spins
-            for i in range(n_spins-1):
-                hm = [ [], [], [i,i+1] ]
-                for j in range(3):
-                    hm[0].append( (j+1) + 4*(j+1) )
-                    hm[1].append(J[j])
-                hm_list.append(hm)
-            if B!=0:
-                for i in range(n_spins):
-                    hm_list.append([ [3], [B], [i] ])
-        
-        super().__init__(hm_list, n_dim, bound, qubit_map)
-
-class LongRangeHeisenberg(Hamiltonian):
-    def __init__(self,  n_spins, J, B=0, n_dim=1):
-        hm_list = []
-
-        if n_dim != 1:
-            raise ValueError('Long Range Heisenberg Model not implemented for more than 1D')
-        if n_dim == 1:
-            qubit_map = None
-            bound = n_spins
-            for i in range(n_spins):
-                for j in range(i+1, n_spins):
-                    prefactor = 1/(np.abs(i-j)+1)
-                    hm = [ [],[],[i,j] ]
-                    for k in range(3):
-                        hm[0].append( (k+1) + 4*(k+1) )
-                        hm[1].append(prefactor * J[k])
-                    hm_list.append(hm)
-        
-        super().__init__(hm_list, n_dim, bound, qubit_map)
-
-class TransverseFieldIsing_AFM(Hamiltonian):
-    def __init__(self, n_spins, J, h=0, n_dim=1):
-        hm_list = []
-
-        if n_dim != 1:
-            raise ValueError('AFM Transverse Field Ising Model not implemented for more than 1D')
-        
-        if n_dim == 1:
-            qubit_map = None
-            bound = n_spins
-            for i in range(n_spins-1):
-                hm_list.append( [ [3 + 4*3], [J], [i,i+1] ] )
-            if h != 0:
-                for i in range(n_spins):
-                    hm_list.append( [ [1], [h], [i] ] )
-
-        super().__init__(hm_list, n_dim, bound, qubit_map)  
