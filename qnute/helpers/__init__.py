@@ -1,3 +1,4 @@
+import numpy as np
 #-----------------#
 # General Helpers #
 #-----------------#
@@ -22,8 +23,8 @@ def base_to_int(digits, b):
     convert a list of base b digits to an integer
     '''
     x = 0
-    for i in range(len(digits)):
-        x += digits[i] * (b**i)
+    for (i,digit) in enumerate(digits):
+        x += digit * (b**i)
     return x
 
 def exp_mat_psi(mat, psi, truncate:int=-1):

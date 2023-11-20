@@ -11,8 +11,11 @@ def get_qc_bases_from_pauli_dict(p_dict, qubit_map):
     Pauli string dictionary and a map from qubit coordinates to qubit indices
     '''
     bases = {}
+    # print(str(p_dict), str(qubit_map))
     for coord in p_dict.keys():
         gate = p_dict[coord]
+        if not isinstance(coord, tuple):
+            coord = (coord,)
         qbit = qubit_map[coord]
         if gate != 0:
             bases[qbit] = gate

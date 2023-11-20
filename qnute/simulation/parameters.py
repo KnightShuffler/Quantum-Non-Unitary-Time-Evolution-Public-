@@ -57,6 +57,7 @@ class QNUTE_params:
         self.fig_path = ''
         self.run_name = ''
 
+    @staticmethod
     def get_new_domain(active, D, d, l):
         '''
         Returns a list of the extended/shrunk domain of a Hamiltonian 
@@ -180,11 +181,11 @@ class QNUTE_params:
                 self.load_measurement_keys(m, domain_ops)
         print('Done')
     
-    def set_run_params(self, dt, delta, N, num_shots, 
-    backend, init_circ=None, init_sv=None, store_state_vector=True,
-    taylor_norm_flag=False, taylor_truncate_h=-1, taylor_truncate_a=-1, 
-    trotter_flag=False,
-    objective_meas_list=None):
+    def set_run_params(self, dt, delta, N, num_shots, backend, init_circ=None,
+                       init_sv=None, store_state_vector=True,
+                       taylor_norm_flag=False, taylor_truncate_h=-1,
+                       taylor_truncate_a=-1, trotter_flag=False, 
+                       objective_meas_list=None):
         self.dt = dt
         self.delta = delta
         self.N = N

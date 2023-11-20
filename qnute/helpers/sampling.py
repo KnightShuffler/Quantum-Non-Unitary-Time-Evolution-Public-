@@ -29,3 +29,9 @@ def sample_from_a(a):
             cdf[i] = 0.0
     
     return cdf
+
+def generate_random_complex_vector(n):
+    amps = np.random.normal(0.0, 1.0, n)
+    phases = np.random.uniform(0.0,np.pi, n)*1j
+    amps /= np.linalg.norm(amps)
+    return amps * np.exp(phases)

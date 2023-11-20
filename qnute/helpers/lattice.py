@@ -1,3 +1,4 @@
+import itertools
 import numpy as np
 from . import int_to_base
 
@@ -119,3 +120,39 @@ def get_k_local_domains(k,d,l):
                 s_path = sorted(path)
                 domains.add(tuple(s_path))
     return sorted(list(domains))
+
+def get_k_local_domains_in_map(k_local, lattice_dim, lattice_bound, qubit_map):
+    domains = set()
+    for ind in qubit_map:
+        point = qubit_map[ind]
+        for k_ in range(k_local):
+            n_paths = get_lattice_paths(point, k_, lattice_dim, lattice_bound)
+            for path in n_paths:
+                s_path = sorted(path)
+                add_flag = True
+                for coord in s_path:
+                    if coord not in qubit_map.values():
+                        add_flag = False
+                        break
+                if add_flag:
+                    domains.add(tuple(s_path))
+    
+    for dom in domains.copy():
+        if len(dom) > 2:
+            for num_I in range(1, min(k_local, len(dom))):
+                for subdom in itertools.combinations(dom, num_I):
+                    if subdom not in domains:
+                        domains.add(subdom)
+    
+    invert_map = {v: k for k,v in qubit_map.items()}
+    term_domains = []
+    list_domains = sorted(list(domains))
+    list_domains.sort(key=lambda t: len(t))
+    num_pauli_terms = 0
+    for dom in list_domains:
+        num_pauli_terms += 3**len(dom)
+        term_domains.append([-1]*k_local)
+        for (_i, coord) in enumerate(dom):
+            term_domains[-1][_i] = invert_map[coord]
+    num_terms = len(term_domains)
+    return term_domains, num_terms, num_pauli_terms

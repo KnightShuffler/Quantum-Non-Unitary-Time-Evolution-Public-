@@ -149,3 +149,11 @@ def get_pauli_eigenspace(partial_pstring, active, nbits, eigval):
     w,v = np.linalg.eig(get_full_pauli_product_matrix(partial_pstring, active, nbits))
     ind = np.where(np.abs(w-eigval) < TOLERANCE)[0]
     return v[:,ind].T
+
+def pauli_str_to_index(p):
+    ind = 0
+    #power = 0
+    for (power, char) in enumerate(p):
+        if char != 'I':
+            ind += (4**power) * (char-ord('X')+1)
+    return ind
