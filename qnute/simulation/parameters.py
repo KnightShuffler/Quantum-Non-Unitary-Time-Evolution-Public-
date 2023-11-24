@@ -1,6 +1,8 @@
-import os
 from qiskit import QuantumCircuit
 from qiskit.quantum_info import Statevector
+
+import os
+import logging
 
 from qnute.hamiltonian import Hamiltonian
 from qnute.helpers import int_to_base
@@ -139,22 +141,21 @@ class QNUTE_params:
         reduce_dim: Flag for whether to use reduced dimension linear system
         load_measurements: Flag for whether to calculate the required measurements
         '''
-        print('Performing Hamiltonian precalculations...')
+        logging.debug('Performing Hamiltonian precalculations...')
         hm_list = self.H.hm_list
         nterms = self.H.num_terms
         self.D = D
         self.reduce_dimension_flag = reduce_dim
 
-        print('\tCalculating Unitary Domains...',end=' ',flush=True)
+        logging.debug('\tCalculating Unitary Domains...',end=' ',flush=True)
         # Calculate the domains of the unitaries simulating each term
         for hm in hm_list:
             self.u_domains.append(QNUTE_params.get_new_domain(hm[2], D, self.H.d, self.H.l))
             self.mix_domains.append( list(set(hm[2]) | set(self.u_domains[-1])) )
-        print('Done')
 
         # Check if the terms are real
         if reduce_dim:
-            print('\tCalculating Required Odd-Y Pauli Strings...', end=' ', flush=True)
+            logging.debug('\tCalculating Required Odd-Y Pauli Strings...', end=' ', flush=True)
 
             # Initialize the keys for the odd y strings
             for m in range(nterms):
@@ -164,10 +165,9 @@ class QNUTE_params:
             # Load the odd Y Pauli Strings
             for y_len in self.odd_y_strings.keys():
                 self.odd_y_strings[y_len] = odd_y_pauli_strings(y_len)
-            print('Done')
         
         if load_measurements:
-            print('\tCalculating Required Pauli Measurements...', end=' ', flush=True)
+            logging.debug('  Calculating Required Pauli Measurements...', end=' ', flush=True)
 
             # Calculate the strings to measure for each term:
             for m in range(nterms):
@@ -179,7 +179,6 @@ class QNUTE_params:
                 # Populate the keys
                 domain_ops = self.odd_y_strings[ndomain] if reduce_dim and self.H.real_term_flags[m] else list(range(4**ndomain))
                 self.load_measurement_keys(m, domain_ops)
-        print('Done')
     
     def set_run_params(self, dt, delta, N, num_shots, backend, init_circ=None,
                        init_sv=None, store_state_vector=True,

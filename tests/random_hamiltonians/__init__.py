@@ -47,7 +47,7 @@ def run_experiments(file:h5py.File, expt_params:Experiment_Params, expt_no:int, 
     for (i,H) in enumerate(read_hamiltonians_from_file(file, expt_params.k)):
         H.multiply_scalar(1.0j)
         params = Params(H)
-        logging.debug('Multiplying Hamiltonian by i to check')
+        # logging.debug('Multiplying Hamiltonian by i to check')
         
         params.load_hamiltonian_params(expt_params.D)
         params.set_run_params(expt_params.dt, expt_params.delta, 

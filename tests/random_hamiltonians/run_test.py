@@ -2,6 +2,7 @@ import numpy as np
 import h5py
 
 import logging
+import time
 
 from .experiment_params import Experiment_Params
 from .topology import TOPOLOGIES_DICT
@@ -55,6 +56,9 @@ def main():
             i_delta = EXPT_PARAMS['delta'][0]
             for expt_no, expt_params in enumerate(loop_expt_params(EXPT_PARAMS), start=1):
                 logging.info('Experiment Number: %i/%i\n%s', expt_no, num_expts, str(expt_params))
+
+                t1 = time.monotonic()
+
                 if f'expt_{expt_no}_num' in f['Statevectors'].keys():
                     t_expt_no = expt_no
                 stats = f[f'Fidelities/Stats/expt_{expt_no}']
@@ -80,6 +84,9 @@ def main():
                     # save_fig(i_dt,i_delta,fig,axs[0,0],topology_ID)
                     i_dt = expt_params.dt
                     i_delta = expt_params.delta
+                t2 = time.monotonic()
+                duration = t2-t1
+                logging.info('Experiment Number: %i/%i finished in %0.2f seconds', expt_no, num_expts, duration)
 
         logging.info('Creating Plots')
         plot_multiple_expts(f, EXPT_PARAMS)
