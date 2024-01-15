@@ -20,7 +20,7 @@ num_hams = 1000
 EXPT_PARAMS = {
     'k': [1,2,3],               # Values for locality k
     'D': [2,4],                 # Values for diameter D
-    'dt': [0.1,0.05],    # Values for time step dt
+    'dt': [0.1,0.05],           # Values for time step dt
     'T': 1.0,                   # Values for max time simulated T
     'delta': [0.1],             # Values for delta
     'shots': [0],
