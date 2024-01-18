@@ -3,6 +3,7 @@ import h5py
 
 import logging
 import time
+from datetime import datetime
 
 from .experiment_params import Experiment_Params
 from .topology import TOPOLOGIES_DICT
@@ -55,7 +56,7 @@ def main():
             i_dt = EXPT_PARAMS['dt'][0]
             i_delta = EXPT_PARAMS['delta'][0]
             for expt_no, expt_params in enumerate(loop_expt_params(EXPT_PARAMS), start=1):
-                logging.info('Experiment Number: %i/%i\n%s', expt_no, num_expts, str(expt_params))
+                logging.info('Experiment Number: %i/%i\n%s - Started at %s', expt_no, num_expts, str(expt_params), datetime.now().__str__())
 
                 t1 = time.monotonic()
 
@@ -86,7 +87,15 @@ def main():
                     i_delta = expt_params.delta
                 t2 = time.monotonic()
                 duration = t2-t1
-                logging.info('Experiment Number: %i/%i finished in %0.2f seconds', expt_no, num_expts, duration)
+                units = 'seconds'
+                if duration > 60:
+                    duration /= 60
+                    units = 'minutes'
+                if duration > 60:
+                    duration /= 60
+                    units = 'hours'
+
+                logging.info('Experiment Number: %i/%i finished in %0.2f %s\n', expt_no, num_expts, duration, units)
 
         logging.info('Creating Plots')
         plot_multiple_expts(f, EXPT_PARAMS)
