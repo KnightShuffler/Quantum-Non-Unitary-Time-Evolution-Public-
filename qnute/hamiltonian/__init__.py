@@ -32,9 +32,12 @@ from qnute.helpers.pauli import odd_y_pauli_strings
 #   qubit in the circuit, for 1-D lattices, if the map is left None, it will map the
 #   coordinate directly to the logical qubit index
 
+hm_dtype = np.dtype([('pauli_id',np.uint32), ('amplitude', np.complex128)])
+
 class Hamiltonian:
     def __init__(self, hm_list, lattice_dim, lattice_bound, qubit_map=None):
-        self.hm_list = hm_list.copy()
+        # self.hm_list = hm_list.copy()
+        self.hm_list = Hamiltonian.generate_ham_list(hm_list)
         self.num_terms = len(hm_list)
         self.d = lattice_dim
         self.l = lattice_bound
@@ -55,6 +58,19 @@ class Hamiltonian:
         self.nbits = len(self.map)
         self.real_term_flags = self.is_real_hamiltonian()
     
+    @staticmethod
+    def generate_ham_list(hm_list):
+        numterms = 0
+        for hm in hm_list:
+            numterms += len(hm[0])
+        ham_list = np.zeros(numterms,dtype=hm_dtype)
+        i = 0
+        for hm in hm_list:
+            for j in range(len(hm[0])):
+                ham_list[i] = (hm[0][j],hm[1][j])
+                i += 1
+        return ham_list
+
     def verify_map(d, l, map):
         coords = map.keys()
         counts = dict( (val, 0) for val in map.values())
