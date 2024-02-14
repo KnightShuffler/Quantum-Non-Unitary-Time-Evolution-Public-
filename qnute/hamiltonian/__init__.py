@@ -52,6 +52,7 @@ class Hamiltonian:
         self.nbits = len(self.qubit_map)
 
         self.pterm_list, self.hm_indices = Hamiltonian.generate_ham_list(hm_list, self.qubit_map)
+        self.term_domains = [hm[2] for hm in hm_list]
         self.num_terms = len(self.hm_indices)
         self.d = lattice_dim
         self.l = lattice_bound
