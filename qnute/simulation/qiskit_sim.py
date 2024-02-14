@@ -40,7 +40,7 @@ def propagate(params: Params, psi0, a_list):
             angle = a_list[t][0][i] * 2.0 * params.dt
             if np.abs(angle) > TOLERANCE:
                 p_dict = pauli_index_to_dict(ops[i], domain)
-                pauli_string_exp(qc, p_dict, params.H.map, angle)
+                pauli_string_exp(qc, p_dict, params.H.qubit_map, angle)
     return evolve_statevector(params, qc, psi0)
 
 def pauli_expectation(params: Params, psi, p, qbits):
@@ -54,7 +54,7 @@ def pauli_expectation(params: Params, psi, p, qbits):
     assert params.num_shots > 0, 'params.num_shots must be > 0 when using QuantumCircuits'
     qc = QuantumCircuit(params.nbits,params.nbits)
     qc.initialize(psi)
-    return measure(qc, p_dict, params.H.map, params.backend, num_shots=params.num_shots)[0]
+    return measure(qc, p_dict, params.H.qubit_map, params.backend, num_shots=params.num_shots)[0]
 
 def tomography(params: Params, psi0, a_list, term):
     sigma_expectation = { 

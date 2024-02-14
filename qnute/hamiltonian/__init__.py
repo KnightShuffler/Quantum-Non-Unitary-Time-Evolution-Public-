@@ -36,7 +36,7 @@ hm_dtype = np.dtype([('pauli_id',np.uint32), ('amplitude', np.complex128)])
 
 class Hamiltonian:
     def __init__(self, hm_list, lattice_dim, lattice_bound, qubit_map=None):
-        self.pterm_list, self.hm_indices = Hamiltonian.generate_ham_list(hm_list, self.map)
+        self.pterm_list, self.hm_indices = Hamiltonian.generate_ham_list(hm_list, self.qubit_map)
         self.num_terms = len(self.hm_indices)
         self.d = lattice_dim
         self.l = lattice_bound
@@ -45,16 +45,16 @@ class Hamiltonian:
         if qubit_map == None:
             if self.d != 1:
                 raise ValueError('Default qubit map only available for 1D topology')
-            self.map = {}
+            self.qubit_map = {}
             for i in range(self.l):
-                self.map[i] = i
+                self.qubit_map[i] = i
         else:
             v = Hamiltonian.verify_map(lattice_dim, lattice_bound, qubit_map)
             if v != True:
                 print('Qubit map not valid!')
                 raise ValueError(v)
-            self.map = qubit_map
-        self.nbits = len(self.map)
+            self.qubit_map = qubit_map
+        self.nbits = len(self.qubit_map)
     
     @staticmethod
     def generate_ham_list(hm_list, qubit_map):

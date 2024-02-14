@@ -157,7 +157,7 @@ def pauli_expectation(params:Params, psi:np.array, p:int, qbits:list):
         return 1.0
     
     p_dict = pauli_index_to_dict(p, qbits)
-    bases = get_qc_bases_from_pauli_dict(p_dict, params.H.map)
+    bases = get_qc_bases_from_pauli_dict(p_dict, params.H.qubit_map)
     active = list(bases.keys())
     
     if params.num_shots > 0:
@@ -221,7 +221,7 @@ def propagate(params:Params, psi0:np.array,
                [ [], [], [] ], ]'''
     psi = psi0.copy()
     for (t,a) in enumerate(a_list):
-        active = [params.H.map[k if isinstance(k, tuple) else (k,)] for k in a[1]]
+        active = [params.H.qubit_map[k if isinstance(k, tuple) else (k,)] for k in a[1]]
         nactive = len(active)
         ops = params.odd_y_strings[nactive] if a[2] else list(range(4**nactive))
         A = np.zeros((2**params.nbits, 2**params.nbits), dtype='c16')
