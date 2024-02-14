@@ -56,7 +56,6 @@ class Hamiltonian:
                 raise ValueError(v)
             self.map = qubit_map
         self.nbits = len(self.map)
-        self.real_term_flags = self.is_real_hamiltonian()
     
     @staticmethod
     def generate_ham_list(hm_list):
@@ -142,37 +141,6 @@ class Hamiltonian:
                     h_mat += term_matrix
         return h_mat
 
-    def get_term_submatrix(self, term):
-        nbits = self.nbits
-        num_basis = 2**nbits
-        h_mat = np.zeros((num_basis, num_basis), dtype=complex)
-        hm = self.hm_list[term]
-
-        if nbits == 1:
-            for i in range(len(hm[0])):
-                h_mat += hm[1][i] * sigma_matrices[hm[0][i]]
-        else:
-            active = [self.map[hm[2][i]] for i in range(len(hm[2]))]
-            nactive = len(active)
-            nterms = len(hm[0])
-            for i in range(nterms):
-                full_pauli_str = [0] * nbits
-                partial_pauli_str = int_to_base(hm[0][i],4,nactive)
-                for j in range(nactive):
-                    full_pauli_str[active[j]] = partial_pauli_str[j]
-                # reverse the string to be consistend with Qiskit's qubit ordering
-                full_pauli_str = full_pauli_str[::-1]
-                # The matrix for the term is a tensor product of the corresponding Pauli matrices
-                term_matrix = sigma_matrices[full_pauli_str[0]]
-                for j in range(1,nbits):
-                    term_matrix = np.kron(term_matrix, sigma_matrices[full_pauli_str[j]])
-                # Scale by the coefficient of the term
-                term_matrix *= hm[1][i]
-                
-                # Add the term to the final matrix
-                h_mat += term_matrix
-        return h_mat
-
     def get_spectrum(self):
         '''
         returns the spectrum of the Hamiltonian
@@ -187,40 +155,6 @@ class Hamiltonian:
         w,v = self.get_spectrum()
         i = np.argmin(w)
         return w[i],v[:,i]
-    
-    def is_real_hamiltonian(self):
-        '''
-        calculates whether each term of the hamiltonian is a real matrix in the Z basis
-        '''
-        real_flags = [True] * self.num_terms
-        for m in range(len(self.hm_list)):
-            hm = self.hm_list[m]
-            nactive = len(hm[2])
-            odd_ys = odd_y_pauli_strings(nactive)
-            # Set to True, calculate if False
-            for j in range(len(hm[0])):
-                # If a term with odd Ys, the coefficient should be imaginary
-                if hm[0][j] in odd_ys:
-                    if np.abs(np.real(hm[1][j])) > TOLERANCE:
-                        real_flags[m] = False
-                        break
-                # If a term with even Ys, the coefficient should be real
-                else:
-                    if np.abs(np.imag(hm[1][j])) > TOLERANCE:
-                        real_flags[m] = False
-                        break
-            return real_flags
-    
-    def is_hermitian(self):
-        '''
-        returns whether the Hamiltonian is a Hermitian operator by checking if 
-        any amplitude in hm[1] has an imaginary part
-        '''
-        for hm in self.hm_list:
-            for amp in hm[1]:
-                if np.abs(np.imag(amp)) > TOLERANCE:
-                    return False
-        return True
     
     def multiply_scalar(self, scalar):
         '''
