@@ -70,6 +70,7 @@ class Hamiltonian:
                 i += 1
         return ham_list
 
+    @staticmethod
     def verify_map(d, l, map):
         coords = map.keys()
         counts = dict( (val, 0) for val in map.values())
