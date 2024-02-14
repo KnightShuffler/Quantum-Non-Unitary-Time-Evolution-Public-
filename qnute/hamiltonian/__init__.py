@@ -81,30 +81,19 @@ class Hamiltonian:
             if counts[map[coord]] > 1:
                 return 'Multiple coordinates map to qubit index {}'.format(map[coord])
         return True
-
-    def print(self):
-        '''
-        Prints all the terms of the Hamiltonian
-        '''
-        term = 0
+    
+    def __str__(self):
+        r_str = 'Hamiltonian Pauli Terms and Amplitudes:\n'
         for hm in self.hm_list:
-            term += 1
-            print('Term {} acting on the qubit locations {}:'.format(term,hm[2]))
-            for j in range(len(hm[0])):
-                nactive = len(hm[2])
-                pstring = int_to_base(hm[0][j],4,nactive)
-                for i in range(nactive):
-                    if pstring[i] == 0:
-                        pstring[i] = 'I'
-                    else:
-                        pstring[i] = chr(ord('X') + pstring[i] - 1)
-                print('\t({0:.2f} {1} {2:.2f}i)'.format(hm[1][j].real, '+-'[int(hm[1][j].imag) < 0], abs(hm[1][j].imag)),end=' ',flush=True)
-                for i in range(nactive):
-                    print('{}_{}'.format(pstring[i],hm[2][i]),end=' ',flush=True)
-                if j < len(hm[0])-1:
-                    print('+')
+            pstring = ''
+            for i,p in enumerate(int_to_base(hm['pauli_id'],4,self.nbits)):
+                if p == 0:
+                    pstring += 'I'
                 else:
-                    print()
+                    pstring += chr(ord('X')+p-1)
+                pstring += f'_{i} '
+            r_str += f'\t{pstring} : ({hm["amplitude"]:.5f})\n'
+        return r_str
     
     def get_matrix(self):
         '''
