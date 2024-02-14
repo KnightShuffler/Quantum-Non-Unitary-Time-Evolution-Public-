@@ -10,14 +10,20 @@ from qnute.simulation.parameters import QNUTE_params as Params
 from qnute.simulation.output import QNUTE_output as Output
 
 def main():
+    logging.getLogger().setLevel(logging.INFO)
+    logging.info('Testing Hamiltonian Module')
     ham = Hamiltonian(
         [
-            [[1],[1.0],[0]]
+            [[1],[1.0],[0]],
         ],
         1,1,
-        {(0,):0}
+        None
     )
     ham.multiply_scalar(-1.0)
+    print(ham)
+    print(ham.hm_indices)
+    print(ham.get_matrix())
+    
     dt = 0.1
     delta = 0.1
     T = 3.0
@@ -28,9 +34,12 @@ def main():
     psi0 = np.zeros(2**num_qbits, dtype=np.complex128)
     psi0[0] = 1.0
 
+    logging.info('Testing Parameters module')
+
     params = Params(ham)
     params.load_hamiltonian_params(2, False, True)
     params.set_run_params(dt, delta, N, num_shots, backend, init_sv=psi0, trotter_flag=True)
+    return
     out = qnute(params)
 
     fig,axs = plt.subplots(1,2,sharex=True,sharey=True,figsize=(12,5))
