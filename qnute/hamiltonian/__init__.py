@@ -36,9 +36,8 @@ hm_dtype = np.dtype([('pauli_id',np.uint32), ('amplitude', np.complex128)])
 
 class Hamiltonian:
     def __init__(self, hm_list, lattice_dim, lattice_bound, qubit_map=None):
-        # self.hm_list = hm_list.copy()
-        self.hm_list = Hamiltonian.generate_ham_list(hm_list)
-        self.num_terms = len(hm_list)
+        self.pterm_list, self.hm_indices = Hamiltonian.generate_ham_list(hm_list, self.map)
+        self.num_terms = len(self.hm_indices)
         self.d = lattice_dim
         self.l = lattice_bound
         
@@ -58,17 +57,21 @@ class Hamiltonian:
         self.nbits = len(self.map)
     
     @staticmethod
-    def generate_ham_list(hm_list):
-        numterms = 0
-        for hm in hm_list:
-            numterms += len(hm[0])
-        ham_list = np.zeros(numterms,dtype=hm_dtype)
+    def generate_ham_list(hm_list, qubit_map):
+        num_pterms = np.uint(0)
+        num_terms = len(hm_list)
+        hm_indices = np.zeros(num_terms, dtype=np.uint)
+        for i,hm in enumerate(hm_list):
+            hm_indices[i] = num_pterms
+            num_pterms += len(hm[0])
+        p_list = np.zeros(num_pterms,dtype=hm_dtype)
+        
         i = 0
         for hm in hm_list:
             for j in range(len(hm[0])):
-                ham_list[i] = (hm[0][j],hm[1][j])
+                p_list[i] = (hm[0][j], hm[1][j])
                 i += 1
-        return ham_list
+        return p_list, hm_indices
 
     @staticmethod
     def verify_map(d, l, map):
@@ -84,15 +87,15 @@ class Hamiltonian:
     
     def __str__(self):
         r_str = 'Hamiltonian Pauli Terms and Amplitudes:\n'
-        for hm in self.hm_list:
+        for pterm in self.pterm_list:
             pstring = ''
-            for i,p in enumerate(int_to_base(hm['pauli_id'],4,self.nbits)):
+            for i,p in enumerate(int_to_base(pterm['pauli_id'],4,self.nbits)):
                 if p == 0:
                     pstring += 'I'
                 else:
                     pstring += chr(ord('X')+p-1)
                 pstring += f'_{i} '
-            r_str += f'\t{pstring} : ({hm["amplitude"]:.5f})\n'
+            r_str += f'\t{pstring} : ({pterm["amplitude"]:.5f})\n'
         return r_str
     
     def get_matrix(self):
@@ -102,12 +105,12 @@ class Hamiltonian:
         N = 2**self.nbits
         h_mat = np.zeros((N,N),dtype=np.complex128)
         
-        for hm in self.hm_list:
-            pdigits = int_to_base(hm['pauli_id'], 4, self.nbits)
+        for pterm in self.pterm_list:
+            pdigits = int_to_base(pterm['pauli_id'], 4, self.nbits)
             term_mat = np.ones((1,1),dtype=np.complex128)
             for p in pdigits:
                 term_mat = np.kron(sigma_matrices[p], term_mat)
-            h_mat += term_mat * hm['amplitude']
+            h_mat += term_mat * pterm['amplitude']
         return h_mat
 
     def get_spectrum(self):
@@ -129,4 +132,4 @@ class Hamiltonian:
         '''
         multiplies a scalar value to the Hamiltonian
         '''
-        self.hm_list[:]['amplitude'] *= scalar
+        self.pterm_list[:]['amplitude'] *= scalar
