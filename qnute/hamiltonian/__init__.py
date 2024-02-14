@@ -160,6 +160,4 @@ class Hamiltonian:
         '''
         multiplies a scalar value to the Hamiltonian
         '''
-        for i in range(len(self.hm_list)):
-            for j in range(len(self.hm_list[i][1])):
-                self.hm_list[i][1][j] *= scalar
+        self.hm_list[:]['amplitude'] *= scalar
