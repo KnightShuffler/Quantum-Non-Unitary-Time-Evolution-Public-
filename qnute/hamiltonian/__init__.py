@@ -4,7 +4,7 @@ from qnute.helpers import int_to_base
 from qnute.helpers import TOLERANCE
 from qnute.helpers.lattice import in_lattice
 from qnute.helpers.pauli import sigma_matrices
-from qnute.helpers.pauli import odd_y_pauli_strings
+from qnute.helpers.pauli import ext_domain_pauli
 
 # Format of the Hamiltonian:
 #   hm_list is a list of terms: [hm]
@@ -36,17 +36,12 @@ hm_dtype = np.dtype([('pauli_id',np.uint32), ('amplitude', np.complex128)])
 
 class Hamiltonian:
     def __init__(self, hm_list, lattice_dim, lattice_bound, qubit_map=None):
-        self.pterm_list, self.hm_indices = Hamiltonian.generate_ham_list(hm_list, self.qubit_map)
-        self.num_terms = len(self.hm_indices)
-        self.d = lattice_dim
-        self.l = lattice_bound
-        
         # None qubit_map corresponds to a default 1D mapping
         if qubit_map == None:
-            if self.d != 1:
+            if lattice_dim != 1:
                 raise ValueError('Default qubit map only available for 1D topology')
             self.qubit_map = {}
-            for i in range(self.l):
+            for i in range(lattice_bound):
                 self.qubit_map[i] = i
         else:
             v = Hamiltonian.verify_map(lattice_dim, lattice_bound, qubit_map)
@@ -55,9 +50,15 @@ class Hamiltonian:
                 raise ValueError(v)
             self.qubit_map = qubit_map
         self.nbits = len(self.qubit_map)
+
+        self.pterm_list, self.hm_indices = Hamiltonian.generate_ham_list(hm_list, self.qubit_map)
+        self.num_terms = len(self.hm_indices)
+        self.d = lattice_dim
+        self.l = lattice_bound
     
     @staticmethod
     def generate_ham_list(hm_list, qubit_map):
+        nbits = len(qubit_map)
         num_pterms = np.uint(0)
         num_terms = len(hm_list)
         hm_indices = np.zeros(num_terms, dtype=np.uint)
@@ -68,8 +69,9 @@ class Hamiltonian:
         
         i = 0
         for hm in hm_list:
+            active_qubits = [qubit_map[coord] for coord in hm[2]]
             for j in range(len(hm[0])):
-                p_list[i] = (hm[0][j], hm[1][j])
+                p_list[i] = (ext_domain_pauli(hm[0][j], active_qubits, list(range(nbits))), hm[1][j])
                 i += 1
         return p_list, hm_indices
 
