@@ -11,12 +11,12 @@ from qnute.simulation.output import QNUTE_output as Output
 
 def main():
     logging.getLogger().setLevel(logging.INFO)
-    logging.info('Testing Hamiltonian Module')
+    logging.info('Testing Hamiltonian Module\n')
     ham = Hamiltonian(
         [
-            [[1],[1.0],[0]],
+            [[1],[1.0],[(0,)]],
         ],
-        1,1,
+        1,2,
         None
     )
     ham.multiply_scalar(-1.0)
@@ -30,18 +30,20 @@ def main():
     N = int(np.ceil(T/dt))
     num_shots=0
     backend=None
-    num_qbits = 1
+    num_qbits = 2
     psi0 = np.zeros(2**num_qbits, dtype=np.complex128)
     psi0[0] = 1.0
 
-    logging.info('Testing Parameters module')
+    logging.info('Testing Parameters module\n')
 
     params = Params(ham)
+    print(params.h_domains)
     params.load_hamiltonian_params(2, False, True)
     params.set_run_params(dt, delta, N, num_shots, backend, init_sv=psi0, trotter_flag=True)
-    return
+    
+    logging.info('Testing QNUTE simulation.\n')
     out = qnute(params)
-
+    
     fig,axs = plt.subplots(1,2,sharex=True,sharey=True,figsize=(12,5))
     times = np.arange(0,N+1)*dt
     l0, = axs[0].plot(times, np.real(out.svs[:,0]),label='|0>')

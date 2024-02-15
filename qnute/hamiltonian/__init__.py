@@ -42,7 +42,7 @@ class Hamiltonian:
                 raise ValueError('Default qubit map only available for 1D topology')
             self.qubit_map = {}
             for i in range(lattice_bound):
-                self.qubit_map[i] = i
+                self.qubit_map[(i,)] = i
         else:
             v = Hamiltonian.verify_map(lattice_dim, lattice_bound, qubit_map)
             if v != True:
