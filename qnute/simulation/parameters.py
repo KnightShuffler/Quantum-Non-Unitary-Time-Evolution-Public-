@@ -13,15 +13,33 @@ from qnute.helpers.pauli import pauli_index_to_dict
 from qnute.helpers.pauli import same_pauli_dicts
 from qnute.helpers.pauli import pauli_dict_product
 from qnute.helpers.pauli import odd_y_pauli_strings
+from qnute.helpers.lattice import in_lattice
 
 class QNUTE_params:
-    def __init__(self, Ham: Hamiltonian):
-        self.H = Ham
+    def __init__(self, hm_list, lattice_dim, lattice_bound, qubit_map=None):
+        # None qubit_map corresponds to a default 1D mapping
+        if qubit_map == None:
+            if lattice_dim != 1:
+                raise ValueError('Default qubit map only available for 1D topology')
+            self.qubit_map = {}
+            for i in range(lattice_bound):
+                self.qubit_map[(i,)] = i
+        else:
+            v = QNUTE_params.verify_map(lattice_dim, lattice_bound, qubit_map)
+            if v != True:
+                logging.ERROR('Qubit map not valid!')
+                raise ValueError(v)
+            self.qubit_map = qubit_map
+        self.nbits = len(self.qubit_map)
+
+        self.lattice_dim = lattice_dim
+        self.lattice_bound = lattice_bound
+
+        self.H = Hamiltonian(hm_list, lattice_dim, lattice_bound, qubit_map)
+
         self.odd_y_strings = {}
-        # self.h_domains = []
-        # for domain in Ham.term_domains:
-        #     self.h_domains.append(domain)
-        self.h_domains = Ham.term_domains.copy()
+
+        self.h_domains = [hm[2] for hm in hm_list]
         self.u_domains = []
         self.mix_domains = []
         self.h_measurements = {}
@@ -30,9 +48,8 @@ class QNUTE_params:
 
         self.reduce_dimension_flag = None
 
-        self.small_u_domain_flags = [False] * Ham.num_terms
+        self.small_u_domain_flags = [False] * self.H.num_terms
 
-        self.nbits = Ham.nbits
         self.D = 0
 
         # QNUTE Run Parameters
@@ -59,6 +76,18 @@ class QNUTE_params:
         self.log_path = ''
         self.fig_path = ''
         self.run_name = ''
+
+    @staticmethod
+    def verify_map(d, l, map):
+        coords = map.keys()
+        counts = dict( (val, 0) for val in map.values())
+        for coord in coords:
+            if not in_lattice(coord, d, l):
+                return 'Out of bounds coordinate {}'.format(coord)
+            counts[map[coord]] += 1
+            if counts[map[coord]] > 1:
+                return 'Multiple coordinates map to qubit index {}'.format(map[coord])
+        return True
 
     @staticmethod
     def get_new_domain(active, D, d, l):

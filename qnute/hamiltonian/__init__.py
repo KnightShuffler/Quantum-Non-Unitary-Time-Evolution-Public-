@@ -35,27 +35,9 @@ from qnute.helpers.pauli import ext_domain_pauli
 hm_dtype = np.dtype([('pauli_id',np.uint32), ('amplitude', np.complex128)])
 
 class Hamiltonian:
-    def __init__(self, hm_list, lattice_dim, lattice_bound, qubit_map=None):
-        # None qubit_map corresponds to a default 1D mapping
-        if qubit_map == None:
-            if lattice_dim != 1:
-                raise ValueError('Default qubit map only available for 1D topology')
-            self.qubit_map = {}
-            for i in range(lattice_bound):
-                self.qubit_map[(i,)] = i
-        else:
-            v = Hamiltonian.verify_map(lattice_dim, lattice_bound, qubit_map)
-            if v != True:
-                print('Qubit map not valid!')
-                raise ValueError(v)
-            self.qubit_map = qubit_map
-        self.nbits = len(self.qubit_map)
-
-        self.pterm_list, self.hm_indices = Hamiltonian.generate_ham_list(hm_list, self.qubit_map)
-        self.term_domains = [hm[2] for hm in hm_list]
+    def __init__(self, hm_list, qubit_map):
+        self.pterm_list, self.hm_indices = Hamiltonian.generate_ham_list(hm_list, qubit_map)
         self.num_terms = len(self.hm_indices)
-        self.d = lattice_dim
-        self.l = lattice_bound
     
     @staticmethod
     def generate_ham_list(hm_list, qubit_map):
@@ -75,18 +57,6 @@ class Hamiltonian:
                 p_list[i] = (ext_domain_pauli(hm[0][j], active_qubits, list(range(nbits))), hm[1][j])
                 i += 1
         return p_list, hm_indices
-
-    @staticmethod
-    def verify_map(d, l, map):
-        coords = map.keys()
-        counts = dict( (val, 0) for val in map.values())
-        for coord in coords:
-            if not in_lattice(coord, d, l):
-                return 'Out of bounds coordinate {}'.format(coord)
-            counts[map[coord]] += 1
-            if counts[map[coord]] > 1:
-                return 'Multiple coordinates map to qubit index {}'.format(map[coord])
-        return True
     
     def __str__(self):
         r_str = 'Hamiltonian Pauli Terms and Amplitudes:\n'
