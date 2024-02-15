@@ -18,9 +18,10 @@ class QNUTE_params:
     def __init__(self, Ham: Hamiltonian):
         self.H = Ham
         self.odd_y_strings = {}
-        self.h_domains = []
-        for hm in Ham.hm_list:
-            self.h_domains.append(hm[2])
+        # self.h_domains = []
+        # for domain in Ham.term_domains:
+        #     self.h_domains.append(domain)
+        self.h_domains = Ham.term_domains.copy()
         self.u_domains = []
         self.mix_domains = []
         self.h_measurements = {}
@@ -81,13 +82,13 @@ class QNUTE_params:
         u_measurements - Pauli indices for the Unitary terms, domain u_domains[m]
         mix_measurement - Pauli indices for the products of h and u terms, domain mix_domains[m]
         '''
-        hm = self.H.hm_list[m]
-        h_c, h_R = min_bounding_sphere(hm[2])
+        # hm = self.H.hm_list[m]
+        h_c, h_R = min_bounding_sphere(self.h_domains[m])
         u_domain = self.u_domains[m]
         u_c, u_R = min_bounding_sphere(u_domain)
 
         # Measurements for c: Pauli strings in hm
-        self.h_measurements[m] = hm[0]
+        self.h_measurements[m] = self.H.pterm_list[self.H.hm_indices[m]:self.H.hm_indices[m+1] if m+1 < self.H.num_terms else None]['pauli_id']
         
         # Measurements for S: Products of Pauli strings on the unitary domain
         # All Pauli strings of can be expressed as a product of two 
@@ -100,7 +101,7 @@ class QNUTE_params:
 
         # List of pauli dictionaries for the operators of the unitary's domain
         h_ops = [
-            pauli_index_to_dict(hm[0][j], hm[2]) for j in range(len(hm[0]))
+            pauli_index_to_dict(pterm, list(self.H.qubit_map.keys())) for pterm in self.h_measurements[m]
         ]
 
         def add_entry(meas, entry):
@@ -142,16 +143,16 @@ class QNUTE_params:
         load_measurements: Flag for whether to calculate the required measurements
         '''
         logging.debug('Performing Hamiltonian precalculations...')
-        hm_list = self.H.hm_list
+        # hm_list = self.H.hm_list
         nterms = self.H.num_terms
         self.D = D
         self.reduce_dimension_flag = reduce_dim
 
         logging.debug('\tCalculating Unitary Domains...',end=' ',flush=True)
         # Calculate the domains of the unitaries simulating each term
-        for hm in hm_list:
-            self.u_domains.append(QNUTE_params.get_new_domain(hm[2], D, self.H.d, self.H.l))
-            self.mix_domains.append( list(set(hm[2]) | set(self.u_domains[-1])) )
+        for domain in self.h_domains:
+            self.u_domains.append(QNUTE_params.get_new_domain(domain, D, self.H.d, self.H.l))
+            self.mix_domains.append( list(set(domain) | set(self.u_domains[-1])) )
 
         # Check if the terms are real
         if reduce_dim:
