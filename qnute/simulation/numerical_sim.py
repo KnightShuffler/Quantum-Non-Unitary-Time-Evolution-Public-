@@ -48,7 +48,7 @@ def update_alist(params:Params, sigma_expectation:dict,
              a_list:list, term:int, psi0:np.array, 
              scale:float):
     # hm = params.H.hm_list[term]
-    pterms = params.H.pterm_list[params.H.hm_indices[term]: params.H.hm_indices[term+1] if term+1 < params.H.num_terms else None]
+    pterms = params.H.get_hm_pterms(term)
     num_terms = pterms.shape[0]
     u_domain = params.u_domains[term]
     ndomain = len(u_domain)

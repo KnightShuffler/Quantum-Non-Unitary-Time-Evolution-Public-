@@ -82,13 +82,12 @@ class QNUTE_params:
         u_measurements - Pauli indices for the Unitary terms, domain u_domains[m]
         mix_measurement - Pauli indices for the products of h and u terms, domain mix_domains[m]
         '''
-        # hm = self.H.hm_list[m]
         h_c, h_R = min_bounding_sphere(self.h_domains[m])
         u_domain = self.u_domains[m]
         u_c, u_R = min_bounding_sphere(u_domain)
 
         # Measurements for c: Pauli strings in hm
-        self.h_measurements[m] = self.H.pterm_list[self.H.hm_indices[m]:self.H.hm_indices[m+1] if m+1 < self.H.num_terms else None]['pauli_id']
+        self.h_measurements[m] = self.H.get_hm_pterms(m)['pauli_id']
         
         # Measurements for S: Products of Pauli strings on the unitary domain
         # All Pauli strings of can be expressed as a product of two 
