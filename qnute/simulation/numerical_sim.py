@@ -47,8 +47,9 @@ def tomography(params:Params, psi0:np.array,
 def update_alist(params:Params, sigma_expectation:dict, 
              a_list:list, term:int, psi0:np.array, 
              scale:float):
-    hm = params.H.hm_list[term]
-    num_terms = len(hm[0])
+    # hm = params.H.hm_list[term]
+    pterms = params.H.pterm_list[params.H.hm_indices[term]: params.H.hm_indices[term+1] if term+1 < params.H.num_terms else None]
+    num_terms = pterms.shape[0]
     u_domain = params.u_domains[term]
     ndomain = len(u_domain)
 
@@ -81,11 +82,11 @@ def update_alist(params:Params, sigma_expectation:dict,
                 key2 = full_pauli_index(params.h_measurements[term][j], 
                                         params.h_domains[term], 
                                         params.u_domains[term])
-            c += 2*scale * params.dt * np.real(hm[1][j]) * sigma_expectation[key1][key2]
+            c += 2*scale * params.dt * np.real(pterms[j]['amplitude']) * sigma_expectation[key1][key2]
         c = np.sqrt(c)
     
     # Load S
-    if params.H.real_term_flags[term] and params.reduce_dimension_flag:
+    if False: #params.H.real_term_flags[term] and params.reduce_dimension_flag:
         ops = params.odd_y_strings[ndomain]
     else:
         ops = list(range(4**ndomain))
@@ -129,7 +130,7 @@ def update_alist(params:Params, sigma_expectation:dict,
             else:
                 p_,c_ = pauli_string_prod(I, J, ndomain)
 
-            b[i] += scale * np.imag(hm[1][j] * c_) * sigma_expectation[key1][p_]
+            b[i] += scale * np.imag(pterms[j]['amplitude'] * c_) * sigma_expectation[key1][p_]
     b = -(2.0 / c) * b
 
     #Regularizer
@@ -204,7 +205,9 @@ def qnute_step(params:Params, output:Output, step:int):
             sigma_expectation = tomography(params, psi0, a_list, term)
             (a, c) = update_alist(params, sigma_expectation, a_list, term, propagate(params, psi0, a_list), 1.0)
         
-        a_list.append([list(a), params.u_domains[term], params.H.real_term_flags[term] and params.reduce_dimension_flag])
+        a_list.append([list(a), params.u_domains[term], 
+                    #    params.H.real_term_flags[term] and
+                    params.reduce_dimension_flag])
         c_list.append(c)
     output.a_list += a_list
     output.c_list += c_list
