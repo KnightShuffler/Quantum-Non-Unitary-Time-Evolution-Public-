@@ -1,4 +1,5 @@
 import numpy as np
+from numba import njit
 
 import logging
 import time
@@ -12,6 +13,7 @@ from .output import QNUTE_output as Output
 
 pauli_pair_dtype = np.dtype([('pauli_id',np.uint32), ('value',np.float64)])
 
+@njit
 def get_theoretical_evolution(H_mat:np.array, psi0: np.array, dt:float, N:int):
     '''Numerically calculates the theoretical time evolution exp(-iHt)|psi_0> with Taylor
     series'''

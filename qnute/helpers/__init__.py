@@ -1,4 +1,5 @@
 import numpy as np
+from numba import njit
 #-----------------#
 # General Helpers #
 #-----------------#
@@ -27,7 +28,8 @@ def base_to_int(digits, b):
         x += digit * (b**i)
     return x
 
-def exp_mat_psi(mat, psi, truncate:int=-1):
+@njit
+def exp_mat_psi(mat:np.array, psi:np.array, truncate:int=-1) -> np.array:
     '''
     Calculates exp(mat)|psi> using the Taylor series of exp(mat)
     if truncate == -1, it will calculate the series up until the norm 
@@ -39,7 +41,7 @@ def exp_mat_psi(mat, psi, truncate:int=-1):
     phi = psi.copy()
     i = 1
     while (truncate < 0 and np.linalg.norm(chi) > TOLERANCE) or (truncate >= 0 and i <= truncate) :
-        chi = 1/i * (mat @ chi)
+        chi = 1/i * (np.dot(mat, chi))
         phi += chi
         i += 1
     return phi
