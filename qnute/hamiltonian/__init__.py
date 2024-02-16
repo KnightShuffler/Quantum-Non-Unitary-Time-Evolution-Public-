@@ -5,6 +5,7 @@ from qnute.helpers import TOLERANCE
 from qnute.helpers.lattice import in_lattice
 from qnute.helpers.pauli import sigma_matrices
 from qnute.helpers.pauli import ext_domain_pauli
+from qnute.helpers.pauli import get_pauli_prod_matrix
 
 # Format of the Hamiltonian:
 #   hm_list is a list of terms: [hm]
@@ -38,6 +39,7 @@ class Hamiltonian:
     def __init__(self, hm_list, qubit_map):
         self.pterm_list, self.hm_indices = Hamiltonian.generate_ham_list(hm_list, qubit_map)
         self.num_terms = len(self.hm_indices)
+        self.nbits = len(qubit_map)
     
     @staticmethod
     def generate_ham_list(hm_list, qubit_map):
@@ -79,10 +81,7 @@ class Hamiltonian:
         h_mat = np.zeros((N,N),dtype=np.complex128)
         
         for pterm in self.pterm_list:
-            pdigits = int_to_base(pterm['pauli_id'], 4, self.nbits)
-            term_mat = np.ones((1,1),dtype=np.complex128)
-            for p in pdigits:
-                term_mat = np.kron(sigma_matrices[p], term_mat)
+            term_mat = get_pauli_prod_matrix(pterm['pauli_id'], self.nbits)
             h_mat += term_mat * pterm['amplitude']
         return h_mat
 
