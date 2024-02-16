@@ -37,14 +37,25 @@ def tomography(params:Params, psi0:np.array,
     # If the unitary domain radius >= the hamiltonian term domain radius, all the
     # measurement operators of S cover all the measurement we need to take
     for i,p in enumerate(params.u_measurements[term]):
-        sigma_expectation['S'][i] = (i,pauli_expectation(params, psi, p))
+        sigma_expectation['S'][i] = (i,pauli_expectation(psi, p, params.nbits, params.num_shots))
     # Otherwise, we need to account for all the different measurement domains
     for i,p in enumerate(params.h_measurements[term]):
-        sigma_expectation['c'][i] = (i, pauli_expectation(params, psi, p))
+        sigma_expectation['c'][i] = (i, pauli_expectation(psi, p, params.nbits, params.num_shots))
     for i,p in enumerate(params.mix_measurements[term]):
-        sigma_expectation['b'][i] = (i, pauli_expectation(params, psi, p))
+        sigma_expectation['b'][i] = (i, pauli_expectation(psi, p, params.nbits, params.num_shots))
         
     return sigma_expectation
+
+@njit
+def pauli_expectation(psi:np.array, p:int, nbits:int, num_shots:int = 0) -> np.float64:
+    '''Returns the expectation value of the Pauli measurement indexed by p, acting
+    on the qubits whose indices are given in qbits'''
+    if p == 0:
+        return 1.0
+    # Theoretical Expectation
+    if num_shots == 0:
+        p_mat = get_pauli_prod_matrix(p, nbits)
+        return np.real(np.vdot(psi, np.dot(p_mat, psi)))
 
 def update_alist(params:Params, sigma_expectation:dict, 
              term:int, psi0:np.array, 
@@ -86,17 +97,6 @@ def update_alist(params:Params, sigma_expectation:dict,
         a_list_term[i] = (p, a[i])
     
     return a_list_term, c
-
-def pauli_expectation(params:Params, psi:np.array, p:int):
-    '''Returns the expectation value of the Pauli measurement indexed by p, acting
-    on the qubits whose indices are given in qbits'''
-    
-    if p == 0:
-        return 1.0
-    # Theoretical Expectation
-    if params.num_shots == 0:
-        p_mat = get_pauli_prod_matrix(p, params.nbits)
-        return np.real(np.vdot(psi, np.dot(p_mat, psi)))
    
 def qnute(params:Params, log_frequency:int = 10) -> Output:
     output = Output(params)
