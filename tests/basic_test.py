@@ -4,12 +4,12 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 
-from qnute.simulation.numerical_sim import qnute
+from qnute.simulation.numerical_sim import qnute, get_theoretical_evolution
 from qnute.hamiltonian import Hamiltonian
 from qnute.simulation.parameters import QNUTE_params as Params
 from qnute.simulation.output import QNUTE_output as Output
 
-if __name__ == '__main__':
+def main():
     logging.getLogger().setLevel(logging.INFO)
     
     hm_list = [[[1],[1.0],[(0,0)]]]
@@ -36,7 +36,7 @@ if __name__ == '__main__':
     logging.info('Testing Parameters module\n')
     params.load_hamiltonian_params(2, False, True)
     params.set_run_params(dt, delta, N, num_shots, backend, init_sv=psi0, trotter_flag=False)
-    
+
     logging.info('Testing QNUTE simulation.\n')
     out = qnute(params)
     
@@ -59,3 +59,7 @@ if __name__ == '__main__':
     fig.supylabel('Amplitude')
     fig.suptitle('QNUTE Evolution of H=-X')
     plt.show()
+
+
+if __name__ == '__main__':
+    main()
