@@ -56,6 +56,44 @@ def pauli_expectation(psi:np.array, p:int, nbits:int, num_shots:int = 0) -> np.f
     if num_shots == 0:
         p_mat = get_pauli_prod_matrix(p, nbits)
         return np.real(np.vdot(psi, np.dot(p_mat, psi)))
+    
+@njit
+def construct_c(pterms:np.array, c_expectations:np.array,  scale:float, dt:float) -> np.float64:
+    c = 1.0
+    for j,pterm in enumerate(pterms):
+        c += 2*scale * dt * np.real(pterm['amplitude']) * c_expectations[j]['value']
+    return np.sqrt(c)
+
+@njit
+def construct_S(u_measurements, S_expectations, nbits):
+    nops = u_measurements.shape[0]
+    S = np.zeros((nops,nops), dtype=np.complex128)
+    for i,p_I in enumerate(u_measurements):
+        for j,p_J in enumerate(u_measurements):
+            p_,c_ = pauli_string_prod(p_I, p_J, nbits)
+            S[i,j] = S_expectations['value'][np.where(S_expectations['pauli_id']==p_)][0] * c_
+    return S
+
+@njit
+def construct_b(pterms, u_measurements, b_expectations, c, nbits, scale):
+    b = np.zeros(u_measurements.shape[0], dtype=np.float64)
+    for i,p_I in enumerate(u_measurements):
+        for j,p_J in enumerate(pterms):
+            p_,c_ = pauli_string_prod(p_I, p_J['pauli_id'], nbits)
+            b[i] += scale * np.imag(pterms[j]['amplitude'] * c_) * b_expectations['value'][np.where(b_expectations['pauli_id']==p_)][0]
+    b *= -(2.0 / c)
+    return b
+
+@njit
+def solve_for_a_list(S, b, delta, u_measurements):
+    dalpha = np.eye(u_measurements.shape[0]) * delta
+    a = np.real(np.linalg.lstsq(2*np.real(S) + dalpha, b, rcond=-1)[0])
+    
+    a_list_term = np.zeros(a.shape[0], dtype=pauli_pair_dtype)
+    for i,p in enumerate(u_measurements):
+        a_list_term[i]['pauli_id'] = p
+        a_list_term[i]['value'] = a[i]
+    return a_list_term
 
 def update_alist(params:Params, sigma_expectation:dict, 
              term:int, psi0:np.array, 
@@ -67,34 +105,15 @@ def update_alist(params:Params, sigma_expectation:dict,
     ndomain = len(u_domain)
 
     # Load c
-    c = 1.0
-    for j,pterm in enumerate(pterms):
-        c += 2*scale * params.dt * np.real(pterm['amplitude']) * sigma_expectation['c'][j]['value']
-    c = np.sqrt(c)
+    c = construct_c(pterms, sigma_expectation['c'], scale, params.dt)
     
     # Load S
-    nops = params.u_measurements[term].shape[0]
-    S = np.zeros((nops,nops), dtype=np.complex128)
-    for i,p_I in enumerate(params.u_measurements[term]):
-        for j,p_J in enumerate(params.u_measurements[term]):
-            p_,c_ = pauli_string_prod(p_I, p_J, params.nbits)
-            S[i,j] = sigma_expectation['S']['value'][np.where(sigma_expectation['S']['pauli_id']==p_)][0] * c_
+    S = construct_S(params.u_measurements[term], sigma_expectation['S'], params.nbits)
     
     # Load b
-    b = np.zeros(nops, dtype=np.float64)
-    for i,p_I in enumerate(params.u_measurements[term]):
-        for j,p_J in enumerate(pterms):
-            p_,c_ = pauli_string_prod(p_I, p_J['pauli_id'], params.nbits)
-            b[i] += scale * np.imag(pterms[j]['amplitude'] * c_) * sigma_expectation['b']['value'][np.where(sigma_expectation['b']['pauli_id']==p_)][0]
-    b *= -(2.0 / c)
+    b = construct_b(pterms, params.u_measurements[term], sigma_expectation['b'], c, params.nbits, scale)
 
-    #Regularizer
-    dalpha = np.eye(nops) * params.delta
-    a = np.real(np.linalg.lstsq(2*np.real(S) + dalpha, b, rcond=-1)[0])
-    
-    a_list_term = np.zeros(a.shape[0], dtype=pauli_pair_dtype)
-    for i,p in enumerate(params.u_measurements[term]):
-        a_list_term[i] = (p, a[i])
+    a_list_term = solve_for_a_list(S,b,params.delta,params.u_measurements[term])
     
     return a_list_term, c
    
@@ -154,13 +173,27 @@ def propagate(params:Params, psi0:np.array,
                [ [], [], [] ], ]'''
     psi = psi0.copy()
     for (t,a_term_list) in enumerate(a_list):
-        A = np.zeros((2**params.nbits, 2**params.nbits), dtype=np.complex128)
-        for (i,a) in enumerate(a_term_list):
-            p_mat = get_pauli_prod_matrix(a['pauli_id'], params.nbits)
-            A += a['value'] * p_mat
-            if params.trotter_flag:
-                psi = exp_mat_psi(-1j * a['value'] * params.dt * p_mat, psi, truncate=params.taylor_truncate_a)
-        if not params.trotter_flag:
-            psi = exp_mat_psi(-1j*params.dt*A, psi, truncate=params.taylor_truncate_a)
+        psi = prop_a_term(psi, a_term_list, params.nbits, params.dt, params.trotter_flag, params.taylor_truncate_a)
+        # A = np.zeros((2**params.nbits, 2**params.nbits), dtype=np.complex128)
+        # for (i,a) in enumerate(a_term_list):
+        #     p_mat = get_pauli_prod_matrix(a['pauli_id'], params.nbits)
+        #     A += a['value'] * p_mat
+        #     if params.trotter_flag:
+        #         psi = exp_mat_psi(-1j * a['value'] * params.dt * p_mat, psi, truncate=params.taylor_truncate_a)
+        # if not params.trotter_flag:
+        #     psi = exp_mat_psi(-1j*params.dt*A, psi, truncate=params.taylor_truncate_a)
     psi /= np.linalg.norm(psi)
+    return psi
+
+@njit
+def prop_a_term(psi0:np.array, a_term_list:np.array, nbits:int, dt:float, trotter_flag:bool, taylor_truncate_a:int) -> np.array:
+    psi = psi0.copy()
+    A = np.zeros((2**nbits, 2**nbits), dtype=np.complex128)
+    for (i,a) in enumerate(a_term_list):
+        p_mat = get_pauli_prod_matrix(a['pauli_id'], nbits)
+        A += a['value'] * p_mat
+        if trotter_flag:
+            psi = exp_mat_psi(-1j * a['value'] * dt * p_mat, psi, truncate=taylor_truncate_a)
+    if not trotter_flag:
+        psi = exp_mat_psi(-1j*dt*A, psi, truncate=taylor_truncate_a)
     return psi
