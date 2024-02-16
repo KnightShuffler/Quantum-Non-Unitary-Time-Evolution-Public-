@@ -1,4 +1,5 @@
 import numpy as np
+from numba import njit
 from . import int_to_base
 from . import base_to_int
 from . import TOLERANCE
@@ -30,6 +31,7 @@ pauli_prod[1][1,:]=[1,  1, 1j,-1j]
 pauli_prod[1][2,:]=[1,-1j,  1, 1j]
 pauli_prod[1][3,:]=[1, 1j,-1j,  1]
 
+@njit(cache=True)
 def get_pauli_prod_matrix(p,nbits):
     pdigits = int_to_base(p, 4, nbits)
     term_mat = np.ones((1,1),dtype=np.complex128)
