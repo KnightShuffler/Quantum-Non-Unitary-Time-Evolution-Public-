@@ -128,7 +128,7 @@ def save_svs(dset:h5py.Dataset, ham_no:int, svs:np.array):
     dset[ham_no][:] = svs
 
 
-def read_hamiltonians_from_file(file:h5py.File, k_local:int) -> Hamiltonian:
+def read_hamiltonians_from_file(file:h5py.File, k_local:int):
     mapdata = file['qubit_map'][:]
     qubit_map = {mapdata['index'][i]:tuple(mapdata['coords'][i]) for i in range(mapdata.shape[0])}
 
@@ -145,7 +145,7 @@ def read_hamiltonians_from_file(file:h5py.File, k_local:int) -> Hamiltonian:
     ham_dtype = dset.dtype
     for n in range(num_hamiltonians):
         # ham = dset[n][:]
-        yield ham_dtype_to_Hamiltonian(dset[n][:], qubit_map, lattice_dim, lattice_bound)
+        yield ham_dtype_to_Hamiltonian(dset[n][:], qubit_map), lattice_dim, lattice_bound
 
 def save_statevectors(filename:str, params:QNUTE_params, out:QNUTE_output):
     with h5py.File(filename, 'a') as f:

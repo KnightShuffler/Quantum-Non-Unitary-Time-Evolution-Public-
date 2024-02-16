@@ -6,7 +6,7 @@ from qnute.helpers.pauli import pauli_str_to_index
 from qnute.hamiltonian import Hamiltonian
 from .topology import TOPOLOGIES_DICT
 
-def generate_random_hamiltonians(topology_id, k_local, num_hamiltonians=1000) -> (np.array, np.dtype):
+def generate_random_hamiltonians(topology_id, k_local, num_hamiltonians=1000) -> tuple[np.array, np.dtype]:
     (num_qubits, lattice_dim, qubit_map) = TOPOLOGIES_DICT[topology_id]
     lattice_bound = np.max(list(qubit_map.values())) + 1
     (term_domains, num_terms, num_pauli_terms) = get_k_local_domains_in_map(k_local, lattice_dim, lattice_bound, qubit_map)
@@ -30,7 +30,7 @@ def generate_random_hamiltonians(topology_id, k_local, num_hamiltonians=1000) ->
                 j += 1
     return hamiltonians, TYPE_hamiltonian
 
-def ham_dtype_to_Hamiltonian(ham, qubit_map, lattice_dim, lattice_bound):
+def ham_dtype_to_Hamiltonian(ham, qubit_map):
     hm_list = []
     for term in range(len(ham)):
         ham_term = [ [], [], [] ]
@@ -44,4 +44,4 @@ def ham_dtype_to_Hamiltonian(ham, qubit_map, lattice_dim, lattice_bound):
             ham_term[1].append(ham['Amplitude_list'][term][i])
         hm_list.append(ham_term)
     invert_map = {v:k for (k,v) in qubit_map.items()}
-    return Hamiltonian(hm_list, lattice_dim, lattice_bound, invert_map)
+    return Hamiltonian(hm_list, invert_map), hm_list, invert_map

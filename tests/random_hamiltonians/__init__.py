@@ -44,9 +44,9 @@ def run_experiments(file:h5py.File, expt_params:Experiment_Params, expt_no:int, 
     '''Calculates the state vector evolution of the Hamiltonians for
     each experiment in an hdf5 file'''
     #for (k,D,dt,N,delta,num_shots,tta,tth,trotter_flag,expt_no) in loop_expt_params():
-    for (i,H) in enumerate(read_hamiltonians_from_file(file, expt_params.k)):
-        H.multiply_scalar(1.0j)
-        params = Params(H)
+    for (i,((H,hm_list, qubit_map),d,l)) in enumerate(read_hamiltonians_from_file(file, expt_params.k)):
+        # H.multiply_scalar(1.0j)
+        params = Params(hm_list, d, l, qubit_map)
         # logging.debug('Multiplying Hamiltonian by i to check')
         
         params.load_hamiltonian_params(expt_params.D)
