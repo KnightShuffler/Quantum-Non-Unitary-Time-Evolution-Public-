@@ -1,11 +1,16 @@
-from hamiltonians import Hamiltonian
-from qnute_params import QNUTE_params as Params
-from qnute_output import QNUTE_output as Output
-from helpers import *
-
+import numpy as np
 from qiskit import QuantumCircuit
 from qiskit import Aer
 from qiskit.quantum_info import Statevector
+
+from qnute.hamiltonian import Hamiltonian
+from qnute.helpers import *
+from qnute.helpers.pauli import *
+from qnute.helpers.circuit import *
+
+from .parameters import QNUTE_params as Params
+from .output import QNUTE_output as Output
+
 sv_sim = Aer.get_backend('statevector_simulator')
 
 import time
@@ -21,38 +26,22 @@ def evolve_statevector(params: Params, qc, psi):
     return result.get_statevector(circ)
 
 def propagate(params: Params, psi0, a_list):
-    if params.circuit_flag:
-        qc = QuantumCircuit(params.nbits)
-        qc.initialize(psi0, list(range(params.nbits)))
-        for t in range(len(a_list)):
-            domain = a_list[t][1]
-            ndomain = len(domain)
-            ops = params.odd_y_strings[ndomain] if a_list[t][2] else list(range(4**ndomain))
-            for i in range(len(ops)):
-                # Skip index 0 for the non-real hamiltonian term since that's just a global phase
-                if not a_list[t][2] and i == 0:
-                    continue
+    qc = QuantumCircuit(params.nbits)
+    qc.initialize(psi0, list(range(params.nbits)))
+    for t in range(len(a_list)):
+        domain = a_list[t][1]
+        ndomain = len(domain)
+        ops = params.odd_y_strings[ndomain] if a_list[t][2] else list(range(4**ndomain))
+        for i in range(len(ops)):
+            # Skip index 0 for the non-real hamiltonian term since that's just a global phase
+            if not a_list[t][2] and i == 0:
+                continue
 
-                angle = a_list[t][0][i] * 2.0 * params.dt
-                if np.abs(angle) > TOLERANCE:
-                    p_dict = pauli_index_to_dict(ops[i], domain)
-                    pauli_string_exp(qc, p_dict, params.H.map, angle)
-        return evolve_statevector(params, qc, psi0)
-    else:
-        psi = psi0.copy()
-        for t in range(len(a_list)):
-            active = [ params.H.map[k] for k in a_list[t][1]]
-            nactive = len(active)
-            ops = params.odd_y_strings[ndomain] if a_list[t][2] else list(range(4**nactive))
-            A = np.zeros((2**params.nbits, 2**params.nbits),dtype=complex)
-            for i in range(len(ops)):
-                p_mat = get_full_pauli_product_matrix(int_to_base(ops[i],4,nactive), active, params.nbits)
-                A += a_list[t][0][i] * p_mat
-                if params.trotter_flag:
-                    psi = exp_mat_psi(-1j*a_list[t][0][i]*params.dt*p_mat, psi, truncate=params.taylor_truncate_a)
-            if not params.trotter_flag:
-                psi = exp_mat_psi(-1j*params.dt*A, psi, truncate=params.taylor_truncate_a)
-        return Statevector(psi)
+            angle = a_list[t][0][i] * 2.0 * params.dt
+            if np.abs(angle) > TOLERANCE:
+                p_dict = pauli_index_to_dict(ops[i], domain)
+                pauli_string_exp(qc, p_dict, params.H.qubit_map, angle)
+    return evolve_statevector(params, qc, psi0)
 
 def pauli_expectation(params: Params, psi, p, qbits):
     '''
@@ -62,21 +51,10 @@ def pauli_expectation(params: Params, psi, p, qbits):
     if p == 0:
         return 1.0
     p_dict = pauli_index_to_dict(p, qbits)
-    if params.circuit_flag:
-        assert params.num_shots > 0, 'params.num_shots must be > 0 when using QuantumCircuits'
-        qc = QuantumCircuit(params.nbits,params.nbits)
-        qc.initialize(psi)
-        return measure(qc, p_dict, params.H.map, params.backend, num_shots=params.num_shots)[0]
-    bases = get_qc_bases_from_pauli_dict(p_dict, params.H.map)
-    active = list(bases.keys())
-    if params.num_shots > 0:
-        pos_eigenspace = get_pauli_eigenspace([bases[q] for q in active], active, params.nbits, 1.0)
-        pos_prob = np.clip(np.sum(np.abs(pos_eigenspace.conj() @ psi.data)**2), 0.0, 1.0)
-        pos_meas = np.random.binomial(params.num_shots, pos_prob)
-        return 2.0*pos_meas/params.num_shots - 1.0
-    else:
-        p_mat = get_full_pauli_product_matrix([bases[q] for q in active], active, params.nbits)
-        return np.real(np.vdot(psi.data, p_mat @ psi.data))
+    assert params.num_shots > 0, 'params.num_shots must be > 0 when using QuantumCircuits'
+    qc = QuantumCircuit(params.nbits,params.nbits)
+    qc.initialize(psi)
+    return measure(qc, p_dict, params.H.qubit_map, params.backend, num_shots=params.num_shots)[0]
 
 def tomography(params: Params, psi0, a_list, term):
     sigma_expectation = { 
@@ -195,9 +173,9 @@ def update_alist(params: Params, sigma_expectation, a_list, term, psi0, scale):
     
     a = np.real(np.linalg.lstsq(2*np.real(S) + dalpha, b, rcond=-1)[0])
     
-    a_list.append([list(a), u_domain, params.H.real_term_flags[term] and params.reduce_dimension_flag])
+    # a_list.append([list(a), u_domain, params.H.real_term_flags[term] and params.reduce_dimension_flag])
     # return S,b,c
-    return c
+    return a, c
 
 def qnute_step(params: Params, output:Output, step):
     a_list = []
@@ -212,9 +190,14 @@ def qnute_step(params: Params, output:Output, step):
         # Ignore terms of empty unitary domains
         if len(params.u_domains[term]) == 0:
             continue
-        sigma_expectation = tomography(params, psi0, a_list, term)
-        # S,b,
-        c = update_alist(params, sigma_expectation, a_list, term, propagate(params, psi0, a_list), 1.0)
+        a = 10.0
+        while np.linalg.norm(a) > 5.0:
+            sigma_expectation = tomography(params, psi0, a_list, term)
+            # S,b,
+            a, c = update_alist(params, sigma_expectation, a_list, term, propagate(params, psi0, a_list), 1.0)
+
+        # output.exp.append(sigma_expectation)
+        a_list.append([list(a), params.u_domains[term], params.H.real_term_flags[term] and params.reduce_dimension_flag])
         # S_list.append(S)
         # b_list.append(b)
         c_list.append(c)

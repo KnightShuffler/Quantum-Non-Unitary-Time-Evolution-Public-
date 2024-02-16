@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from qnute_params import QNUTE_params
+from .parameters import QNUTE_params
 
 class QNUTE_output:
     def __init__(self, params: QNUTE_params):
@@ -9,6 +9,7 @@ class QNUTE_output:
         # self.S_list = []
         # self.b_list = []
         self.c_list = []
+        # self.exp = []
         if params.store_state_vector:
             self.svs = np.zeros((params.N+1, 2**params.nbits),dtype=complex)
             self.dt = params.dt

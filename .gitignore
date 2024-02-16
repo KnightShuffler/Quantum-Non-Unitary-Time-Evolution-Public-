@@ -3,4 +3,6 @@
 .vscode
 figs/
 logs/
+data/
 *.png
+*.hdf5
