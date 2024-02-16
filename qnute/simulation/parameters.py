@@ -11,13 +11,10 @@ from qnute.helpers import int_to_base
 from qnute.helpers.lattice import get_center
 from qnute.helpers.lattice import get_m_sphere
 from qnute.helpers.lattice import min_bounding_sphere
+from qnute.helpers.lattice import in_lattice
 from qnute.helpers.pauli import ext_domain_pauli
 from qnute.helpers.pauli import pauli_string_prod
-from qnute.helpers.pauli import pauli_index_to_dict
-from qnute.helpers.pauli import same_pauli_dicts
-from qnute.helpers.pauli import pauli_dict_product
 from qnute.helpers.pauli import odd_y_pauli_strings
-from qnute.helpers.lattice import in_lattice
 
 class QNUTE_params:
     def __init__(self, hm_list, lattice_dim, lattice_bound, qubit_map=None):
