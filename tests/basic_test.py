@@ -9,20 +9,10 @@ from qnute.hamiltonian import Hamiltonian
 from qnute.simulation.parameters import QNUTE_params as Params
 from qnute.simulation.output import QNUTE_output as Output
 
-def main():
+if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
-    logging.info('Testing Hamiltonian Module\n')
-    ham = Hamiltonian(
-        [
-            [[1],[1.0],[(0,)]],
-        ],
-        1,2,
-        None
-    )
-    ham.multiply_scalar(-1.0)
-    print(ham)
-    print(ham.hm_indices)
-    print(ham.get_matrix())
+    
+    hm_list = [[[1],[1.0],[(0,0)]]]
     
     dt = 0.1
     delta = 0.1
@@ -34,12 +24,18 @@ def main():
     psi0 = np.zeros(2**num_qbits, dtype=np.complex128)
     psi0[0] = 1.0
 
-    logging.info('Testing Parameters module\n')
-
-    params = Params(ham)
+    params = Params(hm_list,2,2,{(0,0):0,(0,1):1})
+    logging.info('Testing Hamiltonian Module\n')
+    ham = params.H
+    ham.multiply_scalar(-1.0)
+    print(ham)
+    print(ham.hm_indices)
+    print(ham.get_matrix())
     print(params.h_domains)
+
+    logging.info('Testing Parameters module\n')
     params.load_hamiltonian_params(2, False, True)
-    params.set_run_params(dt, delta, N, num_shots, backend, init_sv=psi0, trotter_flag=True)
+    params.set_run_params(dt, delta, N, num_shots, backend, init_sv=psi0, trotter_flag=False)
     
     logging.info('Testing QNUTE simulation.\n')
     out = qnute(params)
@@ -63,6 +59,3 @@ def main():
     fig.supylabel('Amplitude')
     fig.suptitle('QNUTE Evolution of H=-X')
     plt.show()
-
-if __name__ == '__main__':
-    main()
