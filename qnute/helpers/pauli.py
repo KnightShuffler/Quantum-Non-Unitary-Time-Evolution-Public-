@@ -17,19 +17,20 @@ sigma_matrices[2] = np.array([[0,-1j],[1j,0]])
 sigma_matrices[3] = np.array([[1,0],[0,-1]])
 
 # maps the product of the Pauli Matrices
-# sigma_i sigma_j = pauli_prod[1][i,j] * sigma_(pauli_prod[0][i,j])
+# sigma_i sigma_j = pauli_prod_phase[i,j] * sigma_(pauli_prod_index[i,j])
 #                    ^ coefficient               ^ matrix identifier
-pauli_prod = [ np.zeros([4,4],dtype=int), np.zeros([4,4],dtype=complex) ]
+pauli_prod_index = np.zeros([4,4],dtype=int)
+pauli_prod_phase = np.zeros([4,4],dtype=complex)
 
-pauli_prod[0][0,:]=[0,1,2,3]
-pauli_prod[0][1,:]=[1,0,3,2]
-pauli_prod[0][2,:]=[2,3,0,1]
-pauli_prod[0][3,:]=[3,2,1,0]
+pauli_prod_index[0,:]=[0,1,2,3]
+pauli_prod_index[1,:]=[1,0,3,2]
+pauli_prod_index[2,:]=[2,3,0,1]
+pauli_prod_index[3,:]=[3,2,1,0]
 
-pauli_prod[1][0,:]=[1,  1,  1,  1]
-pauli_prod[1][1,:]=[1,  1, 1j,-1j]
-pauli_prod[1][2,:]=[1,-1j,  1, 1j]
-pauli_prod[1][3,:]=[1, 1j,-1j,  1]
+pauli_prod_phase[0,:]=[1,  1,  1,  1]
+pauli_prod_phase[1,:]=[1,  1, 1j,-1j]
+pauli_prod_phase[2,:]=[1,-1j,  1, 1j]
+pauli_prod_phase[3,:]=[1, 1j,-1j,  1]
 
 @njit(cache=True)
 def get_pauli_prod_matrix(p,nbits):
@@ -39,6 +40,7 @@ def get_pauli_prod_matrix(p,nbits):
         term_mat = np.kron(sigma_matrices[p], term_mat)
     return term_mat
 
+@njit(cache=True)
 def pauli_string_prod(p1,p2,nbits):
     '''
     returns the product of two nbit long pauli strings
@@ -53,8 +55,8 @@ def pauli_string_prod(p1,p2,nbits):
     prod = [0]*nbits
     
     for i in range(nbits):
-        prod[i] = pauli_prod[0][pstring1[i], pstring2[i]]
-        c      *= pauli_prod[1][pstring1[i], pstring2[i]]
+        prod[i] = pauli_prod_index[pstring1[i], pstring2[i]]
+        c      *= pauli_prod_phase[pstring1[i], pstring2[i]]
     
     return base_to_int(prod,4), c
 
@@ -82,7 +84,7 @@ def ext_domain_pauli(p, active, domain):
     returns the id of the pauli string p that acts on qubits in active, when the domain is extended to domain
     '''
     pstring = int_to_base(p,4,len(active))
-    new_pstring = [0] * len(domain)
+    new_pstring = np.zeros(len(domain),dtype=np.int32)
     for i in range(len(active)):
         if active[i] not in domain:
             print('Error Occured in ext_domain_pauli:')
@@ -134,8 +136,8 @@ def pauli_dict_product(p1_dict, p2_dict):
         if key not in p2_dict.keys():
             p2_dict[key] = 0
         
-        coeff *= pauli_prod[1][p1_dict[key], p2_dict[key]]
-        prod_dict[key] = pauli_prod[0][p1_dict[key], p2_dict[key]]
+        coeff *= pauli_prod_phase[p1_dict[key], p2_dict[key]]
+        prod_dict[key] = pauli_prod_index[p1_dict[key], p2_dict[key]]
     return prod_dict, coeff
 
 def get_full_pauli_product_matrix(partial_pstring, active, nbits):

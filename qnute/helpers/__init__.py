@@ -7,18 +7,20 @@ from numba import njit
 # Error Tolerance
 TOLERANCE = 1e-5
 
-def int_to_base(x, b, num_digits):
+@njit
+def int_to_base(x:int, b:int, num_digits:int):
     '''
     convert a non-negative integer x to base b and return the digits in a list
     '''
     if x < 0:
         raise ValueError('x must be non-negative')
-    digits = [0] * num_digits
+    digits = np.zeros(num_digits, dtype=np.int32)
     for i in range(num_digits):
         digits[i] = x % b
         x = x//b
     return digits
 
+@njit
 def base_to_int(digits, b):
     '''
     convert a list of base b digits to an integer
