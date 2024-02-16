@@ -15,7 +15,7 @@ pauli_pair_dtype = np.dtype([('pauli_id',np.uint32), ('value',np.float64)])
 
 @njit
 def get_theoretical_evolution(H_mat:np.array, psi0: np.array, dt:float, N:int):
-    '''Numerically calculates the theoretical time evolution exp(-iHt)|psi_0> with Taylor
+    '''Numerically calculates the theoretical time evolution exp(Ht)|psi_0> with Taylor
     series'''
     times = np.arange(0,N+1,1)*dt
     svs = np.zeros((N+1, psi0.shape[0]),dtype='c16')
