@@ -1,3 +1,5 @@
+import numpy as np
+
 from qiskit import QuantumCircuit
 from qiskit.quantum_info import Statevector
 
@@ -9,6 +11,8 @@ from qnute.helpers import int_to_base
 from qnute.helpers.lattice import get_center
 from qnute.helpers.lattice import get_m_sphere
 from qnute.helpers.lattice import min_bounding_sphere
+from qnute.helpers.pauli import ext_domain_pauli
+from qnute.helpers.pauli import pauli_string_prod
 from qnute.helpers.pauli import pauli_index_to_dict
 from qnute.helpers.pauli import same_pauli_dicts
 from qnute.helpers.pauli import pauli_dict_product
@@ -35,20 +39,18 @@ class QNUTE_params:
         self.lattice_dim = lattice_dim
         self.lattice_bound = lattice_bound
 
-        self.H = Hamiltonian(hm_list, lattice_dim, lattice_bound, qubit_map)
+        self.H = Hamiltonian(hm_list, self.qubit_map)
 
         self.odd_y_strings = {}
 
         self.h_domains = [hm[2] for hm in hm_list]
         self.u_domains = []
         self.mix_domains = []
-        self.h_measurements = {}
-        self.u_measurements = {}
-        self.mix_measurements = {}
+        self.h_measurements = [0] * self.H.num_terms
+        self.u_measurements = [0] * self.H.num_terms
+        self.mix_measurements = [0] * self.H.num_terms
 
         self.reduce_dimension_flag = None
-
-        self.small_u_domain_flags = [False] * self.H.num_terms
 
         self.D = 0
 
@@ -90,18 +92,14 @@ class QNUTE_params:
         return True
 
     @staticmethod
-    def get_new_domain(active, D, d, l):
+    def get_new_domain(active, D, d, l, qubit_map):
         '''
         Returns a list of the extended/shrunk domain of a Hamiltonian 
         with domain size D on a d-dimensional lattice of bound l
         '''
         c = get_center(active)
         dom = get_m_sphere(c, D//2, d, l)
-        if d == 1:
-            domain = [ point[0] for point in dom ]
-            return domain
-        else:
-            return dom
+        return [coord for coord in dom if coord in qubit_map]
 
     def load_measurement_keys(self, m, domain_ops):
         '''
@@ -112,7 +110,7 @@ class QNUTE_params:
         mix_measurement - Pauli indices for the products of h and u terms, domain mix_domains[m]
         '''
         h_c, h_R = min_bounding_sphere(self.h_domains[m])
-        u_domain = self.u_domains[m]
+        u_domain = [self.qubit_map[coord] for coord in self.u_domains[m]]
         u_c, u_R = min_bounding_sphere(u_domain)
 
         # Measurements for c: Pauli strings in hm
@@ -122,45 +120,28 @@ class QNUTE_params:
         # All Pauli strings of can be expressed as a product of two 
         # Pauli strings with only odd number of Ys, so all the Pauli strings
         # acting on the unitary domain must be measured to build S
-        self.u_measurements[m] = list(range(4**len(u_domain)))
+        self.u_measurements[m] = np.arange(4**len(u_domain),dtype=np.uint32)
+        for i,p in enumerate(self.u_measurements[m]):
+            self.u_measurements[m][i] = ext_domain_pauli(p, u_domain, list(range(self.nbits)))
         
         # Measurements for b: Products of Pauli strings on the unitary domain with 
-        # the Pauli strings in hm
-
-        # List of pauli dictionaries for the operators of the unitary's domain
-        h_ops = [
-            pauli_index_to_dict(pterm, list(self.H.qubit_map.keys())) for pterm in self.h_measurements[m]
-        ]
-
-        def add_entry(meas, entry):
-            for dict in meas:
-                if same_pauli_dicts(entry, dict):
-                    return
-            meas.append(entry)
-
+        # the Pauli strings in hm        
         # Only need to do this calculation if the unitary domain is smaller than the
         # Hamiltonian term's domain, otherwise, all measurement operators were accounted
         # for when building S
+
         if u_R < h_R:
-            self.small_u_domain_flags[m] = True
-            mix_dicts = []
-            for i in domain_ops:
-                i_dict = pauli_index_to_dict(i, u_domain)
-                for j_dict in h_ops:
-                    prod_dict, coeff = pauli_dict_product(i_dict, j_dict)
-                    add_entry(mix_dicts, prod_dict)
-            # Calculate indices for the mix_measurements
-            for i in range(len(mix_dicts)):
-                mix_dict = mix_dicts[i]
-                pauli_id = 0
-                power = 0
-                for j in range(len(self.mix_domains[m])):
-                    qbit = self.mix_domains[m][j]
-                    if qbit in mix_dict.keys():
-                        index = mix_dict[qbit]
-                        pauli_id += index * 4**power
-                    power += 1
-                self.mix_measurements[m].append(pauli_id)
+            mix_pstrings = []
+            for I in self.h_measurements[m]:
+                for J in self.u_measurements[m]:
+                    mix_pstrings.append(pauli_string_prod(I,J,self.nbits)[0])
+            mix_pstrings = set(mix_pstrings)
+            self.mix_measurements[m] = np.zeros(len(mix_pstrings), dtype=np.uint32)
+            for i,pstring in enumerate(mix_pstrings):
+                self.mix_measurements[m][i] = pstring
+        else:
+            self.mix_measurements[m] = self.u_measurements[m]
+        
 
     def load_hamiltonian_params(self, D: int, reduce_dim: bool =False, 
                                 load_measurements: bool=True):
@@ -179,7 +160,7 @@ class QNUTE_params:
         logging.debug('\tCalculating Unitary Domains...',end=' ',flush=True)
         # Calculate the domains of the unitaries simulating each term
         for domain in self.h_domains:
-            self.u_domains.append(QNUTE_params.get_new_domain(domain, D, self.H.d, self.H.l))
+            self.u_domains.append(QNUTE_params.get_new_domain(domain, D, self.lattice_dim, self.lattice_bound, self.qubit_map))
             self.mix_domains.append( list(set(domain) | set(self.u_domains[-1])) )
 
         # Check if the terms are real
