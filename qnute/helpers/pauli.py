@@ -30,6 +30,13 @@ pauli_prod[1][1,:]=[1,  1, 1j,-1j]
 pauli_prod[1][2,:]=[1,-1j,  1, 1j]
 pauli_prod[1][3,:]=[1, 1j,-1j,  1]
 
+def get_pauli_prod_matrix(p,nbits):
+    pdigits = int_to_base(p, 4, nbits)
+    term_mat = np.ones((1,1),dtype=np.complex128)
+    for p in pdigits:
+        term_mat = np.kron(sigma_matrices[p], term_mat)
+    return term_mat
+
 def pauli_string_prod(p1,p2,nbits):
     '''
     returns the product of two nbit long pauli strings
