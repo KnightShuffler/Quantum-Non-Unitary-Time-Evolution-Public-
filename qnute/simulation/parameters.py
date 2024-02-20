@@ -31,12 +31,13 @@ class QNUTE_params:
                 logging.ERROR('Qubit map not valid!')
                 raise ValueError(v)
             self.qubit_map = qubit_map
+        self.invert_map = {index:coord for coord,index in self.qubit_map.items()}
         self.nbits = len(self.qubit_map)
 
         self.lattice_dim = lattice_dim
         self.lattice_bound = lattice_bound
 
-        self.H = Hamiltonian(hm_list, self.qubit_map)
+        self.H = Hamiltonian(hm_list, self.nbits)
 
         self.odd_y_strings = {}
 
