@@ -1,4 +1,6 @@
 import numpy as np
+from numba import njit
+from itertools import combinations
 from qnute.helpers import int_to_base
 from qnute.helpers.pauli import ext_domain_pauli
 from qnute.helpers.pauli import get_pauli_prod_matrix
@@ -30,6 +32,90 @@ from qnute.helpers.pauli import get_pauli_prod_matrix
 #   coordinate directly to the logical qubit index
 
 hm_dtype = np.dtype([('pauli_id',np.uint32), ('amplitude', np.complex128)])
+
+def hm_list_adjoint(hm_list):
+    return [[hm[0], np.conjugate(hm[1]), hm[2]] for hm in hm_list]
+
+@njit
+def hm_pterm_tensor(hm1_ind, hm1_amp, hm2_ind, hm2_amp, len_d2):
+    hm_ind = np.zeros(hm1_ind.shape[0]*hm2_ind.shape[0], dtype=np.uint32)
+    hm_amp = np.zeros(hm1_ind.shape[0]*hm2_ind.shape[0], dtype=np.complex128)
+    k = 0
+    for i,p1 in enumerate(hm1_ind):
+        a1 = hm1_amp[i]
+        for j,p2 in enumerate(hm2_ind):
+            a2 = hm2_amp[j]
+            hm_ind[k] = (p1*np.left_shift(1, len_d2*2) + p2)
+            hm_amp[k] = (a1*a2)
+            k += 1
+    return hm_ind, hm_amp
+
+def hm_list_tensor(hm_list1, hm_list2):
+    hm_list = []
+    for hm1 in hm_list1:
+        # len_d1 = len(hm1[2])
+        for hm2 in hm_list2:
+            len_d2 = len(hm2[2])
+            hm = [None, 
+                  None,
+                  hm2[2] + hm1[2]]
+            hm[0],hm[1] = hm_pterm_tensor(hm1[0], hm1[1], hm2[0], hm2[1], len_d2)
+            hm_list.append(hm)
+    return hm_list
+
+@njit
+def add_hm_terms(hm1_ind, hm1_amp, hm2_ind, hm2_amp):
+    hm_ind = np.zeros(hm1_ind.shape[0] + hm2_ind.shape[0],dtype=np.uint32)
+    hm_amp = np.zeros(hm1_ind.shape[0] + hm2_ind.shape[0],dtype=np.complex128)
+    
+    num_terms = hm1_ind.shape[0]
+    hm_ind[0:num_terms] = hm1_ind
+    hm_amp[0:num_terms] = hm1_amp
+    
+
+    for j,p2 in enumerate(hm2_ind):
+        if p2 not in hm_ind[0:num_terms]:
+            hm_ind[num_terms] = p2
+            hm_amp[num_terms] = hm2_amp[j]
+            num_terms += 1
+        else:
+            k = np.where(hm_ind == p2)[0]
+            hm_amp[k] += hm2_amp[j]
+    
+    # hm_ind.reshape(num_terms)
+    # hm_amp.reshape(num_terms)
+    non_zeros = np.where(hm_amp != 0.0j)[0]
+    return hm_ind[non_zeros], hm_amp[non_zeros]
+            
+def hm_list_add(hm_list1, hm_list2):
+    hm_list = []
+    terms_added = [set(),set()] # For hm_list2
+    for i,hm1 in enumerate(hm_list1):
+        for j,hm2 in enumerate(hm_list2):
+            if j not in terms_added[1]:
+                if hm1[2] == hm2[2]:
+                    hm = [None,None,hm2[2]]
+                    hm[0],hm[1] = add_hm_terms(hm1[0], hm1[1], hm2[0], hm2[1])
+                    hm_list.append(hm)
+                    terms_added[0].add(i)
+                    terms_added[1].add(j)
+    for i,hm1 in enumerate(hm_list1):
+        if i not in terms_added[0]:
+            hm_list.append(hm1)
+    for j,hm2 in enumerate(hm_list2):
+        if j not in terms_added[1]:
+            hm_list.append(hm2)
+    return hm_list
+
+def hm_list_sum(*args):
+    if len(args) == 1:
+        return args[0]
+    if len(args) == 2:
+        return hm_list_add(args[0], args[1])
+    hm_list = args[0]
+    for i in range(1,len(args)):
+        hm_list = hm_list_add(hm_list, args[i])
+    return hm_list
 
 class Hamiltonian:
     def __init__(self, hm_list, qubit_map):
@@ -105,3 +191,18 @@ class Hamiltonian:
     def get_hm_pterms(self, term):
         assert term < self.num_terms and term >= 0
         return self.pterm_list[self.hm_indices[term]: self.hm_indices[term+1] if term+1 < self.num_terms else None]
+    
+    def __add__(self, other):
+        hm_list = hm_list_add(self.hm_list, other.hm_list)
+        nbits = np.max([self.nbits, other.nbits])
+        return Hamiltonian(hm_list, nbits)
+    
+    @staticmethod
+    def adjoint(H:'Hamiltonian')->'Hamiltonian':
+        return Hamiltonian(hm_list_adjoint(H.hm_list), H.nbits)
+    
+    @staticmethod
+    def tensor_product(H1:'Hamiltonian', H2:'Hamiltonian')->'Hamiltonian':
+        hm_list = hm_list_tensor(H1.hm_list, H2.hm_list)
+        nbits = np.max([H1.nbits, H2.nbits])
+        return Hamiltonian(hm_list, nbits)
