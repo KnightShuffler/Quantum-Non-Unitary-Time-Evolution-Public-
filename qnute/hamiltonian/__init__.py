@@ -118,17 +118,60 @@ def hm_list_sum(*args):
     return hm_list
 
 class Hamiltonian:
-    def __init__(self, hm_list, qubit_map):
-        self.pterm_list, self.hm_indices = Hamiltonian.generate_ham_list(hm_list, qubit_map)
-        self.num_terms = len(self.hm_indices)
-        self.nbits = len(qubit_map)
+    def __init__(self, hm_list, nbits):
+        self.hm_list = Hamiltonian.reduce_hm_list(hm_list, nbits)
+        self.pterm_list, self.hm_indices = Hamiltonian.generate_ham_list(self.hm_list, nbits)
+        self.num_terms = len(hm_list)
+        self.nbits = nbits
+        # self.nbits = len(qubit_map)
     
     @staticmethod
-    def generate_ham_list(hm_list, qubit_map):
-        nbits = len(qubit_map)
-        num_pterms = np.uint(0)
+    def reduce_hm_list(hm_list, nbits):
+        new_list = []
+        d = {}
+        for r in range(1,nbits+1):
+            for c in combinations(range(nbits),r):
+                d[c] = [[],[]]
+        identity_amplitude = 0.0j
+        for hm in hm_list:
+            term_domain = np.array(hm[2])
+            for i,p in enumerate(hm[0]):
+                if hm[1][i] == 0.0j:
+                    continue
+                if p == 0:
+                    identity_amplitude += hm[1][i]
+                    continue
+                p_digits = np.array(int_to_base(p, 4, len(term_domain)))
+                term_subdomain = tuple(term_domain[np.nonzero(p_digits)[0]])
+                new_p = 0
+                j = 0
+                for dig in p_digits:
+                    if dig != 0:
+                        new_p += dig*(4**j)
+                        j+=1
+                d[term_subdomain][0].append(new_p)
+                d[term_subdomain][1].append(hm[1][i])
+        
+        if identity_amplitude != 0.0j:
+            d[tuple(range(nbits))][0].append(0)
+            d[tuple(range(nbits))][1].append(identity_amplitude)
+        
+        for term_domain, id_amp in d.items():
+            if len(id_amp[0]) == 0:
+                continue
+            new_list.append([
+                np.array(id_amp[0], dtype=np.uint32),
+                np.array(id_amp[1], dtype=np.complex128),
+                np.array(term_domain, dtype=np.uint32)
+            ])
+        return new_list
+
+    @staticmethod
+    def generate_ham_list(hm_list, nbits):
+        # nbits = len(qubit_map)
+        num_pterms = np.uint32(0)
         num_terms = len(hm_list)
-        hm_indices = np.zeros(num_terms, dtype=np.uint)
+        hm_indices = np.zeros(num_terms, dtype=np.uint32)
         for i,hm in enumerate(hm_list):
             hm_indices[i] = num_pterms
             num_pterms += len(hm[0])
@@ -136,7 +179,7 @@ class Hamiltonian:
         
         i = 0
         for hm in hm_list:
-            active_qubits = [qubit_map[coord] for coord in hm[2]]
+            active_qubits = hm[2]
             for j in range(len(hm[0])):
                 p_list[i] = (ext_domain_pauli(hm[0][j], active_qubits, list(range(nbits))), hm[1][j])
                 i += 1
