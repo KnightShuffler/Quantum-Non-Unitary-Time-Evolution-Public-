@@ -187,14 +187,16 @@ class Hamiltonian:
     
     def __str__(self):
         r_str = 'Hamiltonian Pauli Terms and Amplitudes:\n'
-        for pterm in self.pterm_list:
+        for pi,pterm in enumerate(self.pterm_list):
             pstring = ''
-            for i,p in enumerate(int_to_base(pterm['pauli_id'],4,self.nbits)):
+            for i,p in enumerate(int_to_base(pterm['pauli_id'],4,self.nbits)[::-1]):
                 if p == 0:
                     pstring += 'I'
                 else:
                     pstring += chr(ord('X')+p-1)
-                pstring += f'_{i} '
+                pstring += f'_{self.nbits-i-1} '
+            if pi in self.hm_indices:
+                r_str += '\n'
             r_str += f'\t{pstring} : ({pterm["amplitude"]:.5f})\n'
         return r_str
     
