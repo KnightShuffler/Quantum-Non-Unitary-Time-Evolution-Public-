@@ -17,7 +17,7 @@ from qnute.helpers.pauli import pauli_string_prod
 from qnute.helpers.pauli import odd_y_pauli_strings
 
 class QNUTE_params:
-    def __init__(self, hm_list, lattice_dim, lattice_bound, qubit_map=None):
+    def __init__(self, H:Hamiltonian, lattice_dim, lattice_bound, qubit_map=None):
         # None qubit_map corresponds to a default 1D mapping
         if qubit_map == None:
             if lattice_dim != 1:
@@ -37,11 +37,11 @@ class QNUTE_params:
         self.lattice_dim = lattice_dim
         self.lattice_bound = lattice_bound
 
-        self.H = Hamiltonian(hm_list, self.nbits)
+        self.H = H
 
         self.odd_y_strings = {}
 
-        self.h_domains = [hm[2] for hm in hm_list]
+        self.h_domains = [hm[2] for hm in self.H.hm_list]
         self.u_domains = []
         self.mix_domains = []
         self.h_measurements = [0] * self.H.num_terms
