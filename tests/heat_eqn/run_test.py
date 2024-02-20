@@ -1,7 +1,6 @@
 import numpy as np
-# from .laplace_hamiltonian import hm_list_tensor, get_lowerLeft_hm_list, get_upperRight_hm_list, hm_list_sum, get_laplace1D_hm_list
-from .laplace_hamiltonian import generateLaplaceHamiltonian1D
 from qnute.hamiltonian import Hamiltonian
+from qnute.hamiltonian.laplacian import generateLaplaceHamiltonian1D
 
 def main():
     # hml1 = [
@@ -29,12 +28,25 @@ def main():
     # print(H1_H2)
     # print(H2_H1)
 
-    hm_list = generateLaplaceHamiltonian1D(n, qubit_map, 0.1, True, True)
-    print(hm_list)
-    H = Hamiltonian(hm_list, qubit_map)
+    H = generateLaplaceHamiltonian1D(n, 0.1, False, False)
     print(H)
+    print(H.pterm_list)
     print(H.hm_indices)
     print(np.real(H.get_matrix()))
+
+    # hml1 = [
+    #     [np.array([0],dtype=np.uint32), np.array([1.0+0.j],dtype=np.complex128), [1]],
+    #     [np.array([3],dtype=np.uint32), np.array([1.0+0.j],dtype=np.complex128), [2]]
+    # ]
+
+    # hml2 = [
+    #     [np.array([1,2],dtype=np.uint32), np.array([0.5,0.5],dtype=np.complex128), [0]]
+    # ]
+
+    # H1 = Hamiltonian(hml1, 3)
+    # H2 = Hamiltonian(hml2, 1)
+
+    # print(Hamiltonian.tensor_product(H1,H2))
 
 if __name__ == '__main__':
     main()
