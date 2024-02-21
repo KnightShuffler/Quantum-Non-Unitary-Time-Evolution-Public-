@@ -117,9 +117,10 @@ def update_alist(params:Params, sigma_expectation:dict,
     
     return a_list_term, c
    
-def qnute(params:Params, log_frequency:int = 10) -> Output:
+def qnute(params:Params, log_frequency:int = 10, c0:float=1.0) -> Output:
     output = Output(params)
     output.svs[0,:] = params.init_sv.data
+    output.c_list.append(c0)
 
     logging.debug('Performing initial measurements...')
     for m in params.objective_measurements:
@@ -159,7 +160,7 @@ def qnute_step(params:Params, output:Output, step:int):
         a_list.append(a)
         c_list.append(c)
     output.a_list += a_list
-    output.c_list += c_list
+    output.c_list.append(np.prod(c_list))
     output.svs[step,:] = propagate(params, psi0, a_list)#.data
 
     for m in params.objective_measurements:
