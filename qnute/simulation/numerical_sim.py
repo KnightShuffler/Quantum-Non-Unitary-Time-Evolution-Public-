@@ -122,14 +122,14 @@ def qnute(params:Params, log_frequency:int = 10, c0:float=1.0) -> Output:
     output.svs[0,:] = params.init_sv.data
     output.c_list.append(c0)
 
-    logging.debug('Performing initial measurements...')
+    logging.info('Performing initial measurements...')
     for m in params.objective_measurements:
         output.measurements[m[0]][0] = pauli_expectation(params, params.init_sv, m[1],m[2])
-    logging.debug('Starting QNUTE Iterations:')
+    logging.info('Starting QNUTE Iterations:')
 
     for i in range(1, params.N+1):
         if i % log_frequency == 0 or i == params.N or i == 1:
-            logging.debug(f'    Iteration {i:03d}')
+            logging.info(f'    Iteration {i:03d}')
         
         t0 = time.monotonic()
 
@@ -138,7 +138,7 @@ def qnute(params:Params, log_frequency:int = 10, c0:float=1.0) -> Output:
         t1 = time.monotonic()
         output.times[i-1] = t1 - t0
         if i % log_frequency == 0 or i == params.N or i == 1:
-            logging.debug(f'      Finished in {(t1-t0):0.2f} seconds.')
+            logging.info(f'      Finished in {(t1-t0):0.2f} seconds.')
     
     return output
 
