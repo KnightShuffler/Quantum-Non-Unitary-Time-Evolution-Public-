@@ -121,7 +121,7 @@ class Hamiltonian:
     def __init__(self, hm_list, nbits):
         self.hm_list = Hamiltonian.reduce_hm_list(hm_list, nbits)
         self.pterm_list, self.hm_indices = Hamiltonian.generate_ham_list(self.hm_list, nbits)
-        self.num_terms = len(hm_list)
+        self.num_terms = len(self.hm_list)
         self.nbits = nbits
         # self.nbits = len(qubit_map)
     
