@@ -155,7 +155,7 @@ class QNUTE_params:
         self.D = D
         self.reduce_dimension_flag = reduce_dim
 
-        logging.debug('\tCalculating Unitary Domains...',end=' ',flush=True)
+        logging.debug('\tCalculating Unitary Domains...')
         # Calculate the domains of the unitaries simulating each term
         for domain in self.h_domains:
             self.u_domains.append(QNUTE_params.get_new_domain(domain, D, self.lattice_dim, self.lattice_bound, self.qubit_map))
@@ -163,7 +163,7 @@ class QNUTE_params:
 
         # Check if the terms are real
         if reduce_dim:
-            logging.debug('\tCalculating Required Odd-Y Pauli Strings...', end=' ', flush=True)
+            logging.debug('\tCalculating Required Odd-Y Pauli Strings...')
 
             # Initialize the keys for the odd y strings
             for m in range(nterms):
@@ -175,7 +175,7 @@ class QNUTE_params:
                 self.odd_y_strings[y_len] = odd_y_pauli_strings(y_len)
         
         if load_measurements:
-            logging.debug('  Calculating Required Pauli Measurements...', end=' ', flush=True)
+            logging.debug('  Calculating Required Pauli Measurements...')
 
             # Calculate the strings to measure for each term:
             for m in range(nterms):
