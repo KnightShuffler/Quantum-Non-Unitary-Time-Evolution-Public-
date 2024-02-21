@@ -37,12 +37,12 @@ def tomography(params:Params, psi0:np.array,
     # If the unitary domain radius >= the hamiltonian term domain radius, all the
     # measurement operators of S cover all the measurement we need to take
     for i,p in enumerate(params.u_measurements[term]):
-        sigma_expectation['S'][i] = (i,pauli_expectation(psi, p, params.nbits, params.num_shots))
+        sigma_expectation['S'][i] = (p,pauli_expectation(psi, p, params.nbits, params.num_shots))
     # Otherwise, we need to account for all the different measurement domains
     for i,p in enumerate(params.h_measurements[term]):
-        sigma_expectation['c'][i] = (i, pauli_expectation(psi, p, params.nbits, params.num_shots))
+        sigma_expectation['c'][i] = (p, pauli_expectation(psi, p, params.nbits, params.num_shots))
     for i,p in enumerate(params.mix_measurements[term]):
-        sigma_expectation['b'][i] = (i, pauli_expectation(psi, p, params.nbits, params.num_shots))
+        sigma_expectation['b'][i] = (p, pauli_expectation(psi, p, params.nbits, params.num_shots))
         
     return sigma_expectation
 
