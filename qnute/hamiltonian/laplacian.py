@@ -41,39 +41,45 @@ def get_upperRight_hm_list(num_qbits:int,qbit_offset:int=0):
     return hm_list_tensor([[upperRightKernel_hm_list[0], upperRightKernel_hm_list[1], [num_qbits-1+qbit_offset]]], get_upperRight_hm_list(num_qbits-1,qbit_offset))
 
 @lru_cache
-def get_laplace1D_hm_list(num_qbits:int):
+def get_laplace1D_hm_list(num_qbits:int,qbit_offset:int=0):
     if num_qbits == 1:
-        return [[laplaceKernel_hm_list[0], laplaceKernel_hm_list[1], [0]]]
+        return [[laplaceKernel_hm_list[0], laplaceKernel_hm_list[1], [qbit_offset]]]
     return hm_list_sum(
-        hm_list_tensor([[np.zeros(1,np.uint32), np.array([1.0],dtype=np.complex128), [num_qbits-1]]], get_laplace1D_hm_list(num_qbits-1)),
-        hm_list_tensor(get_lowerLeft_hm_list(1,num_qbits-1), get_upperRight_hm_list(num_qbits-1)),
-        hm_list_tensor(get_upperRight_hm_list(1,num_qbits-1), get_lowerLeft_hm_list(num_qbits-1))
+        hm_list_tensor([[np.zeros(1,np.uint32), np.array([1.0],dtype=np.complex128), [num_qbits-1+qbit_offset]]], get_laplace1D_hm_list(num_qbits-1,qbit_offset)),
+        hm_list_tensor(get_lowerLeft_hm_list(1,num_qbits-1+qbit_offset), get_upperRight_hm_list(num_qbits-1,qbit_offset)),
+        hm_list_tensor(get_upperRight_hm_list(1,num_qbits-1+qbit_offset), get_lowerLeft_hm_list(num_qbits-1,qbit_offset))
     )
 
 @lru_cache
-def get_laplace1D_periodic_hm_list(num_qbits:int):
+def get_laplace1D_periodic_hm_list(num_qbits:int,qbit_offset:int=0):
     return hm_list_sum(
-        get_laplace1D_hm_list(num_qbits),
-        get_lowerLeft_hm_list(num_qbits),
-        get_upperRight_hm_list(num_qbits)
+        get_laplace1D_hm_list(num_qbits,qbit_offset),
+        get_lowerLeft_hm_list(num_qbits,qbit_offset),
+        get_upperRight_hm_list(num_qbits,qbit_offset)
     )
 
-def generateLaplaceHamiltonian1D(num_qbits:int, dx:float,
+def generateLaplaceHamiltonian1D(num_qbits:int, 
+                                 qbit_offset:int=0,
+                                 dx:float=1.0,
                                  periodic_bc_flag:bool=False,
                                  homogeneous_flag:bool=False):
     hm_list = []
     if not homogeneous_flag:
         if not periodic_bc_flag:
-            hm_list = get_laplace1D_hm_list(num_qbits)
+            hm_list = get_laplace1D_hm_list(num_qbits,qbit_offset)
         else:
-            hm_list = get_laplace1D_periodic_hm_list(num_qbits)
+            hm_list = get_laplace1D_periodic_hm_list(num_qbits,qbit_offset)
     else:
         if not periodic_bc_flag:
-            hm_list = hm_list_tensor([[upperLeftKernel_hm_list[0], upperLeftKernel_hm_list[1], [num_qbits-1]]],
-                                 get_laplace1D_hm_list(num_qbits-1))
+            hm_list = hm_list_tensor([[upperLeftKernel_hm_list[0], upperLeftKernel_hm_list[1], [num_qbits-1+qbit_offset]]],
+                                 get_laplace1D_hm_list(num_qbits-1,qbit_offset))
+            # hm_list = hm_list_tensor(get_laplace1D_hm_list(num_qbits-1,qbit_offset),
+            #                          [[upperLeftKernel_hm_list[0], upperLeftKernel_hm_list[1], [0]]])
         else:
-            hm_list = hm_list_tensor([[upperLeftKernel_hm_list[0], upperLeftKernel_hm_list[1], [num_qbits-1]]],
-                                 get_laplace1D_periodic_hm_list(num_qbits-1))
+            hm_list = hm_list_tensor([[upperLeftKernel_hm_list[0], upperLeftKernel_hm_list[1], [num_qbits-1+qbit_offset]]],
+                                 get_laplace1D_periodic_hm_list(num_qbits-1,qbit_offset))
+            # hm_list = hm_list_tensor(get_laplace1D_periodic_hm_list(num_qbits-1,qbit_offset),
+            #                          [[upperLeftKernel_hm_list[0], upperLeftKernel_hm_list[1], [0]]])
 
     for hm in hm_list:
         for i,amp in enumerate(hm[1]):
