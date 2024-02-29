@@ -8,16 +8,17 @@ from qnute.simulation.numerical_sim import qnute, get_theoretical_evolution
 from qnute.hamiltonian import Hamiltonian
 from qnute.simulation.parameters import QNUTE_params as Params
 from qnute.simulation.output import QNUTE_output as Output
+from qnute.hamiltonian.laplacian import generateLaplaceHamiltonian1D
 
 def main():
     logging.getLogger().setLevel(logging.INFO)
     
-    num_qbits = 3
-    hm_list = [[
-                [0,1,5,10, 48,49,53,58],
-                [-1.0,0.5,0.25,0.25, -1.0,0.5,0.25,0.25],
-                [0, 1,2]
-            ]]
+    num_qbits = 4
+    # hm_list = [[
+    #             [0,1,5,10, 48,49,53,58],
+    #             [-1.0,0.5,0.25,0.25, -1.0,0.5,0.25,0.25],
+    #             [0, 1,2]
+    #         ]]
     
     dt = 0.01
     delta = 0.1
@@ -34,9 +35,16 @@ def main():
     psi0[Nx//2:] = np.ones(Nx//2)
     psi0 /= np.linalg.norm(psi0)
 
-    params = Params(hm_list,1,num_qbits,None)
+    # ham = Hamiltonian(hm_list, num_qbits)
+    ham = generateLaplaceHamiltonian1D(num_qbits, 0, 1.0, False, True)
+    print(ham)
+
+    print(np.real(ham.get_matrix()))
+    return
+
+    params = Params(ham,1,num_qbits,None)
     logging.info('Testing Hamiltonian Module\n')
-    ham = params.H
+    # ham = params.H
     gs = ham.get_gs()[1]
     # ham.multiply_scalar(-1.0j)
 
