@@ -29,19 +29,19 @@ def get_theoretical_evolution(L:float,Nx:int,dx:float,Nt:int,dt:float,
 
 def main():
     logging.getLogger().setLevel(logging.INFO)
-    n = 5
+    n = 3
     # qubit_map = {(i,):(i) for i in range(n)}
     qubit_map = {(i,):(i+1)%n for i in range(n)}
     # qubit_map = {(0,):1, (1,):2, (2,):3, (3,):4, (4,):0}
     # sv_sample_indices = np.array([0,1,2,3])
     sv_sample_indices = np.arange(2**(n-1))
     sv_extra_indices = np.array([i for i in range(2**n) if i not in sv_sample_indices])
-    homogeneous_flag = True
+    homogeneous_flag = False
 
     Nx = 2**n
     # L = 1.0
     # dx = L / (Nx+1)
-    dx = 0.1
+    dx = 0.05
     L = dx * (Nx+1)
     if homogeneous_flag:
         L = dx * (Nx//2 + 1)
@@ -72,7 +72,8 @@ def main():
     # print(np.real(H.get_matrix())/norm)
 
     times = np.arange(Nt+1)*dt
-    x = np.arange((Nx if not homogeneous_flag else Nx//2))*dx + dx
+    x = np.arange((Nx if not homogeneous_flag else Nx//2)+1)*dx
+    f = np.zeros(x.shape,dtype=np.complex128)
     theoretical_solution = get_theoretical_evolution(L,Nx,dx,Nt,dt,
                                                      sv_sample_indices,
                                                      homogeneous_flag)
@@ -81,10 +82,11 @@ def main():
     print()
     print(psi0)
     c0 = np.linalg.norm(psi0)
+    c_prime = np.sqrt(np.sum(np.power(psi0[sv_sample_indices],2)) + np.power(2,n-1))
+    print(f'c0={c0}\nc1={c_prime}')
     psi0 /= c0
     print(psi0)
-
-    # return
+    print(psi0/psi0[-1])
 
     params = Params(H, 1, n, qubit_map)
     params.load_hamiltonian_params(D, False, True)
@@ -101,12 +103,13 @@ def main():
     fig,axs = plt.subplots(1,2,sharex=True,sharey=True,figsize=(8,4))
 
     for i,t in enumerate(times):
-        l, =axs[0].plot(x, theoretical_solution[i, np.arange(Nx) if not homogeneous_flag else sv_sample_indices],label=f't={t:0.3f}')
+        f[1:(Nx if not homogeneous_flag else Nx//2)+1] = theoretical_solution[i, np.arange(Nx) if not homogeneous_flag else sv_sample_indices]
+        l, =axs[0].plot(x, f,label=f't={t:0.3f}')
     # taus = np.arange(Ntau+1)*dtau
     # for i,t in enumerate(times):
+        f[1:(Nx if not homogeneous_flag else Nx//2)+1] = np.real(out.svs[i, np.arange(Nx) if not homogeneous_flag else sv_sample_indices]) * (np.prod(out.c_list[0:i+1]) if not homogeneous_flag else (1.0 / np.min(out.svs[sv_extra_indices]) ))
         axs[1].plot(x,
-                    np.real(out.svs[i, np.arange(Nx) if not homogeneous_flag else sv_sample_indices]) * (np.prod(out.c_list[0:i+1]) if not homogeneous_flag
-                    else 1.0/np.mean(out.svs[i,sv_extra_indices])),
+                    f,
                     label=f'tau={t:0.3f}', color=l.get_color())
         # axs[1].plot(x,qnute_svs[i,:], label=f'tau={t:0.3f}')
 
