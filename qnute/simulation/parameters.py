@@ -5,6 +5,8 @@ from qiskit.quantum_info import Statevector
 
 import os
 import logging
+from math import isclose
+from itertools import combinations
 
 from qnute.hamiltonian import Hamiltonian
 from qnute.helpers import int_to_base
@@ -12,6 +14,7 @@ from qnute.helpers.lattice import get_center
 from qnute.helpers.lattice import get_m_sphere
 from qnute.helpers.lattice import min_bounding_sphere
 from qnute.helpers.lattice import in_lattice
+from qnute.helpers.lattice import manhattan_dist
 from qnute.helpers.pauli import ext_domain_pauli
 from qnute.helpers.pauli import pauli_string_prod
 from qnute.helpers.pauli import odd_y_pauli_strings
@@ -38,15 +41,16 @@ class QNUTE_params:
         self.lattice_bound = lattice_bound
 
         self.H = H
+        self.QNUTE_H = None
 
         self.odd_y_strings = {}
 
-        self.h_domains = [hm[2] for hm in self.H.hm_list]
+        # self.h_domains = [hm[2] for hm in self.H.hm_list]
         self.u_domains = []
-        self.mix_domains = []
-        self.h_measurements = [0] * self.H.num_terms
-        self.u_measurements = [0] * self.H.num_terms
-        self.mix_measurements = [0] * self.H.num_terms
+        # self.mix_domains = []
+        self.h_measurements = []
+        self.u_measurements = []
+        self.mix_measurements = []
 
         self.reduce_dimension_flag = None
 
@@ -90,14 +94,14 @@ class QNUTE_params:
         return True
 
     @staticmethod
-    def get_new_domain(active, D, d, l, qubit_map):
+    def get_new_domain(active, D, d, l, qubit_map)->set[int]:
         '''
         Returns a list of the extended/shrunk domain of a Hamiltonian 
         with domain size D on a d-dimensional lattice of bound l
         '''
         c = get_center(active)
         dom = get_m_sphere(c, D//2, d, l)
-        return [coord for coord in dom if coord in qubit_map]
+        return {qubit_map[coord] for coord in dom if coord in qubit_map}
 
     def load_measurement_keys(self, m, domain_ops):
         '''
@@ -107,20 +111,22 @@ class QNUTE_params:
         u_measurements - Pauli indices for the Unitary terms, domain u_domains[m]
         mix_measurement - Pauli indices for the products of h and u terms, domain mix_domains[m]
         '''
-        h_c, h_R = min_bounding_sphere(self.h_domains[m])
-        u_domain = [self.qubit_map[coord] for coord in self.u_domains[m]]
-        u_c, u_R = min_bounding_sphere(u_domain)
+        # h_c, h_R = min_bounding_sphere(self.h_domains[m])
+        # u_domain = [self.qubit_map[coord] for coord in self.u_domains[m]]
+        # u_c, u_R = min_bounding_sphere(u_domain)
 
         # Measurements for c: Pauli strings in hm
-        self.h_measurements[m] = self.H.get_hm_pterms(m)['pauli_id']
+        self.h_measurements[m] = self.QNUTE_H.get_hm_pterms(m)['pauli_id']
+
+        u_domain = [self.invert_map[index] for index in self.u_domains[m]]
         
         # Measurements for S: Products of Pauli strings on the unitary domain
         # All Pauli strings of can be expressed as a product of two 
         # Pauli strings with only odd number of Ys, so all the Pauli strings
         # acting on the unitary domain must be measured to build S
-        self.u_measurements[m] = np.arange(4**len(u_domain),dtype=np.uint32)
+        self.u_measurements[m] = np.array(domain_ops,dtype=np.uint32)
         for i,p in enumerate(self.u_measurements[m]):
-            self.u_measurements[m][i] = ext_domain_pauli(p, u_domain, list(range(self.nbits)))
+            self.u_measurements[m][i] = ext_domain_pauli(p, self.u_domains[m], list(range(self.nbits)))
         
         # Measurements for b: Products of Pauli strings on the unitary domain with 
         # the Pauli strings in hm        
@@ -128,7 +134,9 @@ class QNUTE_params:
         # Hamiltonian term's domain, otherwise, all measurement operators were accounted
         # for when building S
 
-        if u_R < h_R:
+        if self.QNUTE_H.get_hm_term_support(m).issubset(self.u_domains[m]):
+            self.mix_measurements[m] = self.u_measurements[m]
+        else:
             mix_pstrings = []
             for I in self.h_measurements[m]:
                 for J in self.u_measurements[m]:
@@ -137,11 +145,12 @@ class QNUTE_params:
             self.mix_measurements[m] = np.zeros(len(mix_pstrings), dtype=np.uint32)
             for i,pstring in enumerate(mix_pstrings):
                 self.mix_measurements[m][i] = pstring
-        else:
-            self.mix_measurements[m] = self.u_measurements[m]
+            
+        
         
 
-    def load_hamiltonian_params(self, D: int, reduce_dim: bool =False, 
+    def load_hamiltonian_params(self, D: int, u_domains:list[set[int]],
+                                reduce_dim: bool =False, 
                                 load_measurements: bool=True):
         '''
         Performs the precalculations to run QNUTE
@@ -151,15 +160,23 @@ class QNUTE_params:
         '''
         logging.debug('Performing Hamiltonian precalculations...')
         # hm_list = self.H.hm_list
-        nterms = self.H.num_terms
+        # nterms = self.H.num_terms
         self.D = D
         self.reduce_dimension_flag = reduce_dim
 
         logging.debug('\tCalculating Unitary Domains...')
         # Calculate the domains of the unitaries simulating each term
-        for domain in self.h_domains:
-            self.u_domains.append(QNUTE_params.get_new_domain(domain, D, self.lattice_dim, self.lattice_bound, self.qubit_map))
-            self.mix_domains.append( list(set(domain) | set(self.u_domains[-1])) )
+        # for domain in self.h_domains:
+        #     self.u_domains.append(QNUTE_params.get_new_domain(domain, D, self.lattice_dim, self.lattice_bound, self.qubit_map))
+        #     self.mix_domains.append( list(set(domain) | set(self.u_domains[-1])) )
+        self.u_domains = u_domains
+        amplitude_splits = QNUTE_params.get_u_domain_amplitude_splits(self.H, u_domains, self.invert_map)
+        self.QNUTE_H = self.H.rearrange_terms(u_domains, amplitude_splits)
+        nterms = self.QNUTE_H.num_terms
+
+        self.h_measurements = [0] * nterms
+        self.u_measurements = [0] * nterms
+        self.mix_measurements = [0] * nterms
 
         # Check if the terms are real
         if reduce_dim:
@@ -167,7 +184,7 @@ class QNUTE_params:
 
             # Initialize the keys for the odd y strings
             for m in range(nterms):
-                if self.H.real_term_flags[m]:
+                if self.QNUTE_H.real_term_flags[m]:
                     self.odd_y_strings[len(self.u_domains[m])] = None
             
             # Load the odd Y Pauli Strings
@@ -185,7 +202,7 @@ class QNUTE_params:
                 self.mix_measurements[m] = []
                 ndomain = len(self.u_domains[m])
                 # Populate the keys
-                domain_ops = self.odd_y_strings[ndomain] if reduce_dim and self.H.real_term_flags[m] else list(range(4**ndomain))
+                domain_ops = self.odd_y_strings[ndomain] if reduce_dim and self.QNUTE_H.real_term_flags[m] else list(range(4**ndomain))
                 self.load_measurement_keys(m, domain_ops)
     
     def set_run_params(self, dt, delta, N, num_shots, backend, init_circ=None,
@@ -272,3 +289,50 @@ class QNUTE_params:
             os.makedirs(self.log_path)
         if not os.path.exists(self.fig_path):
             os.makedirs(self.fig_path)
+
+    @staticmethod
+    def get_minimum_cover(support:set[int], u_domains:list[set[int]], invert_map:dict[int,tuple[int]]) -> list[int]:
+        support_center = get_center([invert_map[index] for index in support])
+        u_domain_centers:list[np.ndarray[float]] = [get_center([invert_map[index] for index in domain]) for domain in u_domains]
+
+        r = 1
+        if len(support) > len(u_domains[0]):
+            r+=1
+        found_flag = False
+        min_dist = float('inf')
+        u_index_list = []
+        while r < len(u_domains) and not found_flag:
+            for u_indices in combinations(range(len(u_domains)), r):
+                u = [u_domains[i] for i in u_indices]
+                x = set.union(*u)
+                if support.issubset(x):
+                    found_flag = True
+                    dist = 0.0
+                    for i in u_indices:
+                        dist += manhattan_dist(support_center, u_domain_centers[i])
+                    if isclose(dist,min_dist):
+                        u_index_list += list(u_indices)
+                    else:
+                        if dist < min_dist:
+                            min_dist = dist
+                            u_index_list = list(u_indices)
+            r += 1
+        
+        if not found_flag:
+            u_index_list = list(range(len(u_domains)))
+        else:
+            r -= 1
+        return u_index_list
+    
+    @staticmethod
+    def get_u_domain_amplitude_splits(ham:Hamiltonian, u_domains:list[set[int]], invert_map:dict[int,tuple[int]]):
+        amplitude_splits = np.zeros((ham.num_terms,len(u_domains)),dtype=np.float64)
+
+        for term in range(ham.num_terms):
+            support = ham.get_hm_term_support(term)
+            
+            u_index_list = QNUTE_params.get_minimum_cover(support, [set(dom) for dom in u_domains], invert_map)
+            frac = 1.0/len(u_index_list)
+            for ui in u_index_list:
+                amplitude_splits[term,ui] += frac
+        return amplitude_splits

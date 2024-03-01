@@ -98,8 +98,8 @@ def solve_for_a_list(S, b, delta, u_measurements):
 def update_alist(params:Params, sigma_expectation:dict, 
              term:int, psi0:np.array, 
              scale:float):
-    # hm = params.H.hm_list[term]
-    pterms = params.H.get_hm_pterms(term)
+    # hm = params.QNUTE_H.hm_list[term]
+    pterms = params.QNUTE_H.get_hm_pterms(term)
     num_terms = pterms.shape[0]
     u_domain = params.u_domains[term]
     ndomain = len(u_domain)
@@ -147,7 +147,7 @@ def qnute_step(params:Params, output:Output, step:int):
     c_list = []
 
     psi0 = output.svs[step - 1]
-    H = params.H
+    H = params.QNUTE_H
 
     for term in range(H.num_terms):
         if len(params.u_domains[term]) == 0:

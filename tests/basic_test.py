@@ -40,7 +40,7 @@ def main():
     print(ham)
 
     print(np.real(ham.get_matrix()))
-    return
+    
 
     params = Params(ham,1,num_qbits,None)
     logging.info('Testing Hamiltonian Module\n')
@@ -57,8 +57,10 @@ def main():
 
     logging.info('Testing Parameters module\n')
     D = 2
-    params.load_hamiltonian_params(D, False, True)
+    u_domains = [[0,1],[1,2],[2,3]]
+    params.load_hamiltonian_params(D, u_domains, False, True)
     params.set_run_params(dt, delta, N, num_shots, backend, init_sv=psi0, trotter_flag=False)
+    # return
 
     logging.info('Testing QNUTE simulation.\n')
     out = qnute(params)

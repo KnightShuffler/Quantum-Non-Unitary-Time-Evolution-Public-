@@ -1,6 +1,7 @@
 import numpy as np
 from numba import njit
 from itertools import combinations
+from copy import deepcopy
 from qnute.helpers import int_to_base
 from qnute.helpers.pauli import ext_domain_pauli
 from qnute.helpers.pauli import get_pauli_prod_matrix
@@ -251,3 +252,35 @@ class Hamiltonian:
         hm_list = hm_list_tensor(H1.hm_list, H2.hm_list)
         nbits = np.max([H1.nbits, H2.nbits])
         return Hamiltonian(hm_list, nbits)
+    
+    def rearrange_terms(self, u_domains:list[set[int]], amplitude_splits:np.ndarray[np.ndarray[float]]) -> 'Hamiltonian':
+        new_pterm_list = np.zeros(len(u_domains)*self.pterm_list.shape[0], dtype=hm_dtype)
+        new_hm_indices = []
+        counter = 0
+        for i,dom in enumerate(u_domains):
+            new_hm_indices.append(counter)
+            for term in range(self.num_terms):
+                for pterm in self.get_hm_pterms(term):
+                    new_amplitude = pterm['amplitude']*amplitude_splits[term,i]
+                    if new_amplitude != 0.0:
+                        new_pterm_list[counter]=(pterm['pauli_id'], pterm['amplitude']*amplitude_splits[term,i])
+                        counter += 1
+
+        # new_pterm_list.resize(counter)
+        
+        ham2 = deepcopy(self)
+        ham2.pterm_list = new_pterm_list[0:counter]
+        ham2.hm_indices = new_hm_indices
+        ham2.num_terms = len(u_domains)
+
+        return ham2
+    
+    def get_hm_term_support(self, term:int) -> set[int]:
+        p = self.pterm_list[self.hm_indices[term]]['pauli_id']
+        support = set()
+        for i in range(self.nbits):
+            if p % 4 != 0:
+                support.add(i)
+            p //= 4
+        return support
+
