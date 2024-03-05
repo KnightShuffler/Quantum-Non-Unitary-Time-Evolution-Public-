@@ -295,7 +295,9 @@ class Hamiltonian:
             if term < self.num_terms - 1:
                 if i == self.hm_indices[term+1]:
                     term += 1
-            if pterm['pauli_id'] in odd_y and not isclose(pterm['amplitude'].real, 0.0):
-                self.real_term_flags[term] = False
+            if pterm['pauli_id'] in odd_y:
+                self.real_term_flags[term] &= isclose(pterm['amplitude'].real, 0.0)
+            else:
+                self.real_term_flags[term] &= isclose(pterm['amplitude'].imag, 0.0)
             
 
