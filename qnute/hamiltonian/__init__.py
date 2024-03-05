@@ -280,6 +280,8 @@ class Hamiltonian:
     
     def get_hm_term_support(self, term:int) -> set[int]:
         p = self.pterm_list[self.hm_indices[term]]['pauli_id']
+        if p == 0:
+            return set(range(self.nbits))
         support = set()
         for i in range(self.nbits):
             if p % 4 != 0:
