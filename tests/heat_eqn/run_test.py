@@ -26,7 +26,7 @@ def graycode_permute_matrix(num_qbits:int):
 def get_theoretical_evolution(L:float,Nx:int,dx:float,Nt:int,dt:float,
                               sv_sample_indices:np.ndarray,
                               homogeneous_flag:bool=False,
-                              freq:float=1.0):
+                              freq:int=1):
     if not homogeneous_flag:
         theoretical_solution = np.zeros((Nt+1,Nx), dtype=np.float64)
         x = np.arange(Nx)*dx + dx
@@ -42,7 +42,7 @@ def get_theoretical_evolution(L:float,Nx:int,dx:float,Nt:int,dt:float,
 
 def main():
     logging.getLogger().setLevel(logging.INFO)
-    n = 5
+    n = 4
     qubit_map = {(i,):(i) for i in range(n)}
     assert n-1 > 1
     fig,axs = plt.subplots(n-1,4,figsize=(4*4,(n-1)*4))
@@ -50,7 +50,9 @@ def main():
     sv_sample_indices = np.arange(2**(n-1))
     sv_extra_indices = np.array([i for i in range(2**n) if i not in sv_sample_indices])
     homogeneous_flag = False
-    graycode_flag = True
+    graycode_flag = False
+    full_circle_flag = False
+    reduce_dim_flag = False
 
     Nx = 2**n
     # L = 1.0
@@ -88,7 +90,7 @@ def main():
     times = np.arange(Nt+1)*dt
     x = np.arange((Nx if not homogeneous_flag else Nx//2)+2)*dx
     f = np.zeros(x.shape,dtype=np.complex128)
-    freq = 1.0
+    freq = 1
     theoretical_solution = get_theoretical_evolution(L,Nx,dx,Nt,dt,
                                                     sv_sample_indices,
                                                     homogeneous_flag,
@@ -110,10 +112,13 @@ def main():
     params = Params(H, 1, n, qubit_map)
 
     for Di,D in enumerate(range(2,n+1)):
-        u_domains = [[j%n for j in range(i,i+D)] for i in range(n-D+1+1)] if D < n else [list(range(n))]
+        if full_circle_flag:
+            u_domains = [[j%n for j in range(i,i+D)] for i in range(n)] if D < n else [list(range(n))]
+        else:
+            u_domains = [list(range(i,i+D)) for i in range(n-D+1)]
         print('u_domains:', u_domains)
 
-        params.load_hamiltonian_params(D, u_domains, False, True)
+        params.load_hamiltonian_params(D, u_domains, reduce_dim_flag, True)
         params.set_run_params(dtau, delta, Nt, num_shots, backend, init_sv=psi0,trotter_flag=trotter_flag)
 
         out = qnute(params,log_frequency=100,c0=c0)
@@ -160,7 +165,7 @@ def main():
         for i in range(2):
             axs[Di,i].set_xlim(-0.01,L + 0.01)
             axs[Di,i].set_xticks(np.arange(0.0,L+0.01,dx))
-            if freq == 1.0:
+            if freq == 1:
                 axs[Di,i].set_ylim(-0.01, 1.01)
             else:
                 axs[Di,i].set_ylim(-1.01, 1.01)
@@ -176,9 +181,9 @@ def main():
         axs[-1,i].set_xlabel(label)
     # axs[2].set_xlim(-0.01, times[-1] + 0.01)
     # axs[2].set_ylim(-0.01, 1.01)
-    fig.suptitle(f'QITE Heat equation for {n} qubits\ndtau={dtau} | {"Gray Code" if graycode_flag else "Direct Encoding"}')
+    fig.suptitle(f'QITE Heat equation for {n} qubits\ndtau={dtau} | dx={dx} | {"Gray Code" if graycode_flag else "Simple Encoding"} | {"Linear" if not full_circle_flag else "Circular"} Topology\n{"Full" if not reduce_dim_flag else "Reduced"} Unitary Operator Set | {"Homogeneous" if homogeneous_flag else "Cartesian"} Coordinates | Frequency = {freq}')
     plt.tight_layout()
-    plt.savefig(f'figs/heat_eqn/{n}_qubits_dtau={dtau:0.3f}_{"GrayCode" if graycode_flag else "DirectEncoding"}_freq={freq:0.3f}.png')
+    plt.savefig(f'figs/heat_eqn/{n}_qubits_dtau={dtau:0.3f}_dx={dx:0.3f}_{"GrayCode" if graycode_flag else "SimpleEncoding"}_{"Linear" if not full_circle_flag else "Circular"}Topology_{"Full" if not reduce_dim_flag else "Reduced"}UnitaryOperatorSet_{"Homogeneous" if homogeneous_flag else "Cartesian"}Coordinates_Frequency={freq}.png')
     # plt.show()
     
 
