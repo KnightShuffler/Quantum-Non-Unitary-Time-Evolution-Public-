@@ -83,13 +83,13 @@ def get_graycode_laplace1D_continuity_term(num_qbits:int,qbit_offset:int=0):
 
 @lru_cache
 def get_graycode_laplace1D_periodic_term(num_qbits:int,qbit_offset:int=0):
-    assert num_qbits >= 2
+    # assert num_qbits >= 2
     # if num_qbits == 2:
     #     return hm_list_tensor([[np.array([1],dtype=np.uint32), np.array([1.0],dtype=np.complex128), [num_qbits-1+qbit_offset]]],
     #                           get_upperLeft_hm_list(1, qbit_offset))
     return hm_list_tensor(
         [[np.array([1],dtype=np.uint32), np.array([1.0],dtype=np.complex128), [num_qbits-1+qbit_offset]]],
-        hm_list_tensor(get_upperLeft_hm_list(num_qbits-1,qbit_offset))
+        get_upperLeft_hm_list(num_qbits-1,qbit_offset)
     )
 
 @lru_cache
