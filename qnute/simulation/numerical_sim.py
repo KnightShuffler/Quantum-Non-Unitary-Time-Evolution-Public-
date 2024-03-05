@@ -65,19 +65,19 @@ def construct_c(pterms:np.array, c_expectations:np.array,  scale:float, dt:float
     return np.sqrt(c)
 
 @njit
-def construct_S(u_measurements, S_expectations, nbits):
-    nops = u_measurements.shape[0]
+def construct_S(u_operators, S_expectations, nbits):
+    nops = u_operators.shape[0]
     S = np.zeros((nops,nops), dtype=np.complex128)
-    for i,p_I in enumerate(u_measurements):
-        for j,p_J in enumerate(u_measurements):
+    for i,p_I in enumerate(u_operators):
+        for j,p_J in enumerate(u_operators):
             p_,c_ = pauli_string_prod(p_I, p_J, nbits)
             S[i,j] = S_expectations['value'][np.where(S_expectations['pauli_id']==p_)][0] * c_
     return S
 
 @njit
-def construct_b(pterms, u_measurements, b_expectations, c, nbits, scale):
-    b = np.zeros(u_measurements.shape[0], dtype=np.float64)
-    for i,p_I in enumerate(u_measurements):
+def construct_b(pterms, u_operators, b_expectations, c, nbits, scale):
+    b = np.zeros(u_operators.shape[0], dtype=np.float64)
+    for i,p_I in enumerate(u_operators):
         for j,p_J in enumerate(pterms):
             p_,c_ = pauli_string_prod(p_I, p_J['pauli_id'], nbits)
             b[i] += scale * np.imag(pterms[j]['amplitude'] * c_) * b_expectations['value'][np.where(b_expectations['pauli_id']==p_)][0]
@@ -85,12 +85,12 @@ def construct_b(pterms, u_measurements, b_expectations, c, nbits, scale):
     return b
 
 @njit
-def solve_for_a_list(S, b, delta, u_measurements):
-    dalpha = np.eye(u_measurements.shape[0]) * delta
+def solve_for_a_list(S, b, delta, u_operators):
+    dalpha = np.eye(u_operators.shape[0]) * delta
     a = np.real(np.linalg.lstsq(2*np.real(S) + dalpha, b, rcond=-1)[0])
     
     a_list_term = np.zeros(a.shape[0], dtype=pauli_pair_dtype)
-    for i,p in enumerate(u_measurements):
+    for i,p in enumerate(u_operators):
         a_list_term[i]['pauli_id'] = p
         a_list_term[i]['value'] = a[i]
     return a_list_term
@@ -104,16 +104,21 @@ def update_alist(params:Params, sigma_expectation:dict,
     u_domain = params.u_domains[term]
     ndomain = len(u_domain)
 
+    if params.reduce_dimension_flag and params.QNUTE_H.real_term_flags[term]:
+        u_operators = params.odd_y_strings[ndomain]
+    else:
+        u_operators = params.u_measurements[term]
+
     # Load c
     c = construct_c(pterms, sigma_expectation['c'], scale, params.dt)
     
     # Load S
-    S = construct_S(params.u_measurements[term], sigma_expectation['S'], params.nbits)
+    S = construct_S(u_operators, sigma_expectation['S'], params.nbits)
     
     # Load b
-    b = construct_b(pterms, params.u_measurements[term], sigma_expectation['b'], c, params.nbits, scale)
+    b = construct_b(pterms, u_operators, sigma_expectation['b'], c, params.nbits, scale)
 
-    a_list_term = solve_for_a_list(S,b,params.delta,params.u_measurements[term])
+    a_list_term = solve_for_a_list(S,b,params.delta,u_operators)
     
     return a_list_term, c
    

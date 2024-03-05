@@ -144,10 +144,7 @@ class QNUTE_params:
             mix_pstrings = set(mix_pstrings)
             self.mix_measurements[m] = np.zeros(len(mix_pstrings), dtype=np.uint32)
             for i,pstring in enumerate(mix_pstrings):
-                self.mix_measurements[m][i] = pstring
-            
-        
-        
+                self.mix_measurements[m][i] = pstring  
 
     def load_hamiltonian_params(self, D: int, u_domains:list[set[int]],
                                 reduce_dim: bool =False, 
@@ -181,6 +178,7 @@ class QNUTE_params:
         # Check if the terms are real
         if reduce_dim:
             logging.debug('\tCalculating Required Odd-Y Pauli Strings...')
+            self.QNUTE_H.calculate_real_terms()
 
             # Initialize the keys for the odd y strings
             for m in range(nterms):
@@ -188,7 +186,7 @@ class QNUTE_params:
                     self.odd_y_strings[len(self.u_domains[m])] = None
             
             # Load the odd Y Pauli Strings
-            for y_len in self.odd_y_strings.keys():
+            for y_len in self.odd_y_strings:
                 self.odd_y_strings[y_len] = odd_y_pauli_strings(y_len)
         
         if load_measurements:
@@ -202,7 +200,8 @@ class QNUTE_params:
                 self.mix_measurements[m] = []
                 ndomain = len(self.u_domains[m])
                 # Populate the keys
-                domain_ops = self.odd_y_strings[ndomain] if reduce_dim and self.QNUTE_H.real_term_flags[m] else list(range(4**ndomain))
+                # domain_ops = self.odd_y_strings[ndomain] if reduce_dim and self.QNUTE_H.real_term_flags[m] else list(range(4**ndomain))
+                domain_ops = list(range(4**ndomain))
                 self.load_measurement_keys(m, domain_ops)
     
     def set_run_params(self, dt, delta, N, num_shots, backend, init_circ=None,

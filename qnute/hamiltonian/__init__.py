@@ -2,9 +2,11 @@ import numpy as np
 from numba import njit
 from itertools import combinations
 from copy import deepcopy
+from math import isclose
 from qnute.helpers import int_to_base
 from qnute.helpers.pauli import ext_domain_pauli
 from qnute.helpers.pauli import get_pauli_prod_matrix
+from qnute.helpers.pauli import odd_y_pauli_strings
 
 # Format of the Hamiltonian:
 #   hm_list is a list of terms: [hm]
@@ -125,6 +127,7 @@ class Hamiltonian:
         self.num_terms = len(self.hm_list)
         self.nbits = nbits
         # self.nbits = len(qubit_map)
+        self.real_term_flags = None
     
     @staticmethod
     def reduce_hm_list(hm_list, nbits):
@@ -283,4 +286,16 @@ class Hamiltonian:
                 support.add(i)
             p //= 4
         return support
+
+    def calculate_real_terms(self):
+        self.real_term_flags = [True] * self.num_terms
+        odd_y = odd_y_pauli_strings(self.nbits)
+        term = 0
+        for i,pterm in enumerate(self.pterm_list):
+            if term < self.num_terms - 1:
+                if i == self.hm_indices[term+1]:
+                    term += 1
+            if pterm['pauli_id'] in odd_y and not isclose(pterm['amplitude'].real, 0.0):
+                self.real_term_flags[term] = False
+            
 

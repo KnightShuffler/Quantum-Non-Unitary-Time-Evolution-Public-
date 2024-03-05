@@ -1,5 +1,6 @@
 import numpy as np
 from numba import njit
+from functools import lru_cache
 from . import int_to_base
 from . import base_to_int
 from . import TOLERANCE
@@ -60,6 +61,7 @@ def pauli_string_prod(p1,p2,nbits):
     
     return base_to_int(prod,4), c
 
+@lru_cache
 def odd_y_pauli_strings(nbits):
     '''
     returns a list of all the nbit long pauli strings with an odd number of Ys
@@ -77,7 +79,7 @@ def odd_y_pauli_strings(nbits):
         # append if odd number of Ys
         if num_y %2 == 1:
             odd_y.append(i)
-    return odd_y
+    return np.array(odd_y,dtype=np.uint32)
 
 def ext_domain_pauli(p, active, domain):
     '''
