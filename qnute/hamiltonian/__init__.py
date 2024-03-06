@@ -221,7 +221,11 @@ class Hamiltonian:
         returns the spectrum of the Hamiltonian
         '''
         h_mat = self.get_matrix()
-        return np.linalg.eig(h_mat)
+        eig_vals, eig_states = np.linalg.eig(h_mat)
+        idx = eig_vals.argsort()[::-1]   
+        eig_vals = eig_vals[idx]
+        eig_states = eig_states[:,idx]
+        return eig_vals, eig_states
 
     def get_gs(self):
         '''
