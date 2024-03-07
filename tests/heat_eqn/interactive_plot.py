@@ -6,6 +6,7 @@ from qnute.simulation.parameters import QNUTE_params as Params
 from qnute.simulation.output import QNUTE_output as Output
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
+from scipy.interpolate import UnivariateSpline
 
 from .run_test import get_theoretical_evolution, graycode_permute_matrix
 
@@ -56,13 +57,13 @@ def main():
     x = np.arange((Nx if not homogeneous_flag else Nx//2)+2)*dx
     f = np.zeros(x.shape,dtype=np.complex128)
 
-    freq = 0
+    freq = 1
 
-    theoretical_solution = get_theoretical_evolution(L,Nx,dx,Nt,dt,
-                              sv_sample_indices,
-                              homogeneous_flag, freq)
-    psi0 = theoretical_solution[0].copy()
-    # psi0 = np.random.uniform(0.0, 1.0, Nx)
+    # theoretical_solution = get_theoretical_evolution(L,Nx,dx,Nt,dt,
+    #                           sv_sample_indices,
+    #                           homogeneous_flag, freq)
+    # psi0 = theoretical_solution[0].copy()
+    psi0 = np.random.uniform(0.0, 1.0, Nx)
     psi0 /= np.linalg.norm(psi0)
     if graycode_flag:
         psi0 = np.dot(P_n, psi0)
@@ -102,7 +103,9 @@ def main():
     
     fig.suptitle(f'QITE States at time t={0.0:0.3f}')
     lines = [[[i,i] for i in range(n-1)] for j in range(2)]
+    splines = [[[i,i] for i in range(n-1)] for j in range(2)]
     x = np.arange(Nx)
+    x_spline = np.linspace(0,Nx-1,1000)
     axs[0,0].set_xticks(x)
     axs[0,0].set_ylim([-1.01,1.01])
     for Di,D in enumerate(range(2,n+1)):
@@ -111,10 +114,17 @@ def main():
         axs[0,Di].grid(True)
         axs[1,Di].grid(True)
 
-        lines[0][Di][0], = axs[0,Di].plot(x, qnute_svs[Di,0,:].real)
+        # lines[0][Di][0], = axs[0,Di].plot(x, qnute_svs[Di,0,:].real)
         lines[1][Di][0], = axs[1,Di].plot(x, eig_fids[Di,0,:].real)
-        lines[0][Di][1], = axs[0,Di].plot(x, qnute_svs[Di,0,:].imag)
+        # lines[0][Di][1], = axs[0,Di].plot(x, qnute_svs[Di,0,:].imag)
         lines[1][Di][1], = axs[1,Di].plot(x, eig_fids[Di,0,:].imag)
+
+        r_spline = UnivariateSpline(x,qnute_svs[Di,0,:].real,s=3)
+        i_spline = UnivariateSpline(x,qnute_svs[Di,0,:].imag,s=3)
+
+        splines[0][Di][0], = axs[0,Di].plot(x_spline, r_spline(x_spline))
+        splines[0][Di][1], = axs[0,Di].plot(x_spline, i_spline(x_spline))
+        
 
 
 
@@ -123,10 +133,16 @@ def main():
         t = slider_time.val * dt
         fig.suptitle(f'QITE States at time t={t:0.3f}')
         for Di in range(n-1):
-            lines[0][Di][0].set_ydata(qnute_svs[Di,ti,:].real)
+            # lines[0][Di][0].set_ydata(qnute_svs[Di,ti,:].real)
             lines[1][Di][0].set_ydata(eig_fids[Di,ti,:].real)
-            lines[0][Di][1].set_ydata(qnute_svs[Di,ti,:].imag)
+            # lines[0][Di][1].set_ydata(qnute_svs[Di,ti,:].imag)
             lines[1][Di][1].set_ydata(eig_fids[Di,ti,:].imag)
+
+            r_spline = UnivariateSpline(x,qnute_svs[Di,ti,:].real,s=3)
+            i_spline = UnivariateSpline(x,qnute_svs[Di,ti,:].imag,s=3)
+
+            splines[0][Di][0].set_ydata(r_spline(x_spline))
+            splines[0][Di][1].set_ydata(i_spline(x_spline))
         fig.canvas.draw()
     
     slider_time.on_changed(update)
