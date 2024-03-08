@@ -1,229 +1,151 @@
 import numpy as np
-from numba import njit
-from qnute.hamiltonian import Hamiltonian
-from qnute.hamiltonian.laplacian import generateLaplaceHamiltonian1D, generateGrayCodeLaplacian1D
-from qnute.simulation.numerical_sim import qnute
-from qnute.simulation.numerical_sim import get_theoretical_evolution as get_qnute_th_evolution
-from qnute.simulation.parameters import QNUTE_params as Params
-from qnute.simulation.output import QNUTE_output as Output
 import matplotlib.pyplot as plt
-from qnute.helpers.pauli import sigma_matrices
 
+import os
 import logging
 
+from . import get_zero_bc_analytical_solution
+from . import get_zero_bc_frequency_amplitudes
+from . import get_periodic_bc_analytical_solution
+from . import get_periodic_bc_frequency_amplitudes
+from . import run_1D_heat_eqn_simulation
+
 # @njit(cache=True)
-def graycode_permute_matrix(num_qbits:int):
-    if num_qbits == 1:
-        return np.eye(2,2, dtype=np.complex128)
-    P_n = graycode_permute_matrix(num_qbits-1)
-    X = np.kron(sigma_matrices[1], np.eye(2**(num_qbits-2)))
+# def graycode_permute_matrix(num_qbits:int):
+#     if num_qbits == 1:
+#         return np.eye(2,2, dtype=np.complex128)
+#     P_n = graycode_permute_matrix(num_qbits-1)
+#     X = np.kron(sigma_matrices[1], np.eye(2**(num_qbits-2)))
 
-    ul =  np.kron( np.array([[1,0],[0,0]],dtype=np.complex128), P_n ) 
-    lr = np.kron( np.array([[0,0],[0,1]], dtype=np.complex128), np.matmul(X,P_n))
-    return ul + lr
+#     ul =  np.kron( np.array([[1,0],[0,0]],dtype=np.complex128), P_n ) 
+#     lr = np.kron( np.array([[0,0],[0,1]], dtype=np.complex128), np.matmul(X,P_n))
+#     return ul + lr
 
-@njit
-def get_theoretical_evolution(L:float,Nx:int,dx:float,Nt:int,dt:float,
-                              sv_sample_indices:np.ndarray,
-                              homogeneous_flag:bool=False,
-                              freq:int=1,
-                              alpha=1.0):
-    if freq == 0:
-        return np.ones((Nt+1,Nx), dtype=np.float64)
-    if not homogeneous_flag:
-        theoretical_solution = np.zeros((Nt+1,Nx), dtype=np.float64)
-        x = np.arange(Nx)*dx + dx
-        for i,t in enumerate(np.arange(Nt+1)*dt):
-            theoretical_solution[i,:] = np.sin(freq*np.pi*x/L) * np.exp(-np.power(freq*np.pi/L,2)*t*alpha)
-        return theoretical_solution
-    else:
-        theoretical_solution = np.ones(((Nt+1),Nx), dtype=np.float64)
-        x = np.arange(Nx//2)*dx + dx
-        for i,t in enumerate(np.arange(Nt+1)*dt):
-            theoretical_solution[i,sv_sample_indices] = np.sin(freq*np.pi*x/L) * np.exp(-np.power(freq*np.pi/L,2)*t*alpha)
-        return theoretical_solution
+def create_simulation_plot(Nx:int, dx:float, Nt:int, dt:float,
+                           periodic_bc_flag:bool,
+                           analytical_solution:np.ndarray[float], 
+                           D_list:list[int], 
+                           qite_solutions:np.ndarray[float],
+                           data:np.ndarray[float],
+                        #    fidelities:np.ndarray[float],
+                        #    log_norm_ratio:np.ndarray[float],
+                        #    mean_sq_error:np.ndarray[float],
+                           fig_name:str, fig_path:str="figs/heat_eqn/"
+                           ) -> None:
+    figure = plt.figure(figsize=(16,3*(len(D_list)+1)))
+    figure.set_facecolor('white')
+    figure.suptitle('QITE simulation of the Heat Equation',fontsize=13)
+    
+    f1,f2 = figure.subfigures(2,1,height_ratios=(1,len(D_list)))
+    
+    times = np.arange(Nt+1)*dt
+    x = np.arange(Nx+(2 if not periodic_bc_flag else 1))*dx
+    f = np.zeros(x.shape,dtype=np.float64)
+
+    ax1 = f1.subplots()
+    ax1.set_title('Analytical Solution',fontsize=10)
+
+    ax1.set_xlabel('x')
+    ax1.set_xlim(x[0]-dx/2,x[-1]+dx/2)
+    ax1.set_xticks(x)
+    ax1.grid(True)
+
+    col_titles = ['QITE Approximation', 'Fidelity', 'Log of Norm Ratio', 'Mean Squared Error']
+    d_subfigs = f2.subfigures(len(D_list),1)
+    for row,subfig in enumerate(d_subfigs):
+        subfig.suptitle(f'D={D_list[row]}',fontsize=12)
+        axs = subfig.subplots(1,4)
+        for col, ax in enumerate(axs):
+            ax.set_title(col_titles[col])
+            if col == 0:
+                # if not periodic_bc_flag:
+                #     f[1:-1] = qite_solutions[row,ti,:]
+                # else:
+                #     f[0:-1] = qite_solutions[row,ti,:]
+                #     f[-1] = f[0]
+                # ax.plot(x,f)
+                ax.set_xlabel('x')
+                ax.set_xlim(x[0]-dx/2 + x[-1]+dx/2)
+                ax.set_xticks(x)
+            else:
+                ax.plot(times,data[col-1,row,:])
+                ax.set_xlabel('Time')
+
+            ax.grid(True)
+        subfig.subplots_adjust(wspace=0.3,hspace=0.5, bottom=0.175, top=0.8)
+    
+    for ti,t in enumerate(times):
+        if not periodic_bc_flag:
+            f[1:-1] = analytical_solution[ti,:]
+        else:
+            f[0:-1] = analytical_solution[ti,:]
+            f[-1] = f[0]
+        l, = ax1.plot(x, f)
+        for Di, D in enumerate(D_list):
+            if not periodic_bc_flag:
+                f[1:-1] = qite_solutions[Di,ti,:]
+            else:
+                f[0:-1] = qite_solutions[Di,ti,:]
+                f[-1] = f[0]
+            d_subfigs[Di].axes[0].plot(x,f,color=l.get_color())
+
+
+    f1.subplots_adjust(left=0.3, right=0.7, top=0.8, bottom=0.175)
+
+    if not os.path.exists(fig_path):
+        os.makedirs(fig_path)
+    if fig_path[-1] != '/':
+        fig_path += '/'
+    figure.savefig(fig_path+fig_name+'.png')
+    plt.show()
+
 
 def main():
     logging.getLogger().setLevel(logging.INFO)
-    n = 5
-    qubit_map = {(i,):(i) for i in range(n)}
-    assert n-1 > 1
+    n = 4
 
-    sv_sample_indices = np.arange(2**(n-1))
-    sv_extra_indices = np.array([i for i in range(2**n) if i not in sv_sample_indices])
-    homogeneous_flag = False
-    graycode_flag = False
-    full_circle_flag = False
     reduce_dim_flag = True
-    periodic_bc_flag = False
+    periodic_bc_flag = True
+    D_list = list(range(2,n+2,2))
 
     Nx = 2**n
     dx = 0.1
-    L = dx * (Nx+1)
-    if homogeneous_flag:
-        L = dx * (Nx//2 + 1)
-    T = 1.0
-
+    L = (Nx + (1 if not periodic_bc_flag else 0))*dx
+    T = 0.2
     dtau = 0.1
     dt = dtau*dx*dx
     Nt = np.int32(np.ceil(T/dt))
-
-    print(f'Nt = {Nt}, dt = {dt:0.5f}')
-
-    delta = 0.1
-    num_shots=0
-    backend=None
-    trotter_flag = False
-
-    if not graycode_flag:
-        H = generateLaplaceHamiltonian1D(n, 0, 1.0, periodic_bc_flag, homogeneous_flag)
-    else:
-        H = generateGrayCodeLaplacian1D(n, 1.0, periodic_bc_flag, homogeneous_flag)
     alpha = 0.01
-    H.multiply_scalar(alpha)
-    print(H)
-    print(H.pterm_list)
-    # print(H.hm_indices)
-    print(np.real(H.get_matrix()))
-
-    P_n = graycode_permute_matrix(n)
-    iP_n = np.linalg.inv(P_n)
+    delta = 0.1
 
     times = np.arange(Nt+1)*dt
-    x = np.arange((Nx if not homogeneous_flag else Nx//2)+2)*dx
-    f = np.zeros(x.shape,dtype=np.complex128)
+    x = np.arange(Nx+(2 if not periodic_bc_flag else 1))*dx
+
+    # psi0 = np.abs(np.random.normal(0.0,1.0,Nx))
+    # psi0 = np.sin(2*np.pi*x[0:-1]/L)
+    psi0 = np.ones(Nx)
+
+    if not periodic_bc_flag:
+        frequency_amplitudes = get_zero_bc_frequency_amplitudes(psi0, dx, L)
+        analytical_solution = get_zero_bc_analytical_solution(frequency_amplitudes, L, Nx, dx, Nt, dt, alpha)
+    else:
+        frequency_amplitudes = get_periodic_bc_frequency_amplitudes(psi0, dx, L)
+        analytical_solution = get_periodic_bc_analytical_solution(frequency_amplitudes, L, Nx, dx, Nt, dt, alpha)
     
-    for freq in range(1,Nx+1):
-    # for freq in range(5,9):
-        fig,axs = plt.subplots(n-1,4,figsize=(4*4,(n-1)*4))
-        theoretical_solution = get_theoretical_evolution(L,Nx,dx,Nt,dt,
-                                                        sv_sample_indices,
-                                                        homogeneous_flag,
-                                                        freq, alpha)
-
-        psi0 = theoretical_solution[0,:].copy()
-        # psi0 = np.random.uniform(-1.0, 1.0, 2**n) + np.random.uniform(-1.0, 1.0, 2**n)*1.0j
-        if graycode_flag:
-            psi0 = np.dot(P_n, psi0)
-
-        print()
-        print(psi0)
-        c0 = np.linalg.norm(psi0)
-        c_prime = np.sqrt(np.sum(np.power(psi0[sv_sample_indices],2)) + np.power(2,n-1))
-        print(f'c0={c0}\nc1={c_prime}')
-        psi0 /= c0
-        print(psi0)
-        print(psi0/psi0[-1])
-
-        gse,gs = H.get_gs()
-
-        params = Params(H, 1, n, qubit_map)
-
-        for Di,D in enumerate(range(2,n+1)):
-            if full_circle_flag:
-                u_domains = [[j%n for j in range(i,i+D)] for i in range(n)] if D < n else [list(range(n))]
-                # if D < n:
-                #     u_domains = [[j%n for j in range(i,i+D)] for i in range(n+1-D+1)]
-                # else:
-                #     u_domains = [list(range(n))]
-                # match D:
-                #     case 2:
-                #         u_domains = [[0,1], [1,2], [2,3], [3,0]]
-                #     case 3:
-                #         u_domains = [[0,1,2], [2,3,0]]
-                #     case 4:
-                #         u_domains = [list(range(4))]
-            else:
-                u_domains = [list(range(i,i+D)) for i in range(n-D+1)]
-            print('u_domains:', u_domains)
-
-            params.load_hamiltonian_params(D, u_domains, reduce_dim_flag, True)
-            params.set_run_params(dtau, delta, Nt, num_shots, backend, init_sv=psi0,trotter_flag=trotter_flag)
-
-            out = qnute(params,log_frequency=100,c0=c0)
-            # print(len(out.c_list))
-
-            print('Final State:')
-            print(out.svs[-1,:])
-
-            # qnute_svs = get_qnute_th_evolution(np.real(H.get_matrix()), psi0, dtau, Ntau)
-
-            fid = np.zeros(times.shape[0], dtype=np.float64)
-            fid_gs = np.zeros(times.shape[0], dtype=np.float64)
-            psnr = np.zeros(times.shape[0], dtype=np.float64)
-            mean_sq_err = np.zeros(times.shape[0], dtype=np.float64)
-            mean_abs_err = np.zeros(times.shape[0], dtype=np.float64)
-
-            for i,t in enumerate(times):
-                # if graycode_flag:
-                f[1:(Nx if not homogeneous_flag else Nx//2)+1] = theoretical_solution[i, np.arange(Nx) if not homogeneous_flag else sv_sample_indices]
-                # else:
-                #     f[1:(Nx if not homogeneous_flag else Nx//2)+1] = np.matmul(iP_n, theoretical_solution[i, np.arange(Nx) if not homogeneous_flag else sv_sample_indices])
-                l, =axs[Di,0].plot(x, f,label=f't={t:0.3f}')
-            # taus = np.arange(Ntau+1)*dtau
-            # for i,t in enumerate(times):
-                if not graycode_flag:
-                    f[1:(Nx if not homogeneous_flag else Nx//2)+1] = np.real(out.svs[i, np.arange(Nx) if not homogeneous_flag else sv_sample_indices]) * (np.prod(out.c_list[0:i+1]) if not homogeneous_flag else (1.0 / np.mean(out.svs[sv_extra_indices]) ))
-                else:
-                    f[1:(Nx if not homogeneous_flag else Nx//2)+1] = np.dot(iP_n, np.real(out.svs[i, np.arange(Nx) if not homogeneous_flag else sv_sample_indices]) * (np.prod(out.c_list[0:i+1]) if not homogeneous_flag else (1.0 / np.mean(out.svs[sv_extra_indices]) )))
-                axs[Di,1].plot(x,
-                            f,
-                            label=f'tau={t:0.3f}', color=l.get_color())
-                # axs[1].plot(x,qnute_svs[i,:], label=f'tau={t:0.3f}')
-                if graycode_flag:
-                    fid[i] = np.abs(np.vdot(theoretical_solution[i,:]/np.linalg.norm(theoretical_solution[i,:]), np.matmul(iP_n, out.svs[i,:])))
-                    mean_sq_err[i] = np.mean((theoretical_solution[i,:] - (np.dot(iP_n, out.svs[i,:]).real * np.prod(out.c_list[0:i+1])))**2)
-                    mean_abs_err[i] = np.mean(np.abs(theoretical_solution[i,:] - (np.dot(iP_n, out.svs[i,:]) * np.prod(out.c_list[0:i+1]))))
-                else:
-                    fid[i] = np.abs(np.vdot(theoretical_solution[i,:]/np.linalg.norm(theoretical_solution[i,:]), out.svs[i,:]))
-                    mean_sq_err[i] = np.mean((theoretical_solution[i,:].real - (out.svs[i,:].real * np.prod(out.c_list[0:i+1])))**2)
-                    psnr[i] = 10.0 * np.log10(np.max(theoretical_solution[i,:].real)**2/mean_sq_err[i])
-                    mean_abs_err[i] = np.mean(np.abs(theoretical_solution[i,:] - (out.svs[i,:] * np.prod(out.c_list[0:i+1]))))
-                fid_gs[i] = np.abs(np.vdot(gs, out.svs[i,:]))
-
-            axs[Di,2].plot(times, fid)
-            # axs[Di,2].plot(times,fid_gs,linestyle='--')
-            # axs[Di,2].plot(times,psnr)
-            axs[Di,3].plot(times, mean_sq_err)
-            # axs[Di,3].plot(times, mean_abs_err)
-
-            for i in range(4):
-                axs[Di,i].grid(True)
-
-            axs[Di,0].set_ylabel(f'D={D}')
-            for i in range(2):
-                axs[Di,i].set_xlim(-0.01,L + 0.01)
-                axs[Di,i].set_xticks(np.arange(0.0,L+0.01,dx))
-                if freq == 1:
-                    axs[Di,i].set_ylim(-0.01, 1.01)
-                else:
-                    axs[Di,i].set_ylim(-1.01, 1.01)
-
-        column_titles = ['Theoretical Evolution',
-        'QITE Evolution',
-        'Fidelity in unit evolution',
-        # 'PSNR',
-        'Mean squared error']
-        # 'Mean Absolute error']
-        for ax,title in zip(axs[0],column_titles):
-            ax.set_title(title)
-        column_xlabels = ['x', 'x', 'time', 'time']
-        for i,label in enumerate(column_xlabels):
-            axs[-1,i].set_xlabel(label)
-        # axs[2].set_xlim(-0.01, times[-1] + 0.01)
-        # axs[2].set_ylim(-0.01, 1.01)
-        fig.suptitle(f'QITE Heat equation for {n} qubits\ndtau={dtau} | dx={dx} | {"Gray Code" if graycode_flag else "Simple Encoding"} | {"Linear" if not full_circle_flag else "Circular"} Topology\n{"Full" if not reduce_dim_flag else "Reduced"} Unitary Operator Set | {"Homogeneous" if homogeneous_flag else "Cartesian"} Coordinates | Frequency = {freq}')
-        plt.tight_layout()
-        plt.savefig(f'figs/heat_eqn/alpha/alpha={alpha:0.3f}_{n}_qubits_dtau={dtau:0.3f}_dx={dx:0.3f}_{"GrayCode" if graycode_flag else "SimpleEncoding"}_{"Linear" if not full_circle_flag else "Circular"}Topology_{"Full" if not reduce_dim_flag else "Reduced"}UnitaryOperatorSet_{"Homogeneous" if homogeneous_flag else "Cartesian"}Coordinates_Frequency={freq}.png')
-
-        # plt.show()
-        
-
-        # print(fid)
-        # fig2, ax2 = plt.subplots(1,1,figsize=(8,4))
-        # ax2.plot(times, fid, color='black')
-        # plt.show()
+    qite_solutions = run_1D_heat_eqn_simulation(n, dx, T, dtau, alpha, psi0, 
+                                                periodic_bc_flag, D_list, delta, reduce_dim_flag).real
     
+    fidelities = np.zeros((len(D_list), Nt+1), dtype=np.float64)
+    log_norm_ratios = np.zeros(fidelities.shape, dtype=np.float64)
+    mean_sq_err = np.zeros(fidelities.shape, dtype=np.float64)
+    
+
+    for Di,D in enumerate(D_list):
+        for ti,t in enumerate(times):
+            fidelities[Di,ti] = np.abs(np.vdot(qite_solutions[Di,ti,:], analytical_solution[ti,:])) / (np.linalg.norm(analytical_solution[ti,:]) * np.linalg.norm(qite_solutions[Di,ti,:]))
+            log_norm_ratios[Di,ti] = np.log(np.linalg.norm(analytical_solution[ti,:])) - np.log(np.linalg.norm(qite_solutions[Di,ti,:]))
+            mean_sq_err[Di,ti] = np.mean((analytical_solution[ti,:] - qite_solutions[Di,ti,:])**2)
+    create_simulation_plot(Nx,dx,Nt,dt,periodic_bc_flag,analytical_solution,D_list,qite_solutions,np.array([fidelities,log_norm_ratios,mean_sq_err]), 'test_plot')
 
 
 if __name__ == '__main__':
