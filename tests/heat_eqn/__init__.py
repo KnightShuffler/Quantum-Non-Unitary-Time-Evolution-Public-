@@ -109,14 +109,11 @@ def run_1D_heat_eqn_simulation(num_qbits:int, dx:float, T:float,
         params.load_hamiltonian_params(D, u_domains, reduce_dim_flag, True)
         params.set_run_params(dtau, delta, Nt, 0, None, init_sv=psi0,trotter_flag=True)
 
-        try:
-            out = qnute(params, log_frequency=100, c0=c0)
-            solutions[Di,:,:] = out.svs
-            for ti in range(Nt+1):
-                solutions[Di,ti,:] *= np.prod(out.c_list[0:ti+1])
-        except ValueError as e:
-            logging.error(f"Simulation failed for D={D}, solution populated with zeros.")
-            logging.error(repr(e))
+
+        out = qnute(params, log_frequency=100, c0=c0)
+        solutions[Di,:,:] = out.svs
+        for ti in range(Nt+1):
+            solutions[Di,ti,:] *= np.prod(out.c_list[0:ti+1])
 
     return solutions
 

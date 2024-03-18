@@ -118,7 +118,17 @@ def update_alist(params:Params, sigma_expectation:dict,
     # Load b
     b = construct_b(pterms, u_operators, sigma_expectation['b'], c, params.nbits, scale)
 
-    a_list_term = solve_for_a_list(S,b,params.delta,u_operators)
+    delta_scales = np.arange(1,11)
+    for di,scale in enumerate(delta_scales):
+        try:
+            a_list_term = solve_for_a_list(S,b,params.delta*scale,u_operators)
+            break
+        except ValueError as e:
+            if di < 10:
+                logging.info('Least squares did not converge at delta = %f retrying with delta = %f', params.delta, params.delta*delta_scales[di+1])
+            else:
+                logging.error('Least square failed to converge, populating a_list with 0s')
+                a_list_term = np.zeros(u_operators.shape, dtype=np.float64)
     
     return a_list_term, c
    
