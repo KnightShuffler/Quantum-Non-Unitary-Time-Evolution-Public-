@@ -48,9 +48,10 @@ def get_zero_bc_frequency_amplitudes(psi:np.ndarray[float], dx:float, L:float
     for i in range(Nx):
         nu = i+1
         psi_nu = np.sin(nu*np.pi*x/L)
-        frequency_amplitudes[i] = np.dot(psi_nu, psi) / np.linalg.norm(psi_nu)**2
+        # frequency_amplitudes[i] = np.dot(psi_nu, psi) / np.linalg.norm(psi_nu)**2
+        frequency_amplitudes[i] = np.dot(psi_nu, psi)
 
-    return frequency_amplitudes
+    return frequency_amplitudes * 2.0*dx/L
 
 @njit
 def get_periodic_bc_frequency_amplitudes(psi:np.ndarray[float], dx:float, L:float
