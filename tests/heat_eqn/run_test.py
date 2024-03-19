@@ -44,9 +44,9 @@ def main():
 
     frequency_amplitudes = np.zeros(Nx,dtype=np.float64)
     psi0 = np.zeros(Nx,dtype=np.float64)
-    for n in range(1,Nx+1,2):
-        frequency_amplitudes[n] = 4.0/(n*np.pi)
-        psi0 += frequency_amplitudes[n] * np.sin(n*np.pi*x/L)
+    for k in range(1,Nx+1,2):
+        frequency_amplitudes[k] = 4.0/(k*np.pi)
+        psi0 += frequency_amplitudes[k] * np.sin(k*np.pi*x/L)
     analytical_solution = get_zero_bc_analytical_solution(frequency_amplitudes, L,Nx,dx,Nt,dt,alpha)
     
 
