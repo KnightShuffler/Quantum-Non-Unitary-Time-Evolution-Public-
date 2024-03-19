@@ -1,0 +1,28 @@
+[
+    {
+        "num_space_dims":1,
+        "num_qbits": 3,
+        "alpha": 0.01,
+        "dx": 0.1,
+        "dtau": 0.1,
+        "T": 1.0,
+        "periodic_bc_flag": false,
+        "D_list": [2,4,6],
+        "expt_name": "3 Qubit True Square Wave",
+        "expt_info": "f(x,0) = 1.0",
+        "f0_file": "tests/heat_eqn/true_square.npy",
+    },
+    {
+        "num_space_dims":2,
+        "num_qbits": [2,2],
+        "alpha": 0.01,
+        "dx": [0.1,0.1],
+        "dtau": 0.1,
+        "T": 1.0,
+        "periodic_bc_flag": [false],
+        "D_list": [2,4,6],
+        "expt_name": "2D Heat Test",
+        "expt_info": "",
+        "f0_file": null
+    }
+]
