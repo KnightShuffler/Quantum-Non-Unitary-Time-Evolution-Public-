@@ -127,7 +127,7 @@ def generate_evolution_and_stats_figure(expt_data:ExperimentData,
         
         add_time_color_bar(ax, expt_data.T)
         
-        ax.set_ylim([0.0,1.0])
+        # ax.set_ylim([0.0,1.0])
         
 
     for row,ax in enumerate(stat_axs):
@@ -149,4 +149,5 @@ def generate_evolution_and_stats_figure(expt_data:ExperimentData,
     if not os.path.exists(figpath):
         os.makedirs(figpath)
     figure.savefig(figpath+figname+'.svg')
-    plt.show()
+    figure.savefig(figpath+figname+'.png')
+    # plt.show()
