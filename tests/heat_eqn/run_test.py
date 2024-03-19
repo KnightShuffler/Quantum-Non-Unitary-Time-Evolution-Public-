@@ -7,11 +7,11 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import os
 import logging
 
-from . import get_zero_bc_analytical_solution
-from . import get_zero_bc_frequency_amplitudes
-from . import get_periodic_bc_analytical_solution
-from . import get_periodic_bc_frequency_amplitudes
-from . import run_1D_heat_eqn_simulation
+from .simulate_1d import get_zero_bc_analytical_solution
+from .simulate_1d import get_zero_bc_frequency_amplitudes
+from .simulate_1d import get_periodic_bc_analytical_solution
+from .simulate_1d import get_periodic_bc_frequency_amplitudes
+from .simulate_1d import run_1D_heat_eqn_simulation
 
 from .save_experiments import save_experiment_data
 from .save_experiments import load_experiment_data

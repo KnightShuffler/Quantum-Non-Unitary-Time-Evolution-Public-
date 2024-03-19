@@ -9,7 +9,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 import os
 
-from . import get_zero_bc_frequency_amplitudes
+from .simulate_1d import get_zero_bc_frequency_amplitudes
 from .save_experiments import ExperimentData
 
 time_colormap:Colormap = colormaps.get_cmap('coolwarm').reversed()
