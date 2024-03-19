@@ -2,7 +2,8 @@ import numpy as np
 import h5py
 
 import os
-import logging
+
+from . import heat_logger
 
 def save_experiment_data(num_qbits:int,
                          alpha:float,
@@ -23,7 +24,7 @@ def save_experiment_data(num_qbits:int,
     if filepath[-1] != '/':
         filepath += '/'
     if not os.path.exists(filepath):
-        logging.info('Creating directory "%s"', filepath)
+        heat_logger.info('Creating directory "%s"', filepath)
         os.makedirs(filepath)
 
     Nx = 2**num_qbits
@@ -53,7 +54,7 @@ def save_experiment_data(num_qbits:int,
         stats.create_dataset('log_norm_ratio', log_norm_ratio_data.shape, np.float64, log_norm_ratio_data)
         stats.create_dataset('mean_square_error', mse_data.shape, np.float64, mse_data)
     
-    logging.info('Saved data in %s%s.hdf5', filepath,filename)
+    heat_logger.info('Saved data in %s%s.hdf5', filepath,filename)
 
 from dataclasses import dataclass
 

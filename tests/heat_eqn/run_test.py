@@ -7,6 +7,8 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import os
 import logging
 
+from . import heat_logger
+
 from .simulate_1d import get_zero_bc_analytical_solution
 from .simulate_1d import get_zero_bc_frequency_amplitudes
 from .simulate_1d import get_periodic_bc_analytical_solution
@@ -19,7 +21,7 @@ from .plotting import generate_evolution_and_stats_figure
 
 
 def main():
-    logging.getLogger().setLevel(logging.INFO)
+    heat_logger.setLevel(logging.INFO)
     # n = 3
 
     # reduce_dim_flag = True
