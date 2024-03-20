@@ -22,20 +22,20 @@ from .plotting import generate_evolution_and_stats_figure
 
 def main():
     heat_logger.setLevel(logging.INFO)
-    # n = 3
+    n = 3
 
     reduce_dim_flag = True
     periodic_bc_flag = False
     D_list = list(range(2,n+2,2))
 
     Nx = 2**n
-    dx = 0.1
+    dx = 1.0
     L = (Nx + (1 if not periodic_bc_flag else 0))*dx
     T = 1.0
     dtau = 0.1
     dt = dtau*dx*dx
     Nt = np.int32(np.ceil(T/dt))
-    alpha = 0.01
+    alpha = 0.1
     delta = 0.1
 
     times = np.arange(Nt+1)*dt
@@ -44,13 +44,22 @@ def main():
 
     # psi0 = np.ones(Nx) * 0.5
 
-    frequency_amplitudes = np.zeros(Nx,dtype=np.float64)
-    psi0 = np.zeros(Nx,dtype=np.float64)
-    for k in range(1,Nx+1,2):
-        frequency_amplitudes[k] = 4.0/(k*np.pi)
-        psi0 += frequency_amplitudes[k] * np.sin(k*np.pi*x/L)
+    # frequency_amplitudes = np.zeros(Nx,dtype=np.float64)
+    # psi0 = np.zeros(Nx,dtype=np.float64)
+    # for k in range(1,Nx+1,2):
+    #     frequency_amplitudes[k] = 4.0/(k*np.pi)
+    #     psi0 += frequency_amplitudes[k] * np.sin(k*np.pi*x/L)
+
+    psi0 = np.zeros(Nx,np.float64)
+    psi0[1] = 1.0
+    frequency_amplitudes = get_zero_bc_frequency_amplitudes(psi0, dx, L)
+
     analytical_solution = get_zero_bc_analytical_solution(frequency_amplitudes, L,Nx,dx,Nt,dt,alpha)
     
+    filename = '3qubit_image'
+    filepath = 'data/heat_eqn/'
+    figpath = 'figs/heat_eqn/'
+    info = ''
 
     # if not periodic_bc_flag:
     #     frequency_amplitudes = get_zero_bc_frequency_amplitudes(psi0, dx, L)
@@ -83,15 +92,16 @@ def main():
                          analytical_solution[0,:], frequency_amplitudes,
                          qite_solutions,analytical_solution,D_list,
                          fidelities,log_norm_ratios,mean_sq_err,
-                         filepath='data/heat_eqn/',
-                         filename='6qubit_truncated_square_wave',
-                         info_string='f(x,0) = 1.0')
+                         filepath=filepath,
+                         filename=filename,
+                         info_string=info)
     
-    expt_data = load_experiment_data(filepath='data/heat_eqn',filename='6qubit_truncated_square_wave')
+    expt_data = load_experiment_data(filepath=filepath,filename=filename)
     
     generate_evolution_and_stats_figure(expt_data,
-                                        figpath='figs/heat_eqn/',
-                                        figname='6qubit_truncated_square_wave')
+                                        figpath=figpath,
+                                        figname=filename)
+    
     
 
 
