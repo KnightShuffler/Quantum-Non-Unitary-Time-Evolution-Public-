@@ -19,13 +19,13 @@ class ExperimentInput:
     num_qbits:int|np.ndarray[int]
     dx:float|np.ndarray[float]
     periodic_bc_flag:bool|np.ndarray[bool]
-    Nt:int
+    # Nt:int
     f0:np.ndarray[float]
 
     def dict(self):
         return {k:v if (k=='f0' or not isinstance(v, np.ndarray)) else list(v) for k,v in asdict(self).items()}
 
-def generate_input_file(inputs:Iterable[ExperimentInput], filepath:str,file:str,
+def generate_input_file(inputs:Iterable[ExperimentInput]|ExperimentInput, filepath:str,file:str,
                         datapath:str='tests/heat_eqn/'):
     if filepath[-1] != '/':
         filepath += '/'
@@ -38,14 +38,21 @@ def generate_input_file(inputs:Iterable[ExperimentInput], filepath:str,file:str,
 
     with open(filepath+file+'.json', 'w') as outfile:
         outfile.write('[\n')
-        for i,entry in enumerate(inputs):
-            np.save(datafile:=datapath+entry.expt_name+'.npy', entry.f0)
-            d = entry.dict()
+        if isinstance(inputs, Iterable):
+            for i,entry in enumerate(inputs):
+                np.save(datafile:=datapath+entry.expt_name+'.npy', entry.f0)
+                d = entry.dict()
+                d['f0'] = datafile
+                json_object = json.dumps(d, indent=4)
+                outfile.write(json_object)
+                if i != len(inputs) - 1:
+                    outfile.write(',\n')
+        else:
+            np.save(datafile:=datapath+inputs.expt_name+'.npy', inputs.f0)
+            d = inputs.dict()
             d['f0'] = datafile
             json_object = json.dumps(d, indent=4)
             outfile.write(json_object)
-            if i != len(inputs) - 1:
-                outfile.write(',\n')
         outfile.write('\n]')
     
 
@@ -72,16 +79,16 @@ def parse_entry(entry:dict[str,Any]) -> ExperimentInput:
     dx = parse_field(ndims, entry, 'dx')
     periodic_bc_flag = parse_field(ndims, entry, 'periodic_bc_flag')
 
-    if ndims == 1:
-        dt = dtau * dx * dx
-    else:
-        dt = dtau * np.min(dx)**2
-    Nt = np.int32(np.ceil(T/dt))
+    # if ndims == 1:
+    #     dt = dtau * dx * dx
+    # else:
+    #     dt = dtau * np.min(dx)**2
+    # Nt = np.int32(np.ceil(T/dt))
 
     f0 = np.load(entry['f0'])
 
     return ExperimentInput(ndims, alpha, dtau, T, D_list, expt_name, expt_info,
-                           num_qbits, dx, periodic_bc_flag, Nt, f0)
+                           num_qbits, dx, periodic_bc_flag, f0)
     
 
 def parse_field(ndims:int, entry:dict, field:str)->np.ndarray|Any:
@@ -98,21 +105,16 @@ def parse_field(ndims:int, entry:dict, field:str)->np.ndarray|Any:
             return entry[field]
 
 if __name__ == '__main__':
-    l = [
-        ExperimentInput(1,0.1, 0.1, 1.0, [2,4],
-                         'test', 'testinfo', 2, 0.1,
-                         False, 1000, 
-                         np.array([0.0, 1.0, 0.0, 0.0])),
-        ExperimentInput(1,0.1, 0.1, 1.0, [2,4],
-                         'test2', 'test2info', 2, 0.1,
-                         False, 1000, 
-                         np.array([0.0, 0.0, 1.0, 0.0])),
-        ExperimentInput(2,0.1, 0.1, 1.0, [2,4],
-                         'test2', 'test2info', [1,1], [0.1,0.2],
-                         [False,True], 1000, 
-                         np.array([0.0, 0.0, 1.0, 0.0]))
-        ]
-    generate_input_file(l, './', 'test_input')
+    a = 1.0
+    b = 2.0
+    dx = 0.1
+    Nx = 8
+    L = 8*dx
+    triangle_sv = np.array([1.0,1.25,1.5,1.75,2.0,1.75,1.5,1.25])
+    
+    expts = ExperimentInput(1, 0.05, 0.1, 1.0, [2,4],
+                            'Triangle Wave', 'a=1,b=2', 3, 0.1, True, triangle_sv)
+    generate_input_file(expts, './', 'test_input')
 
     for entry in get_inputs('./test_input.json'):
         print(entry,'\n')
