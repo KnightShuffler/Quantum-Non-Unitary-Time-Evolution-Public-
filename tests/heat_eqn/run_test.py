@@ -6,6 +6,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 import os
 import logging
+import sys
 
 from . import heat_logger
 
@@ -18,90 +19,63 @@ from .simulate_1d import run_1D_heat_eqn_simulation
 from .save_experiments import save_experiment_data
 from .save_experiments import load_experiment_data
 from .plotting import generate_evolution_and_stats_figure
+from .input_handler import get_inputs
 
 
 def main():
     heat_logger.setLevel(logging.INFO)
-    n = 3
 
-    reduce_dim_flag = True
-    periodic_bc_flag = False
-    D_list = list(range(2,n+2,2))
-
-    Nx = 2**n
-    dx = 1.0
-    L = (Nx + (1 if not periodic_bc_flag else 0))*dx
-    T = 1.0
-    dtau = 0.1
-    dt = dtau*dx*dx
-    Nt = np.int32(np.ceil(T/dt))
-    alpha = 0.1
-    delta = 0.1
-
-    times = np.arange(Nt+1)*dt
-    # x = np.arange(Nx+(2 if not periodic_bc_flag else 1))*dx
-    x = np.arange(1,Nx+1)*dx if not periodic_bc_flag else np.arange(Nx)*dx
-
-    # psi0 = np.ones(Nx) * 0.5
-
-    # frequency_amplitudes = np.zeros(Nx,dtype=np.float64)
-    # psi0 = np.zeros(Nx,dtype=np.float64)
-    # for k in range(1,Nx+1,2):
-    #     frequency_amplitudes[k] = 4.0/(k*np.pi)
-    #     psi0 += frequency_amplitudes[k] * np.sin(k*np.pi*x/L)
-
-    psi0 = np.zeros(Nx,np.float64)
-    psi0[1] = 1.0
-    frequency_amplitudes = get_zero_bc_frequency_amplitudes(psi0, dx, L)
-
-    analytical_solution = get_zero_bc_analytical_solution(frequency_amplitudes, L,Nx,dx,Nt,dt,alpha)
+    input_file = sys.argv[1]
     
-    filename = '3qubit_image'
+    delta = 0.1
     filepath = 'data/heat_eqn/'
     figpath = 'figs/heat_eqn/'
-    info = ''
 
-    # if not periodic_bc_flag:
-    #     frequency_amplitudes = get_zero_bc_frequency_amplitudes(psi0, dx, L)
-    #     analytical_solution = get_zero_bc_analytical_solution(frequency_amplitudes, L, Nx, dx, Nt, dt, alpha)
-    # else:
-    #     frequency_amplitudes = get_periodic_bc_frequency_amplitudes(psi0, dx, L)
-    #     analytical_solution = get_periodic_bc_analytical_solution(frequency_amplitudes, L, Nx, dx, Nt, dt, alpha)
-    
-    qite_solutions = run_1D_heat_eqn_simulation(n, dx, T, dtau, alpha, psi0, 
-                                                periodic_bc_flag, D_list, delta, reduce_dim_flag).real
-    
-    fidelities = np.zeros((len(D_list), Nt+1), dtype=np.float64)
-    log_norm_ratios = np.zeros(fidelities.shape, dtype=np.float64)
-    mean_sq_err = np.zeros(fidelities.shape, dtype=np.float64)
-    
+    for expt in get_inputs(input_file):
+        if expt.num_space_dims == 1:
+            Nx = 2**expt.num_qbits
+            L = (Nx + (1 if not expt.periodic_bc_flag else 0))*expt.dx
+            dt = expt.dtau * expt.dx**2
+            Nt = np.int32(np.ceil(expt.T/dt))
+            times = np.arange(Nt+1)*dt
+            sample_x = np.arange(1,Nx+1)*expt.dx if not expt.periodic_bc_flag else np.arange(Nx)*expt.dx
+            if not expt.periodic_bc_flag:
+                frequency_amplitudes = get_zero_bc_frequency_amplitudes(expt.f0, expt.dx, L)
+                analytical_solution = get_zero_bc_analytical_solution(frequency_amplitudes, L, Nx, expt.dx, Nt, dt, expt.alpha)
+            else:
+                frequency_amplitudes = get_periodic_bc_frequency_amplitudes(expt.f0, expt.dx, L)
+                analytical_solution = get_periodic_bc_analytical_solution(frequency_amplitudes, L, Nx, expt.dx, Nt, dt, expt.alpha)
+            
+            qite_solutions = run_1D_heat_eqn_simulation(expt.num_qbits, expt.dx, expt.T,
+                                                        expt.dtau, expt.alpha, expt.f0,
+                                                        expt.periodic_bc_flag, expt.D_list, 
+                                                        delta, True)
+            
+            fidelities = np.zeros((len(expt.D_list), Nt+1), dtype=np.float64)
+            log_norm_ratios = np.zeros(fidelities.shape, dtype=np.float64)
+            mean_sq_err = np.zeros(fidelities.shape, dtype=np.float64)
+            
 
-    for Di,D in enumerate(D_list):
-        for ti,t in enumerate(times):
-            fidelities[Di,ti] = np.abs(np.vdot(qite_solutions[Di,ti,:], analytical_solution[ti,:])) / (np.linalg.norm(analytical_solution[ti,:]) * np.linalg.norm(qite_solutions[Di,ti,:]))
-            log_norm_ratios[Di,ti] = np.log(np.linalg.norm(analytical_solution[ti,:])) - np.log(np.linalg.norm(qite_solutions[Di,ti,:]))
-            mean_sq_err[Di,ti] = np.mean((analytical_solution[ti,:] - qite_solutions[Di,ti,:])**2)
-        
-    print(f'{psi0 = }')
-    print(f'{frequency_amplitudes = }')
-    print(f'{analytical_solution[0,:] = }')
-    print(f'{qite_solutions[:,0,:] = }')
+            for Di,D in enumerate(expt.D_list):
+                for ti,t in enumerate(times):
+                    fidelities[Di,ti] = np.abs(np.vdot(qite_solutions[Di,ti,:], analytical_solution[ti,:])) / (np.linalg.norm(analytical_solution[ti,:]) * np.linalg.norm(qite_solutions[Di,ti,:]))
+                    log_norm_ratios[Di,ti] = np.log(np.linalg.norm(analytical_solution[ti,:])) - np.log(np.linalg.norm(qite_solutions[Di,ti,:]))
+                    mean_sq_err[Di,ti] = np.mean((analytical_solution[ti,:] - qite_solutions[Di,ti,:])**2)
 
+            save_experiment_data(expt.num_qbits, expt.alpha, expt.dx, L, 
+                                 expt.dtau, Nt, expt.periodic_bc_flag,
+                                 analytical_solution[0,:], frequency_amplitudes,
+                                 qite_solutions,analytical_solution,expt.D_list,
+                                 fidelities,log_norm_ratios,mean_sq_err,
+                                 filepath=filepath,
+                                 filename=expt.expt_name,
+                                 info_string=expt.expt_info)
     
-    save_experiment_data(n, alpha, dx, L, dtau, Nt, periodic_bc_flag,
-                         analytical_solution[0,:], frequency_amplitudes,
-                         qite_solutions,analytical_solution,D_list,
-                         fidelities,log_norm_ratios,mean_sq_err,
-                         filepath=filepath,
-                         filename=filename,
-                         info_string=info)
-    
-    expt_data = load_experiment_data(filepath=filepath,filename=filename)
-    
-    generate_evolution_and_stats_figure(expt_data,
-                                        figpath=figpath,
-                                        figname=filename)
-    
+            expt_data = load_experiment_data(filepath=filepath,filename=expt.expt_name)
+            
+            generate_evolution_and_stats_figure(expt_data,
+                                                figpath=figpath,
+                                                figname=expt.expt_name)
     
 
 
