@@ -23,7 +23,7 @@ class ExperimentInput:
     f0:np.ndarray[float]
 
     def dict(self):
-        return {k:v if not isinstance(v, np.ndarray) else list(v) for k,v in asdict(self).items()}
+        return {k:v if (k=='f0' or not isinstance(v, np.ndarray)) else list(v) for k,v in asdict(self).items()}
 
 def generate_input_file(inputs:Iterable[ExperimentInput], filepath:str,file:str,
                         datapath:str='tests/heat_eqn/'):
