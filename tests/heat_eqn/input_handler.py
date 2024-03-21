@@ -19,7 +19,6 @@ class ExperimentInput:
     num_qbits:int|np.ndarray[int]
     dx:float|np.ndarray[float]
     periodic_bc_flag:bool|np.ndarray[bool]
-    L:float|np.ndarray[float]
     Nt:int
     f0:np.ndarray[float]
 
@@ -74,21 +73,15 @@ def parse_entry(entry:dict[str,Any]) -> ExperimentInput:
     periodic_bc_flag = parse_field(ndims, entry, 'periodic_bc_flag')
 
     if ndims == 1:
-        Nx = 2**num_qbits
-        L = Nx*dx + (dx if not periodic_bc_flag else 0.0)
         dt = dtau * dx * dx
     else:
-        Nx = np.power(2, num_qbits, dtype=np.int32)
-        L = np.zeros(ndims,dtype=np.float64)
-        for i in range(ndims):
-            L[i] = Nx[i]*dx[i] + (dx[i] if not periodic_bc_flag[i] else 0.0)
         dt = dtau * np.min(dx)**2
     Nt = np.int32(np.ceil(T/dt))
 
     f0 = np.load(entry['f0'])
 
     return ExperimentInput(ndims, alpha, dtau, T, D_list, expt_name, expt_info,
-                           num_qbits, dx, periodic_bc_flag, L, Nt, f0)
+                           num_qbits, dx, periodic_bc_flag, Nt, f0)
     
 
 def parse_field(ndims:int, entry:dict, field:str)->np.ndarray|Any:
@@ -108,15 +101,15 @@ if __name__ == '__main__':
     l = [
         ExperimentInput(1,0.1, 0.1, 1.0, [2,4],
                          'test', 'testinfo', 2, 0.1,
-                         False, 0.9, 1000, 
+                         False, 1000, 
                          np.array([0.0, 1.0, 0.0, 0.0])),
         ExperimentInput(1,0.1, 0.1, 1.0, [2,4],
                          'test2', 'test2info', 2, 0.1,
-                         False, 0.9, 1000, 
+                         False, 1000, 
                          np.array([0.0, 0.0, 1.0, 0.0])),
         ExperimentInput(2,0.1, 0.1, 1.0, [2,4],
                          'test2', 'test2info', [1,1], [0.1,0.2],
-                         [False,True], 0.9, 1000, 
+                         [False,True], 1000, 
                          np.array([0.0, 0.0, 1.0, 0.0]))
         ]
     generate_input_file(l, './', 'test_input')
