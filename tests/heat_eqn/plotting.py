@@ -9,7 +9,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 import os
 
-from .simulate_1d import get_zero_bc_frequency_amplitudes
+from .simulate_1d import get_zero_bc_frequency_amplitudes, get_periodic_bc_frequency_amplitudes
 from .save_experiments import ExperimentData
 
 time_colormap:Colormap = colormaps.get_cmap('coolwarm').reversed()
@@ -36,6 +36,24 @@ def get_zero_bc_interpolation(psi:np.ndarray[float],
         f_interpolate += amp * np.sin(nu*np.pi*dense_x/L)
     return f_interpolate
 
+@njit
+def get_periodic_bc_interpolation(psi:np.ndarray[float],
+                                  dense_x:np.ndarray[float],
+                                  dx: float,L:float
+                                  ) -> np.ndarray[float]:
+    frequency_amplitudes = get_periodic_bc_frequency_amplitudes(psi,dx,L)
+    f_interpolate = np.zeros(dense_x.shape[0], dtype=np.float64)
+    for i,amp in enumerate(frequency_amplitudes):
+        if i == 0:
+            f_interpolate += amp * np.ones(dense_x.shape)
+        elif i%2 == 0:
+            nu = i
+            f_interpolate += amp * np.sin(nu*np.pi*dense_x/L)
+        else:
+            nu = i+1
+            f_interpolate += amp * np.cos(nu*np.pi*dense_x/L)
+    return f_interpolate
+
 def plot_1d_evolution_zero_bc(ax:Axes,
                               f0:np.ndarray[float],
                               solutions:np.ndarray[float],
@@ -59,6 +77,32 @@ def plot_1d_evolution_zero_bc(ax:Axes,
             t = times[ti-1]/times[-1]
             color = time_colormap(t)
             f = get_zero_bc_interpolation(solutions[ti-1,:], dense_x, dx, L)
+            ax.plot(dense_x, f, linestyle='--', linewidth=0.5, color=color)
+            ax.scatter(sample_x, solutions[ti-1,:], s=10, color=color)
+
+def plot_1d_evolution_periodic_bc(ax:Axes,
+                                  f0:np.ndarray[float],
+                                  solutions:np.ndarray[float],
+                                  sample_x:np.ndarray[float],
+                                  dx:float, L:float,
+                                  times:np.ndarray[float],
+                                  plot_times:np.ndarray[int],
+                                  dense_x:np.ndarray[float] = None,
+                                  )->None:
+    if dense_x is None:
+        step = dx/10
+        dense_x = np.arange(0,L+step,step)
+
+    for ti in plot_times:
+        if ti == 0:
+            color = time_colormap(0.0)
+            f = get_periodic_bc_interpolation(f0, dense_x, dx, L)
+            ax.plot(dense_x, f, linestyle='--', linewidth=0.5, color=color)
+            ax.scatter(sample_x, f0, s=10, color=color)
+        else:
+            t = times[ti-1]/times[-1]
+            color = time_colormap(t)
+            f = get_periodic_bc_interpolation(solutions[ti-1,:], dense_x, dx, L)
             ax.plot(dense_x, f, linestyle='--', linewidth=0.5, color=color)
             ax.scatter(sample_x, solutions[ti-1,:], s=10, color=color)
 
@@ -111,11 +155,15 @@ def generate_evolution_and_stats_figure(expt_data:ExperimentData,
         if row < Nd:
             if not expt_data.periodic_bc_flag:
                 plot_1d_evolution_zero_bc(ax, expt_data.f0, expt_data.qite_sols[row,:,:], sample_x, expt_data.dx, expt_data.L, times, plot_times)
+            else:
+                plot_1d_evolution_periodic_bc(ax, expt_data.f0, expt_data.qite_sols[row,:,:], sample_x, expt_data.dx, expt_data.L, times, plot_times)
             add_text(ax, 0.5, 0.05, f'D={expt_data.D_list[row]} Approximation', size=10, horizontalalignment='center')
             ax.set_ylabel(f'$\\psi_{expt_data.D_list[row]}(x,t)$',fontsize=14)
         else:
             if not expt_data.periodic_bc_flag:
                 plot_1d_evolution_zero_bc(ax, expt_data.f0, expt_data.analytical_sol, sample_x, expt_data.dx, expt_data.L, times, plot_times)
+            else:
+                plot_1d_evolution_periodic_bc(ax, expt_data.f0, expt_data.analytical_sol, sample_x, expt_data.dx, expt_data.L, times, plot_times)
             ax.set_xlabel(r'$x$',fontsize=14)
             ax.set_xlim([-expt_data.dx/2, expt_data.L+expt_data.dx/2])
             add_text(ax, 0.5, 0.05, 'Analytical Solution', size=10, horizontalalignment='center')
