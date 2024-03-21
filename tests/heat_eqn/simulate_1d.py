@@ -51,24 +51,25 @@ def get_zero_bc_frequency_amplitudes(psi:np.ndarray[float], dx:float, L:float
         # frequency_amplitudes[i] = np.dot(psi_nu, psi) / np.linalg.norm(psi_nu)**2
         frequency_amplitudes[i] = np.dot(psi_nu, psi)
 
-    return frequency_amplitudes * 2.0*dx/L
+    return frequency_amplitudes * 2.0/Nx
 
 @njit
 def get_periodic_bc_frequency_amplitudes(psi:np.ndarray[float], dx:float, L:float
                                      ) -> np.ndarray[float]:
     Nx = psi.shape[0]
     x = np.arange(Nx)*dx
-    frequency_amplitudes = np.zeros(Nx,dtype=np.float64)
+    frequency_amplitudes = 2.0*np.ones(Nx,dtype=np.float64)/Nx
     for i in range(Nx):
         if i == 0:
             psi_nu = np.ones(Nx,dtype=np.float64)
+            frequency_amplitudes[i] /= 2.0
         elif i % 2 == 0:
             nu = i
             psi_nu = np.sin(nu*np.pi*x/L)
         else:
             nu = i+1
-            psi_nu = np.cos(nu*np.pi*x)
-        frequency_amplitudes[i] = np.dot(psi_nu, psi) / np.linalg.norm(psi_nu)**2
+            psi_nu = np.cos(nu*np.pi*x/L)
+        frequency_amplitudes[i] *= np.dot(psi_nu, psi)
 
     return frequency_amplitudes
 
@@ -80,7 +81,7 @@ def run_1D_heat_eqn_simulation(num_qbits:int, dx:float, T:float,
                                     delta:float=0.1,
                                     reduce_dim_flag:bool=True
                                     ) ->np.ndarray[complex]:
-    if D_list == None:
+    if D_list is None:
         D_list = list(range(2,num_qbits+2,2))
     
     Nx = 2**num_qbits
@@ -115,4 +116,4 @@ def run_1D_heat_eqn_simulation(num_qbits:int, dx:float, T:float,
         for ti in range(Nt+1):
             solutions[Di,ti,:] *= np.prod(out.c_list[0:ti+1])
 
-    return solutions
+    return solutions.real
