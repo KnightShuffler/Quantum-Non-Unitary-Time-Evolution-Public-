@@ -135,6 +135,9 @@ def hm_list_sum(*args):
         hm_list = hm_list_add(hm_list, args[i])
     return hm_list
 
+def get_identity_hm_list(num_qbits:int):
+    return [[np.zeros(1,dtype=np.uint32), np.ones(1,dtype=np.complex128), np.arange(num_qbits)]]
+
 class Hamiltonian:
     def __init__(self, hm_list, nbits):
         self.hm_list = Hamiltonian.reduce_hm_list(hm_list, nbits)
