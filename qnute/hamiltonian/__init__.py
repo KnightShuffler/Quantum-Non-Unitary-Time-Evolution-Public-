@@ -53,15 +53,30 @@ def hm_pterm_tensor(hm1_ind, hm1_amp, hm2_ind, hm2_amp, len_d2):
             k += 1
     return hm_ind, hm_amp
 
-def hm_list_tensor(hm_list1, hm_list2):
+def hm_list_tensor(hm_list1, hm_list2, num_qbits1:int=None, num_qbits2:int=None):
+    if num_qbits1 is None:
+        num_qbits1 = 0
+        for hm in hm_list1:
+            if (q:=np.max(hm[2])) > num_qbits1:
+                num_qbits1 = q
+        num_qbits1 += 1
+    if num_qbits2 is None:
+        num_qbits2 = 0
+        for hm in hm_list2:
+            if (q:=np.max(hm[2])) > num_qbits2:
+                num_qbits2 = q
+        num_qbits2 += 1
+    
+    assert num_qbits1 != 0
+    assert num_qbits2 != 0
+
     hm_list = []
     for hm1 in hm_list1:
-        # len_d1 = len(hm1[2])
         for hm2 in hm_list2:
             len_d2 = len(hm2[2])
             hm = [None, 
                   None,
-                  hm2[2] + hm1[2]]
+                  np.concatenate((hm1[2]+num_qbits2, hm2[2]))]
             hm[0],hm[1] = hm_pterm_tensor(hm1[0], hm1[1], hm2[0], hm2[1], len_d2)
             hm_list.append(hm)
     return hm_list
@@ -96,7 +111,7 @@ def hm_list_add(hm_list1, hm_list2):
     for i,hm1 in enumerate(hm_list1):
         for j,hm2 in enumerate(hm_list2):
             if j not in terms_added[1]:
-                if hm1[2] == hm2[2]:
+                if (hm1[2] == hm2[2]).all():
                     hm = [None,None,hm2[2]]
                     hm[0],hm[1] = add_hm_terms(hm1[0], hm1[1], hm2[0], hm2[1])
                     hm_list.append(hm)
@@ -146,7 +161,7 @@ class Hamiltonian:
                     identity_amplitude += hm[1][i]
                     continue
                 p_digits = np.array(int_to_base(p, 4, len(term_domain)))
-                term_subdomain = tuple(term_domain[np.nonzero(p_digits)[0]])
+                term_subdomain = tuple(np.sort(term_domain[np.nonzero(p_digits)[0]]))
                 new_p = 0
                 j = 0
                 for dig in p_digits:
