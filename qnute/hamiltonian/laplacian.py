@@ -134,7 +134,7 @@ def generateLaplaceHamiltonian1D(num_qbits:int,
     for hm in hm_list:
         for i,amp in enumerate(hm[1]):
             hm[1][i] /= dx*dx
-    return Hamiltonian(hm_list, num_qbits)
+    return Hamiltonian(hm_list, num_qbits+qbit_offset)
 
 def generateGrayCodeLaplacian1D(num_qbits:int,
                                 dx:float=1.0,
