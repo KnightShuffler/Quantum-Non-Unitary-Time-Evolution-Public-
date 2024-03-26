@@ -97,7 +97,7 @@ def add_hm_terms(hm1_ind, hm1_amp, hm2_ind, hm2_amp):
             hm_amp[num_terms] = hm2_amp[j]
             num_terms += 1
         else:
-            k = np.where(hm_ind == p2)[0]
+            k = np.where(hm_ind[0:num_terms] == p2)[0]
             hm_amp[k] += hm2_amp[j]
     
     # hm_ind.reshape(num_terms)
@@ -111,12 +111,13 @@ def hm_list_add(hm_list1, hm_list2):
     for i,hm1 in enumerate(hm_list1):
         for j,hm2 in enumerate(hm_list2):
             if j not in terms_added[1]:
-                if (hm1[2] == hm2[2]).all():
-                    hm = [None,None,hm2[2]]
-                    hm[0],hm[1] = add_hm_terms(hm1[0], hm1[1], hm2[0], hm2[1])
-                    hm_list.append(hm)
-                    terms_added[0].add(i)
-                    terms_added[1].add(j)
+                if hm1[2].shape == hm2[2].shape:
+                    if (hm1[2] == hm2[2]).all():
+                        hm = [None,None,hm2[2]]
+                        hm[0],hm[1] = add_hm_terms(hm1[0], hm1[1], hm2[0], hm2[1])
+                        hm_list.append(hm)
+                        terms_added[0].add(i)
+                        terms_added[1].add(j)
     for i,hm1 in enumerate(hm_list1):
         if i not in terms_added[0]:
             hm_list.append(hm1)
@@ -164,7 +165,7 @@ class Hamiltonian:
                     identity_amplitude += hm[1][i]
                     continue
                 p_digits = np.array(int_to_base(p, 4, len(term_domain)))
-                term_subdomain = tuple(np.sort(term_domain[np.nonzero(p_digits)[0]]))
+                term_subdomain = tuple(term_domain[np.nonzero(p_digits)[0]])
                 new_p = 0
                 j = 0
                 for dig in p_digits:
