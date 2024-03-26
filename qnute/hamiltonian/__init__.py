@@ -274,8 +274,8 @@ class Hamiltonian:
     
     @staticmethod
     def tensor_product(H1:'Hamiltonian', H2:'Hamiltonian')->'Hamiltonian':
-        hm_list = hm_list_tensor(H1.hm_list, H2.hm_list)
-        nbits = np.max([H1.nbits, H2.nbits])
+        hm_list = hm_list_tensor(H1.hm_list, H2.hm_list, H1.nbits, H2.nbits)
+        nbits = H1.nbits + H2.nbits
         return Hamiltonian(hm_list, nbits)
     
     def rearrange_terms(self, u_domains:list[set[int]], amplitude_splits:np.ndarray[np.ndarray[float]]) -> 'Hamiltonian':
