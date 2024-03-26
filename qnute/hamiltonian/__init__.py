@@ -76,7 +76,7 @@ def hm_list_tensor(hm_list1, hm_list2, num_qbits1:int=None, num_qbits2:int=None)
             len_d2 = len(hm2[2])
             hm = [None, 
                   None,
-                  np.concatenate((hm1[2]+num_qbits2, hm2[2]))]
+                  np.concatenate((hm2[2], hm1[2]+num_qbits2))]
             hm[0],hm[1] = hm_pterm_tensor(hm1[0], hm1[1], hm2[0], hm2[1], len_d2)
             hm_list.append(hm)
     return hm_list
