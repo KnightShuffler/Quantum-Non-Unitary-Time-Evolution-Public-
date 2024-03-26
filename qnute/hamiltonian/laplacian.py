@@ -115,18 +115,18 @@ def generateLaplaceHamiltonian1D(num_qbits:int,
     hm_list = []
     if not homogeneous_flag:
         if not periodic_bc_flag:
-            hm_list = get_laplace1D_hm_list(num_qbits,0)
+            hm_list = get_laplace1D_hm_list(num_qbits)
         else:
-            hm_list = get_laplace1D_periodic_hm_list(num_qbits,0)
+            hm_list = get_laplace1D_periodic_hm_list(num_qbits)
     else:
         if not periodic_bc_flag:
             hm_list = hm_list_tensor([[upperLeftKernel_hm_list[0], upperLeftKernel_hm_list[1], np.array([0])]],
-                                 get_laplace1D_hm_list(num_qbits-1,0))
+                                 get_laplace1D_hm_list(num_qbits-1))
             # hm_list = hm_list_tensor(get_laplace1D_hm_list(num_qbits-1),
             #                          [[upperLeftKernel_hm_list[0], upperLeftKernel_hm_list[1], [0]]])
         else:
             hm_list = hm_list_tensor([[upperLeftKernel_hm_list[0], upperLeftKernel_hm_list[1], np.array([0])]],
-                                 get_laplace1D_periodic_hm_list(num_qbits-1,0))
+                                 get_laplace1D_periodic_hm_list(num_qbits-1))
             # hm_list = hm_list_tensor(get_laplace1D_periodic_hm_list(num_qbits-1),
             #                          [[upperLeftKernel_hm_list[0], upperLeftKernel_hm_list[1], [0]]])
 
