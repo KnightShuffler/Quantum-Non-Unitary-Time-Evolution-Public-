@@ -334,5 +334,9 @@ class Hamiltonian:
                 self.real_term_flags[term] &= isclose(pterm['amplitude'].real, 0.0)
             else:
                 self.real_term_flags[term] &= isclose(pterm['amplitude'].imag, 0.0)
+    
+    @staticmethod
+    def Identity(num_qbits)->'Hamiltonian':
+        return Hamiltonian(get_identity_hm_list(num_qbits), num_qbits)
             
 
