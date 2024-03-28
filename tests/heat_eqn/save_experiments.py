@@ -5,14 +5,15 @@ import os
 
 from . import heat_logger
 
-def save_experiment_data(num_qbits:int,
+def save_experiment_data(num_qbits:int|np.ndarray[int],
                          alpha:float,
-                         dx:float,L:float,
+                         dx:float|np.ndarray[float],
+                         L:float|np.ndarray[float],
                          dtau:float,
                          Nt:int,
-                         periodic_bc_flag:bool,
+                         periodic_bc_flag:bool|np.ndarray[bool],
                          f0:np.ndarray[float],
-                         frequency_amplitudes:np.ndarray[float],
+                         fourier_amplitudes:np.ndarray[float],
                          qite_sols:np.ndarray[float],
                          analytical_sol:np.ndarray[float],
                          D_list:list[int]|np.ndarray[int],
@@ -27,8 +28,15 @@ def save_experiment_data(num_qbits:int,
         heat_logger.info('Creating directory "%s"', filepath)
         os.makedirs(filepath)
 
-    Nx = 2**num_qbits
-    dt = dtau*dx*dx
+    if isinstance(num_qbits, np.ndarray):
+        Nx = 2**np.sum(num_qbits)
+    else:
+        Nx = 2**num_qbits
+    if isinstance(dx, np.ndarray):
+        min_dx = np.min(dx)
+        dt = dtau * min_dx**2
+    else:
+        dt = dtau*dx*dx
     
     with h5py.File(filepath+filename+'.hdf5', 'w') as file:
         file.attrs['num_qbits'] = num_qbits
@@ -45,7 +53,7 @@ def save_experiment_data(num_qbits:int,
 
         sv = file.create_group('statevectors')
         sv.create_dataset('f0', f0.shape, np.float64, f0)
-        sv.create_dataset('frequency_amplitudes', frequency_amplitudes.shape, np.float64, frequency_amplitudes)
+        sv.create_dataset('fourier_amplitudes', fourier_amplitudes.shape, np.float64, fourier_amplitudes)
         sv.create_dataset('analytical_sol', (Nt,Nx), np.float64, analytical_sol[1:,:])
         sv.create_dataset('qite_sols', (len(D_list),Nt,Nx), np.float64, qite_sols[:,1:,:])
 
