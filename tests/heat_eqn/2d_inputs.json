@@ -1,0 +1,80 @@
+[
+{
+    "num_space_dims": 2,
+    "alpha": 0.01,
+    "dtau": 0.1,
+    "T": 1.0,
+    "D_list": [
+        2,
+        4,
+        6
+    ],
+    "expt_name": "2D Square Wave 5x5 qubits",
+    "expt_info": "f(x,y)=1.0 with zero boundary conditions",
+    "num_qbits": [
+        5,
+        5
+    ],
+    "dx": [
+        0.1,
+        0.1
+    ],
+    "periodic_bc_flag": [
+        false,
+        false
+    ],
+    "f0": "tests/heat_eqn/2D Square Wave 5x5 qubits.npy"
+},
+{
+    "num_space_dims": 2,
+    "alpha": 0.01,
+    "dtau": 0.1,
+    "T": 1.0,
+    "D_list": [
+        2,
+        4,
+        6
+    ],
+    "expt_name": "2D Triangle Wave 5x5 qubits",
+    "expt_info": "a=1.0, b=2.0, Periodic boundary conditions on each dimension",
+    "num_qbits": [
+        5,
+        5
+    ],
+    "dx": [
+        0.1,
+        0.1
+    ],
+    "periodic_bc_flag": [
+        true,
+        true
+    ],
+    "f0": "tests/heat_eqn/2D Triangle Wave 5x5 qubits.npy"
+},
+{
+    "num_space_dims": 2,
+    "alpha": 0.01,
+    "dtau": 0.1,
+    "T": 1.0,
+    "D_list": [
+        2,
+        4,
+        6
+    ],
+    "expt_name": "Inverted Parabola on x, Triangle Wave on y",
+    "expt_info": "a=1.0, c=1.5",
+    "num_qbits": [
+        5,
+        5
+    ],
+    "dx": [
+        0.1,
+        0.1
+    ],
+    "periodic_bc_flag": [
+        false,
+        true
+    ],
+    "f0": "tests/heat_eqn/Inverted Parabola on x, Triangle Wave on y.npy"
+}
+]

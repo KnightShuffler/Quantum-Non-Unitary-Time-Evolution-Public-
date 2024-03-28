@@ -13,12 +13,12 @@ class ExperimentInput:
     alpha:float
     dtau:float
     T:float
-    D_list:np.ndarray
+    D_list:list
     expt_name:str
     expt_info:str
-    num_qbits:int|np.ndarray[int]
-    dx:float|np.ndarray[float]
-    periodic_bc_flag:bool|np.ndarray[bool]
+    num_qbits:int|list[int]
+    dx:float|list[float]
+    periodic_bc_flag:bool|list[bool]
     # Nt:int
     f0:np.ndarray[float]
 
@@ -53,8 +53,7 @@ def generate_input_file(inputs:Iterable[ExperimentInput]|ExperimentInput, filepa
             d['f0'] = datafile
             json_object = json.dumps(d, indent=4)
             outfile.write(json_object)
-        outfile.write('\n]')
-    
+        outfile.write('\n]')  
 
 def get_inputs(file:str) -> Generator[ExperimentInput,None,None]:
     with open(file) as f:
@@ -90,7 +89,6 @@ def parse_entry(entry:dict[str,Any]) -> ExperimentInput:
     return ExperimentInput(ndims, alpha, dtau, T, D_list, expt_name, expt_info,
                            num_qbits, dx, periodic_bc_flag, f0)
     
-
 def parse_field(ndims:int, entry:dict, field:str)->np.ndarray|Any:
     if isinstance(entry[field], list):
         if (nfield:=len(entry[field])) < ndims:
@@ -105,16 +103,52 @@ def parse_field(ndims:int, entry:dict, field:str)->np.ndarray|Any:
             return entry[field]
 
 if __name__ == '__main__':
+    expts:list[ExperimentInput] = []
+
+    alpha = 0.01
+    dtau = 0.1
+    T = 1.0
+    D_list = [2,4,6]
+    num_qbits = [5,5]
+    dx = [0.1,0.1]
+
+    # Square Wave 2d
+    f0 = np.ones(2**np.sum(num_qbits), dtype=np.float64)
+    expts.append(ExperimentInput(2, alpha, dtau, T, D_list, '2D Square Wave 5x5 qubits',
+                                 'f(x,y)=1.0 with zero boundary conditions',
+                                 num_qbits, dx, [False,False], f0))
+    
+    # 2D Triangle Wave
     a = 1.0
     b = 2.0
-    dx = 0.1
-    Nx = 8
-    L = 8*dx
-    triangle_sv = np.array([1.0,1.25,1.5,1.75,2.0,1.75,1.5,1.25])
-    
-    expts = ExperimentInput(1, 0.05, 0.1, 1.0, [2,4],
-                            'Triangle Wave', 'a=1,b=2', 3, 0.1, True, triangle_sv)
-    generate_input_file(expts, './', 'test_input')
+    h = b-a
+    Nx = 2**num_qbits[0]
+    slope = 2*(b-a)/Nx
+    f1 = np.zeros(Nx,dtype=np.float64)
+    f1[0:Nx//2] = slope*np.arange(Nx//2)
+    f1[Nx//2:Nx] = h - slope*(np.arange(Nx//2,Nx)-(Nx//2))
+    f11 = np.kron(f1,f1) + a
 
-    for entry in get_inputs('./test_input.json'):
+    expts.append(ExperimentInput(2, alpha, dtau, T, D_list, '2D Triangle Wave 5x5 qubits',
+                                 'a=1.0, b=2.0, Periodic boundary conditions on each dimension',
+                                 num_qbits, dx, [True,True], f11))
+    
+    # Mixed Boundary conditions
+    c = 1.5
+    x = np.arange(1, Nx+1)
+    g1 = 4.0*c/(Nx+1)**2 * ((Nx+1)*x - x**2) # Inverted Parabola with zeros at x=0 and x=Nx, with max height c at x=Nx/2
+
+    expts.append(ExperimentInput(2, alpha, dtau, T, D_list, 'Inverted Parabola on x, Triangle Wave on y',
+                                 'a=1.0, c=1.5',
+                                 num_qbits, dx, [False,True], np.kron(f1 + a, g1)))
+
+    # for expt in expts:
+    #     print(expt.dict())
+    #     print()
+
+
+
+    generate_input_file(expts, './', '2d_inputs')
+
+    for entry in get_inputs('./2d_inputs.json'):
         print(entry,'\n')
