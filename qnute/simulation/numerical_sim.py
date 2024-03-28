@@ -13,6 +13,8 @@ from .output import QNUTE_output as Output
 
 pauli_pair_dtype = np.dtype([('pauli_id',np.uint32), ('value',np.float64)])
 
+qnute_logger = logging.getLogger('QNUTE Logger')
+
 @njit
 def get_theoretical_evolution(H_mat:np.array, psi0: np.array, dt:float, N:int):
     '''Numerically calculates the theoretical time evolution exp(Ht)|psi_0> with Taylor
@@ -125,9 +127,9 @@ def update_alist(params:Params, sigma_expectation:dict,
             break
         except ValueError as e:
             if di < 10:
-                logging.info('Least squares did not converge at delta = %f retrying with delta = %f', params.delta, params.delta*delta_scales[di+1])
+                qnute_logger.info('Least squares did not converge at delta = %f retrying with delta = %f', params.delta, params.delta*delta_scales[di+1])
             else:
-                logging.error('Least square failed to converge, populating a_list with 0s')
+                qnute_logger.error('Least square failed to converge, populating a_list with 0s')
                 a_list_term = np.zeros(u_operators.shape, dtype=np.float64)
     
     return a_list_term, c
@@ -137,14 +139,14 @@ def qnute(params:Params, log_frequency:int = 10, c0:float=1.0) -> Output:
     output.svs[0,:] = params.init_sv.data
     output.c_list.append(c0)
 
-    logging.info('Performing initial measurements...')
+    qnute_logger.info('Performing initial measurements...')
     for m in params.objective_measurements:
         output.measurements[m[0]][0] = pauli_expectation(params, params.init_sv, m[1],m[2])
-    logging.info('Starting QNUTE Iterations:')
+    qnute_logger.info('Starting QNUTE Iterations:')
 
     for i in range(1, params.N+1):
         if i % log_frequency == 0 or i == params.N or i == 1:
-            logging.info(f'    Iteration {i:03d}')
+            qnute_logger.info(f'    Iteration {i:03d}')
         
         t0 = time.monotonic()
 
@@ -153,7 +155,7 @@ def qnute(params:Params, log_frequency:int = 10, c0:float=1.0) -> Output:
         t1 = time.monotonic()
         output.times[i-1] = t1 - t0
         if i % log_frequency == 0 or i == params.N or i == 1:
-            logging.info(f'      Finished in {(t1-t0):0.2f} seconds.')
+            qnute_logger.info(f'      Finished in {(t1-t0):0.2f} seconds.')
     
     return output
 

@@ -9,6 +9,7 @@ import logging
 import sys
 
 from . import heat_logger
+from qnute.simulation.numerical_sim import qnute_logger
 
 from .simulate_1d import (get_zero_bc_analytical_solution,
                           get_zero_bc_frequency_amplitudes,
@@ -29,6 +30,7 @@ from .input_handler import get_inputs
 
 def main():
     heat_logger.setLevel(logging.INFO)
+    qnute_logger.setLevel(logging.INFO)
 
     input_file = sys.argv[1]
     
