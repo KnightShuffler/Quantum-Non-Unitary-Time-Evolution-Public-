@@ -136,6 +136,22 @@ def generateLaplaceHamiltonian1D(num_qbits:int,
             hm[1][i] /= dx*dx
     return Hamiltonian(hm_list, num_qbits)
 
+def generateLaplacianHamiltonianMultiDim(num_qbits:np.ndarray[int],
+                                         dx:np.ndarray[float],
+                                         periodic_bc_flags:np.ndarray[bool]
+                                         ) -> Hamiltonian:
+    ndims = num_qbits.shape[0]
+    min_dx = np.min(dx)
+    Lap:Hamiltonian = None
+    for dim in range(ndims):
+        H = generateLaplaceHamiltonian1D(num_qbits[dim], dx[dim]/min_dx, periodic_bc_flags[dim])
+        if dim == 0:
+            Lap = Hamiltonian.tensor_product_multi(*[Hamiltonian.Identity(num_qbits[j]) if j != dim else H for j in range(ndims)])
+        else:
+            Lap += Hamiltonian.tensor_product_multi(*[Hamiltonian.Identity(num_qbits[j]) if j != dim else H for j in range(ndims)])
+        
+    return Lap
+
 def generateGrayCodeLaplacian1D(num_qbits:int,
                                 dx:float=1.0,
                                 periodic_bc_flag:bool=False,
