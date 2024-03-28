@@ -279,6 +279,16 @@ class Hamiltonian:
         nbits = H1.nbits + H2.nbits
         return Hamiltonian(hm_list, nbits)
     
+    @staticmethod
+    def tensor_product_multi(*hams) -> 'Hamiltonian':
+        for i,ham in enumerate(hams):
+            assert isinstance(ham, Hamiltonian), 'Arguments must be Hamiltonian objects'
+            if i == 0:
+                H = ham
+            else:
+                H = Hamiltonian.tensor_product(ham, H)
+        return H
+    
     def rearrange_terms(self, u_domains:list[set[int]], amplitude_splits:np.ndarray[np.ndarray[float]]) -> 'Hamiltonian':
         new_pterm_list = np.zeros(len(u_domains)*self.pterm_list.shape[0], dtype=hm_dtype)
         new_hm_indices = []
