@@ -199,3 +199,41 @@ def generate_evolution_and_stats_figure(expt_data:ExperimentData,
     figure.savefig(figpath+figname+'.svg')
     figure.savefig(figpath+figname+'.png')
     # plt.show()
+
+def generate_stats_figure(expt_data:ExperimentData,
+                          stat_time_split=20,
+                          plot_times:np.ndarray[int]=None,
+                          figpath:str='figs/',
+                          figname:str='output')->None:
+    Nd,Nt,Nx = expt_data.qite_sols.shape
+    times = np.arange(0,Nt+1)*expt_data.dt
+    time_slice = slice(0,times.shape[0] + stat_time_split,times.shape[0]//stat_time_split)
+
+    figure,axs = plt.subplots(1, 3, sharex=True, figsize=(12,4))
+    
+    plot_stat_figures(axs, expt_data, times, time_slice)
+
+    figure.subplots_adjust(wspace=0.4)
+
+    if figpath[-1] != '/':
+        figpath += '/'
+    if not os.path.exists(figpath):
+        os.makedirs(figpath)
+    figure.savefig(figpath+figname+'.svg')
+    figure.savefig(figpath+figname+'.png')
+
+def plot_stat_figures(stat_axs:np.ndarray[Axes],
+                      expt_data:ExperimentData,
+                      times:np.ndarray[float],
+                      time_slice:slice):
+    letter = 'a'
+    for col,ax in enumerate(stat_axs):
+        add_text(ax, -0.18, 1.0, f"\\textbf{'{'}({letter}){'}'}")
+        letter = chr(ord(letter) + 1)
+        for Di,D in enumerate(expt_data.D_list):
+            l, = ax.plot(times[time_slice], expt_data.stat_data[col,Di,time_slice], marker=plt_markers[Di],label=f'$D={D}$')
+            ax.legend(fancybox=False,shadow=True)
+        # if col == 2:
+            ax.set_xlabel(r'$t$',fontsize=14)
+        ax.set_ylabel(stat_labels[col],fontsize=14)
+        ax.grid(True)
