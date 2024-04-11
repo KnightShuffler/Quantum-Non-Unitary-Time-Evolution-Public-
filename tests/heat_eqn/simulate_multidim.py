@@ -117,6 +117,7 @@ def run_heat_eqn_simulation(expt:ExperimentInput, independent_cover_flag:bool=Tr
     params = Params(H, 1, total_qbits, qubit_map)
 
     for Di,D in enumerate(expt.D_list):
+        heat_logger.info('  Running D=%i', D)
         if not independent_cover_flag:
             if D < total_qbits:
                 u_domains = [list(range(i,i+D)) for i in range(total_qbits-D+1)]

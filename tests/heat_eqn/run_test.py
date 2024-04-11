@@ -35,10 +35,11 @@ def main():
     input_file = sys.argv[1]
     
     delta = 0.1
-    filepath = 'data/heat_eqn/'
-    figpath = 'figs/heat_eqn/'
+    filepath = 'data/heat_eqn/alpha=0.1/'
+    figpath = 'figs/heat_eqn/alpha=0.1/'
 
     for expt in get_inputs(input_file):
+        heat_logger.info('Running experiment: `%s`', expt.expt_name)
         if expt.num_space_dims == 1:
             Nx = 2**expt.num_qbits
             L = (Nx + (1 if not expt.periodic_bc_flag else 0))*expt.dx
