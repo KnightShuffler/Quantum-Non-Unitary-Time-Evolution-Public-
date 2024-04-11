@@ -61,7 +61,7 @@
         4,
         6
     ],
-    "expt_name": "Inverted Parabola on x, Triangle Wave on y",
+    "expt_name": "Inverted Parabola on x, Triangle Wave on y 5x5 qubits",
     "expt_info": "a=1.0, c=1.5",
     "num_qbits": [
         5,
@@ -75,6 +75,6 @@
         false,
         true
     ],
-    "f0": "tests/heat_eqn/Inverted Parabola on x, Triangle Wave on y.npy"
+    "f0": "tests/heat_eqn/Inverted Parabola on x, Triangle Wave on y 5x5 qubits.npy"
 }
 ]
