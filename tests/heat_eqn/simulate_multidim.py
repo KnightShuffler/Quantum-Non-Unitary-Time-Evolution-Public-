@@ -13,8 +13,13 @@ from . import heat_logger
 
 def get_fourier_eigenstates(num_qbits:np.ndarray[int],
                             periodic_bc_flags:np.ndarray[bool]):
-    ndim = num_qbits.shape[0]
+    if isinstance(num_qbits, np.ndarray):
+        ndim = num_qbits.shape[0]
+    else:
+        ndim = 1
     Nx = 2**num_qbits
+    if not isinstance(Nx,np.ndarray):
+        Nx = np.array([Nx])
     num_freq = 2**(np.sum(num_qbits))
     
 
