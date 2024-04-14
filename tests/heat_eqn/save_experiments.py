@@ -68,11 +68,13 @@ from dataclasses import dataclass
 
 @dataclass
 class ExperimentData:
-    dx:float
-    L:float 
+    num_qbits:int|np.ndarray[int]
+    alpha:float
+    dx:float|np.ndarray[float]
+    L:float|np.ndarray[float]
     dt:float
     T:float 
-    periodic_bc_flag:bool 
+    periodic_bc_flag:bool|np.ndarray[bool]
     f0:np.ndarray[float]
     qite_sols:np.ndarray[float]
     analytical_sol:np.ndarray[float]
@@ -84,6 +86,8 @@ def load_experiment_data(filepath:str,filename:str)->ExperimentData:
         filepath += '/'
     
     with h5py.File(filepath+filename+'.hdf5') as file:
+        num_qbits = file.attrs['num_qbits']
+        alpha:float = file.attrs['alpha']
         dx:float = file.attrs['dx']
         L:float = file.attrs['L']
         dt:float = file.attrs['dt']
@@ -98,7 +102,7 @@ def load_experiment_data(filepath:str,filename:str)->ExperimentData:
         log_norm_ratio_data:np.ndarray[float] = file['stats/log_norm_ratio'][:]
         mse_data:np.ndarray[float] = file['stats/mean_square_error'][:]
     
-    return ExperimentData(dx, L, dt, T, periodic_bc_flag,
+    return ExperimentData(num_qbits, alpha, dx, L, dt, T, periodic_bc_flag,
             f0, qite_sols, analytical_sol, D_list,
             np.array([fidelity_data, log_norm_ratio_data, mse_data]))
 
