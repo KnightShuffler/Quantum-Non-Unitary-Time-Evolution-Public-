@@ -61,7 +61,7 @@ def get_CPsis(expt_data:ExperimentData, K:int)->np.ndarray[float]:
 def rescale_qite_sols(expt_data:ExperimentData,
                       CPsis:np.ndarray[float]
                       )-> np.ndarray[float]:
-    norm_qite_sols = expt_data.qite_sols.copy()
+    norm_qite_sols = np.abs(expt_data.qite_sols.copy())
     
     Nt = np.int32(np.ceil(expt_data.T/expt_data.dt))
     times = np.arange(1,Nt+1)*expt_data.dt
@@ -71,6 +71,20 @@ def rescale_qite_sols(expt_data:ExperimentData,
             norm_qite_sols[Di][ti] *= CPsis[Di][ti]/np.linalg.norm(norm_qite_sols[Di][ti])
     
     return norm_qite_sols
+
+def calc_new_fidelities(expt_data:ExperimentData,new_qite_sols:np.ndarray[float])->np.ndarray[float]:
+    fidelities = np.zeros(expt_data.stat_data[0].shape,np.float64)
+    
+    Nt = np.int32(np.ceil(expt_data.T/expt_data.dt))
+    times = np.arange(1,Nt+1)*expt_data.dt
+
+    for Di,D in enumerate(expt_data.D_list):
+        for ti,t in enumerate(times):
+            fidelities[Di][ti+1] = np.dot(new_qite_sols[Di][ti],expt_data.analytical_sol[ti])/(np.linalg.norm(new_qite_sols[Di][ti])*np.linalg.norm(expt_data.analytical_sol[ti]))
+
+    fidelities[:,0] = np.ones((expt_data.D_list.shape[0]))
+
+    return fidelities
 
 def calc_new_log_norm_ratios(expt_data:ExperimentData,CPsis:np.ndarray[float])->np.ndarray[float]:
     log_norm_ratios = np.zeros(expt_data.stat_data[1].shape,np.float64)
@@ -100,6 +114,7 @@ def updateExperimentData(filepath:str,filename:str,K:int) ->ExperimentData:
     
     CPsis = get_CPsis(expt_data, K)
     new_qite_sols = rescale_qite_sols(expt_data, CPsis)
+    new_fidelities = calc_new_fidelities(expt_data, new_qite_sols)
     new_log_norm_ratios = calc_new_log_norm_ratios(expt_data,CPsis)
     new_mse = calc_new_mse(expt_data, new_qite_sols)
 
@@ -109,6 +124,8 @@ def updateExperimentData(filepath:str,filename:str,K:int) ->ExperimentData:
         dset[...] = new_qite_sols
         
         grp = file.require_group(f'stats/rescaled_stats/{K=}')
+        dset = grp.require_dataset('fidelity',new_fidelities.shape,np.float64,exact=True)
+        dset[...] = new_fidelities
         dset = grp.require_dataset('log_norm_ratio',new_log_norm_ratios.shape,np.float64,exact=True)
         dset[...] = new_log_norm_ratios
         dset = grp.require_dataset('mean_square_error',new_mse.shape,np.float64,exact=True)
