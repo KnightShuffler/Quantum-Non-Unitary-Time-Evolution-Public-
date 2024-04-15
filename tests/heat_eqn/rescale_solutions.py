@@ -94,7 +94,9 @@ def calc_new_log_norm_ratios(expt_data:ExperimentData,CPsis:np.ndarray[float])->
 
     for Di,D in enumerate(expt_data.D_list):
         for ti,t in enumerate(times):
-            log_norm_ratios[Di][ti] = CPsis[Di][ti]/np.linalg.norm(expt_data.analytical_sol[ti])
+            log_norm_ratios[Di][ti+1] = CPsis[Di][ti]/np.linalg.norm(expt_data.analytical_sol[ti])
+    
+    log_norm_ratios[:,0] = np.ones((expt_data.D_list.shape[0]))
     
     return np.log(log_norm_ratios)
 
@@ -105,7 +107,7 @@ def calc_new_mse(expt_data:ExperimentData,new_qite_sols:np.ndarray[float])->np.n
 
     for Di,D in enumerate(expt_data.D_list):
         for ti,t in enumerate(times):
-            mse[Di][ti] = np.mean((new_qite_sols[Di][ti] - expt_data.analytical_sol[ti])**2)
+            mse[Di][ti+1] = np.mean((new_qite_sols[Di][ti] - expt_data.analytical_sol[ti])**2)
         
     return mse
 
@@ -134,6 +136,7 @@ def updateExperimentData(filepath:str,filename:str,K:int) ->ExperimentData:
 
     new_data = replace(expt_data)
     new_data.qite_sols = new_qite_sols
+    new_data.stat_data[0] = new_fidelities
     new_data.stat_data[1] = new_log_norm_ratios
     new_data.stat_data[2] = new_mse
 
