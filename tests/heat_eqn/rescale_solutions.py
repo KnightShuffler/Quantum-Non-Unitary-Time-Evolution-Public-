@@ -147,11 +147,13 @@ if __name__ == '__main__':
 
     filepath = 'data/heat_eqn/alpha=0.8/'
     filenames = ['6 qubit square wave alpha=0.8', '6 qubit triangle wave alpha=0.8']
-    K = 50
+    # K = 1
 
-    figpath = 'figs/heat_eqn/alpha=0.8/'
-    fignames = [filename+f'_{K=}' for filename in filenames]
+    figpath = 'figs/heat_eqn/alpha=0.8/abs/'
+    # fignames = [filename+f'_{K=}' for filename in filenames]
 
-    for fi,filename in enumerate(filenames):
-        expt_data = updateExperimentData(filepath,filename,K)
-        generate_evolution_and_stats_figure(expt_data,figpath=figpath,figname=fignames[fi])
+    for filename in filenames:
+        for K in [100]:
+            figname = filename+f'_{K=}'
+            expt_data = updateExperimentData(filepath,filename,K)
+            generate_evolution_and_stats_figure(expt_data,figpath=figpath,figname=figname)
