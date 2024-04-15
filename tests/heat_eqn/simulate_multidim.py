@@ -18,8 +18,6 @@ def get_fourier_eigenstates(num_qbits:np.ndarray[int],
     else:
         ndim = 1
     Nx = 2**num_qbits
-    if not isinstance(Nx,np.ndarray):
-        Nx = np.array([Nx])
     num_freq = 2**(np.sum(num_qbits))
     
 
