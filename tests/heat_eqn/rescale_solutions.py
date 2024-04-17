@@ -142,18 +142,38 @@ def updateExperimentData(filepath:str,filename:str,K:int) ->ExperimentData:
 
     return new_data
 
+def load_rescaled_data(filepath:str,filename:str,K:int) -> ExperimentData:
+    expt_data = load_experiment_data(filepath,filename)
+    with h5py.File(filepath+filename+'.hdf5','r') as file:
+        grp = file.require_group('statevectors/rescaled_qite_sols')
+        dset = grp.require_dataset(f'{K=}',expt_data.qite_sols.shape,np.float64,exact=True)
+        expt_data.qite_sols = dset[:]
+        
+        grp = file.require_group(f'stats/rescaled_stats/{K=}')
+        dset = grp.require_dataset('fidelity',expt_data.stat_data[0].shape,np.float64,exact=True)
+        expt_data.stat_data[0] = dset[:]
+        dset = grp.require_dataset('log_norm_ratio',expt_data.stat_data[1].shape,np.float64,exact=True)
+        expt_data.stat_data[1] = dset[:]
+        dset = grp.require_dataset('mean_square_error',expt_data.stat_data[2].shape,np.float64,exact=True)
+        expt_data.stat_data[2] = dset[:]
+    return expt_data
+
 if __name__ == '__main__':
     from .plotting import generate_evolution_and_stats_figure
 
     filepath = 'data/heat_eqn/alpha=0.8/'
     filenames = ['6 qubit square wave alpha=0.8', '6 qubit triangle wave alpha=0.8']
+    evol_y_lims = [ [-0.1,1.1], [0.9,2.1] ]
     # K = 1
 
     figpath = 'figs/heat_eqn/alpha=0.8/abs/'
     # fignames = [filename+f'_{K=}' for filename in filenames]
 
-    for filename in filenames:
-        for K in [100]:
+    for fi, filename in enumerate(filenames):
+        for K in [200]:
             figname = filename+f'_{K=}'
             expt_data = updateExperimentData(filepath,filename,K)
-            generate_evolution_and_stats_figure(expt_data,figpath=figpath,figname=figname)
+            # expt_data = load_rescaled_data(filepath,filename,K)
+            generate_evolution_and_stats_figure(expt_data,figpath=figpath,figname=figname,
+                                                evolution_y_lim=evol_y_lims[fi],
+                                                plot_times=np.arange(0,1001,1001//10))
