@@ -27,6 +27,8 @@ from .plotting import (generate_evolution_and_stats_figure,
                        generate_stats_figure)
 from .input_handler import get_inputs
 
+from .rescale_solutions import updateExperimentData
+
 
 def main():
     heat_logger.setLevel(logging.INFO)
@@ -35,8 +37,8 @@ def main():
     input_file = sys.argv[1]
     
     delta = 0.1
-    filepath = 'data/heat_eqn/alpha=0.1/'
-    figpath = 'figs/heat_eqn/alpha=0.1/'
+    filepath = 'data/heat_eqn/alpha=0.8/'
+    figpath = 'figs/heat_eqn/alpha=0.8/'
 
     for expt in get_inputs(input_file):
         heat_logger.info('Running experiment: `%s`', expt.expt_name)
@@ -101,6 +103,16 @@ def main():
                                                 figname=expt.expt_name)
         else:
             generate_stats_figure(expt_data, figpath=figpath, figname=expt.expt_name)
+        
+        for K in [1,20,50,100]:
+            expt_data = updateExperimentData(filepath, expt.expt_name, K)
+            figname = expt.expt_name+f'_{K=}'
+            if expt.num_space_dims == 1:
+                generate_evolution_and_stats_figure(expt_data,
+                                                figpath=figpath,
+                                                figname=figname)
+        else:
+            generate_stats_figure(expt_data, figpath=figpath, figname=figname)
 
 
 if __name__ == '__main__':
