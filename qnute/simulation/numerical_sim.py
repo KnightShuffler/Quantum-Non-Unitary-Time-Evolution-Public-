@@ -7,6 +7,7 @@ import time
 from qnute.helpers import exp_mat_psi
 from qnute.helpers.pauli import pauli_string_prod
 from qnute.helpers.pauli import get_pauli_prod_matrix
+from qnute.helpers.pauli import ext_domain_pauli
 
 from .parameters import QNUTE_params as Params
 from .output import QNUTE_output as Output
@@ -107,7 +108,7 @@ def update_alist(params:Params, sigma_expectation:dict,
     ndomain = len(u_domain)
 
     if params.reduce_dimension_flag and params.QNUTE_H.real_term_flags[term]:
-        u_operators = params.odd_y_strings[ndomain]
+        u_operators = np.array([ ext_domain_pauli(p, u_domain, list(range(params.nbits))) for p in params.odd_y_strings[ndomain]])
     else:
         u_operators = params.u_measurements[term]
 
