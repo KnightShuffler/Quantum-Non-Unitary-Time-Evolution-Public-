@@ -7,9 +7,7 @@ from matplotlib.axes import Axes
 from matplotlib.colors import Colormap
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-import os
-
-from .simulate_1d import get_zero_bc_frequency_amplitudes, get_periodic_bc_frequency_amplitudes
+from .simulate_multidim import get_fourier_amplitudes, get_fourier_eigenstates
 from .save_experiments import ExperimentData
 
 time_colormap:Colormap = colormaps.get_cmap('coolwarm').reversed()
@@ -24,87 +22,52 @@ stat_labels:list[str] = [
     r'MSE$(t)$'
 ]
 
-@njit
-def get_zero_bc_interpolation(psi:np.ndarray[float],
-                              dense_x:np.ndarray[float],
-                              dx: float,L:float
-                              ) -> np.ndarray[float]:
-    frequency_amplitudes = get_zero_bc_frequency_amplitudes(psi,dx,L)
-    f_interpolate = np.zeros(dense_x.shape[0], dtype=np.float64)
-    for i,amp in enumerate(frequency_amplitudes):
-        nu = i+1
-        f_interpolate += amp * np.sin(nu*np.pi*dense_x/L)
-    return f_interpolate
+def get_interpolation_1d(psi:np.ndarray[float], 
+                         num_qbits:int,
+                         periodic_bc_flag:bool,
+                         dense_x:np.ndarray[float],
+                         L:float) ->np.ndarray[float]:
+    fourier_amplitudes = get_fourier_amplitudes(psi, num_qbits, periodic_bc_flag)
+    f_interpolate = np.zeros(dense_x.shape[0], np.float64)
 
-@njit
-def get_periodic_bc_interpolation(psi:np.ndarray[float],
-                                  dense_x:np.ndarray[float],
-                                  dx: float,L:float
-                                  ) -> np.ndarray[float]:
-    frequency_amplitudes = get_periodic_bc_frequency_amplitudes(psi,dx,L)
-    f_interpolate = np.zeros(dense_x.shape[0], dtype=np.float64)
-    for i,amp in enumerate(frequency_amplitudes):
-        if i == 0:
-            f_interpolate += amp * np.ones(dense_x.shape)
-        elif i%2 == 0:
-            nu = i
-            f_interpolate += amp * np.sin(nu*np.pi*dense_x/L)
+    for i, (state,factor,freqs) in enumerate(get_fourier_eigenstates(num_qbits, periodic_bc_flag)):
+        if not periodic_bc_flag:
+            f_interpolate += np.sin(freqs[0]*np.pi*dense_x/L) * fourier_amplitudes[i]
         else:
-            nu = i+1
-            f_interpolate += amp * np.cos(nu*np.pi*dense_x/L)
+            if i == 0 or i%2 == 1:
+                f_interpolate += np.cos(freqs[0]*np.pi*dense_x/L) * fourier_amplitudes[i]
+            else:
+                f_interpolate += np.sin(freqs[0]*np.pi*dense_x/L) * fourier_amplitudes[i]
+
     return f_interpolate
 
-def plot_1d_evolution_zero_bc(ax:Axes,
-                              f0:np.ndarray[float],
-                              solutions:np.ndarray[float],
-                              sample_x:np.ndarray[float],
-                              dx:float, L:float,
-                              times:np.ndarray[float],
-                              plot_times:np.ndarray[int],
-                              dense_x:np.ndarray[float] = None,
-                              )->None:
+def plot_1d_evolution(ax:Axes,
+                      f0:np.ndarray[float],
+                      num_qbits:int,
+                      periodic_bc_flag:bool,
+                      solutions:np.ndarray[float],
+                      sample_x:np.ndarray[float],
+                      dx:float,L:float,
+                      times:np.ndarray[float],
+                      plot_times:np.ndarray[int],
+                      dense_x:np.ndarray[float]|None=None
+                      )->None:
     if dense_x is None:
         step = dx/10
         dense_x = np.arange(0,L+step,step)
-
     for ti in plot_times:
         if ti == 0:
             color = time_colormap(0.0)
-            f = get_zero_bc_interpolation(f0, dense_x, dx, L)
+            f = get_interpolation_1d(f0, num_qbits, periodic_bc_flag, dense_x, L)
             ax.plot(dense_x, f, linestyle='--', linewidth=0.5, color=color)
             ax.scatter(sample_x, f0, s=10, color=color)
         else:
             t = times[ti-1]/times[-1]
             color = time_colormap(t)
-            f = get_zero_bc_interpolation(solutions[ti-1,:], dense_x, dx, L)
+            f = get_interpolation_1d(solutions[ti-1,:], num_qbits, periodic_bc_flag, dense_x, L)
             ax.plot(dense_x, f, linestyle='--', linewidth=0.5, color=color)
             ax.scatter(sample_x, solutions[ti-1,:], s=10, color=color)
 
-def plot_1d_evolution_periodic_bc(ax:Axes,
-                                  f0:np.ndarray[float],
-                                  solutions:np.ndarray[float],
-                                  sample_x:np.ndarray[float],
-                                  dx:float, L:float,
-                                  times:np.ndarray[float],
-                                  plot_times:np.ndarray[int],
-                                  dense_x:np.ndarray[float] = None,
-                                  )->None:
-    if dense_x is None:
-        step = dx/10
-        dense_x = np.arange(0,L+step,step)
-
-    for ti in plot_times:
-        if ti == 0:
-            color = time_colormap(0.0)
-            f = get_periodic_bc_interpolation(f0, dense_x, dx, L)
-            ax.plot(dense_x, f, linestyle='--', linewidth=0.5, color=color)
-            ax.scatter(sample_x, f0, s=10, color=color)
-        else:
-            t = times[ti-1]/times[-1]
-            color = time_colormap(t)
-            f = get_periodic_bc_interpolation(solutions[ti-1,:], dense_x, dx, L)
-            ax.plot(dense_x, f, linestyle='--', linewidth=0.5, color=color)
-            ax.scatter(sample_x, solutions[ti-1,:], s=10, color=color)
 
 def add_time_color_bar(ax:Axes, T:float)->None:
     divider = make_axes_locatable(ax)
