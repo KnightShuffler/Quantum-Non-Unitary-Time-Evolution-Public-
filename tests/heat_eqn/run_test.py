@@ -17,8 +17,6 @@ from .simulate_multidim import (run_heat_eqn_simulation,
 
 from .save_experiments import save_experiment_data
 from .save_experiments import load_experiment_data
-from .plotting import (generate_evolution_and_stats_figure,
-                       generate_stats_figure)
 from .input_handler import get_inputs
 
 from .rescale_solutions import updateExperimentData
