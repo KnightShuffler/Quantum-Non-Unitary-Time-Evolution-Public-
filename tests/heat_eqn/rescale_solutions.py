@@ -41,8 +41,6 @@ def get_CPsis(expt_data:ExperimentData, K:int)->np.ndarray[float]:
     
     lambda0 = expt_data.alpha * (lambda0**2)
 
-    
-
     CPsis = np.zeros((expt_data.D_list.shape[0], Nt),np.float64)
     cPrimes = get_cPrimes(expt_data,Nt)
 
@@ -53,7 +51,7 @@ def get_CPsis(expt_data:ExperimentData, K:int)->np.ndarray[float]:
             elif (ti+1)%K != 0:
                 CPsis[Di][ti] = CPsis[Di][ti-1]*cPrimes[Di][ti]
             else:
-                CPsis[Di][ti] = braket_gs_f0/np.dot(gs, expt_data.qite_sols[Di][ti])*np.linalg.norm(expt_data.qite_sols[Di][ti])*np.exp(-lambda0*t)
+                CPsis[Di][ti] = braket_gs_f0/np.dot(gs, np.abs(expt_data.qite_sols[Di][ti]))*np.linalg.norm(expt_data.qite_sols[Di][ti])*np.exp(-lambda0*t)
 
     CPsis *= np.linalg.norm(expt_data.f0)
     return CPsis
