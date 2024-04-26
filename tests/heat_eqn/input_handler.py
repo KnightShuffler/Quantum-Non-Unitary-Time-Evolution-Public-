@@ -94,13 +94,11 @@ def parse_field(ndims:int, entry:dict, field:str)->np.ndarray|Any:
         if (nfield:=len(entry[field])) < ndims:
             heat_logger.error('In entry name `%s`: Expected %d elements for field `%s`, recieved %d', entry['expt_name'], ndims, field, nfield)
             raise ValueError()
-        return np.array(entry[field])
+        return np.array(entry[field][:ndims])
     else:
         if ndims > 1:
             heat_logger.warning('In entry name `%s`: Only one %s provided, using for all spacial dimensions', entry['expt_name'], field)
-            return np.array([entry[field]]*ndims)
-        else:
-            return entry[field]
+        return np.array([entry[field]]*ndims)
 
 if __name__ == '__main__':
     expts:list[ExperimentInput] = []
