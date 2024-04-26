@@ -11,12 +11,6 @@ import sys
 from . import heat_logger
 from qnute.simulation.numerical_sim import qnute_logger
 
-from .simulate_1d import (get_zero_bc_analytical_solution,
-                          get_zero_bc_frequency_amplitudes,
-                          get_periodic_bc_analytical_solution,
-                          get_periodic_bc_frequency_amplitudes,
-                          run_1D_heat_eqn_simulation)
-
 from .simulate_multidim import (run_heat_eqn_simulation, 
                                 get_fourier_amplitudes, 
                                 get_analytical_solution)
