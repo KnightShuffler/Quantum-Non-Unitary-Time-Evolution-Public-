@@ -80,3 +80,27 @@ def add_time_color_bar(ax:Axes, T:float)->None:
 def add_text(ax:Axes, xoffset, yoffset, letter, size=12, **kwargs):
     ax.text(xoffset, yoffset, letter, transform=ax.transAxes,
             size=size, **kwargs)
+
+def plot_2d_state(ax, psi:np.ndarray[float], 
+                  num_qbits:np.ndarray[int], 
+                  periodic_bc_flags:np.ndarray[bool],
+                  L:np.ndarray[float],
+                  *,
+                  vmin:float|None = None,
+                  vmax:float|None = None
+                  ) -> None:
+    N = 2**num_qbits
+    M_slice = [None,None]
+    for i in range(2):
+        if periodic_bc_flags[i]:
+            M_slice[i] = slice(0,N[i])
+        else:
+            N[i] += 2
+            M_slice[i] = slice(1,N[i]-1)
+
+    m = np.zeros((N[1],N[0]),np.float64)
+    m[M_slice[1],M_slice[0]] = psi.reshape(2**num_qbits[1],2**num_qbits[0])
+
+    ax.imshow(m[::-1], cmap='coolwarm', interpolation='none', extent = [0.0, L[0], 0.0, L[1]],
+              vmin = np.min(psi) if vmin is None else vmin,
+              vmax = np.max(psi) if vmax is None else vmax)
