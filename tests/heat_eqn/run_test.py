@@ -42,39 +42,20 @@ def main():
 
     for expt in get_inputs(input_file):
         heat_logger.info('Running experiment: `%s`', expt.expt_name)
-        if expt.num_space_dims == 1:
-            Nx = 2**expt.num_qbits
-            L = (Nx + (1 if not expt.periodic_bc_flag else 0))*expt.dx
-            dt = expt.dtau * expt.dx**2
-            Nt = np.int32(np.ceil(expt.T/dt))
-            times = np.arange(Nt+1)*dt
-            sample_x = np.arange(1,Nx+1)*expt.dx if not expt.periodic_bc_flag else np.arange(Nx)*expt.dx
-            if not expt.periodic_bc_flag:
-                fourier_amplitudes = get_zero_bc_frequency_amplitudes(expt.f0, expt.dx, L)
-                analytical_solution = get_zero_bc_analytical_solution(fourier_amplitudes, L, Nx, expt.dx, Nt, dt, expt.alpha)
-            else:
-                fourier_amplitudes = get_periodic_bc_frequency_amplitudes(expt.f0, expt.dx, L)
-                analytical_solution = get_periodic_bc_analytical_solution(fourier_amplitudes, L, Nx, expt.dx, Nt, dt, expt.alpha)
-            
-            qite_solutions = run_1D_heat_eqn_simulation(expt.num_qbits, expt.dx, expt.T,
-                                                        expt.dtau, expt.alpha, expt.f0,
-                                                        expt.periodic_bc_flag, expt.D_list, 
-                                                        delta, True)
-        else:
-            Nx = 2**expt.num_qbits
-            N = np.prod(Nx)
-            L = np.zeros(expt.num_space_dims,dtype=np.float64)
-            for j in range(expt.num_space_dims):
-                L[j] = (Nx[j] + (1 if not expt.periodic_bc_flag[j] else 0))*expt.dx[j]
-            min_dx = np.min(expt.dx)
-            dt = expt.dtau * min_dx**2
-            Nt = np.int32(np.ceil(expt.T/dt))
-            times = np.arange(Nt+1)*dt
-            
-            fourier_amplitudes = get_fourier_amplitudes(expt.f0, expt.num_qbits, expt.periodic_bc_flag)
-            analytical_solution = get_analytical_solution(fourier_amplitudes, expt.num_qbits, expt.periodic_bc_flag, expt.dx, L, Nt, dt, expt.alpha)
+        Nx = 2**expt.num_qbits
+        N = np.prod(Nx)
+        L = np.zeros(expt.num_space_dims,dtype=np.float64)
+        for j in range(expt.num_space_dims):
+            L[j] = (Nx[j] + (1 if not expt.periodic_bc_flag[j] else 0))*expt.dx[j]
+        min_dx = np.min(expt.dx)
+        dt = expt.dtau * min_dx**2
+        Nt = np.int32(np.ceil(expt.T/dt))
+        times = np.arange(Nt+1)*dt
+        
+        fourier_amplitudes = get_fourier_amplitudes(expt.f0, expt.num_qbits, expt.periodic_bc_flag)
+        analytical_solution = get_analytical_solution(fourier_amplitudes, expt.num_qbits, expt.periodic_bc_flag, expt.dx, L, Nt, dt, expt.alpha)
 
-            qite_solutions = run_heat_eqn_simulation(expt, True)
+        qite_solutions = run_heat_eqn_simulation(expt, True)
             
         fidelities = np.zeros((len(expt.D_list), Nt+1), dtype=np.float64)
         log_norm_ratios = np.zeros(fidelities.shape, dtype=np.float64)
