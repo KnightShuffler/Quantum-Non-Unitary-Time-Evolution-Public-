@@ -78,22 +78,8 @@ def main():
 
         expt_data = load_experiment_data(filepath=filepath,filename=expt.expt_name)
         
-        if expt.num_space_dims == 1:
-            generate_evolution_and_stats_figure(expt_data,
-                                                figpath=figpath,
-                                                figname=expt.expt_name)
-        else:
-            generate_stats_figure(expt_data, figpath=figpath, figname=expt.expt_name)
-        
         for K in [1,20,50,100]:
             expt_data = updateExperimentData(filepath, expt.expt_name, K)
-            figname = expt.expt_name+f'_{K=}'
-            if expt.num_space_dims == 1:
-                generate_evolution_and_stats_figure(expt_data,
-                                                figpath=figpath,
-                                                figname=figname)
-        else:
-            generate_stats_figure(expt_data, figpath=figpath, figname=figname)
 
 
 if __name__ == '__main__':
