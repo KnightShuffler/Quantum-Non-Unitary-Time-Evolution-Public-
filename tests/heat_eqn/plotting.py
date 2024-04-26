@@ -14,7 +14,8 @@ time_colormap:Colormap = colormaps.get_cmap('coolwarm').reversed()
 plt_norm = plt.Normalize(0,1)
 plt_markers:str = '.ds^'
 
-plt.rcParams.update({'text.usetex':True, 'font.family': 'serif'})
+plt.rcParams.update({'font.family': 'sans-serif',
+                     })
 
 stat_labels:list[str] = [
     r'$F(t)$',
