@@ -11,12 +11,15 @@ from .input_handler import ExperimentInput
 
 from . import heat_logger
 
-def get_fourier_eigenstates(num_qbits:np.ndarray[int],
-                            periodic_bc_flags:np.ndarray[bool]):
+def get_fourier_eigenstates(num_qbits:np.ndarray[int]|int,
+                            periodic_bc_flags:np.ndarray[bool]|bool):
     if isinstance(num_qbits, np.ndarray):
         ndim = num_qbits.shape[0]
     else:
+        num_qbits = np.array([num_qbits])
         ndim = 1
+    if not isinstance(periodic_bc_flags,np.ndarray):
+        periodic_bc_flags = np.array([periodic_bc_flags]*ndim)
     Nx = 2**num_qbits
     num_freq = 2**(np.sum(num_qbits))
     
@@ -77,16 +80,27 @@ def get_fourier_amplitudes(psi, num_qbits, periodic_bc_flags):
     return amplitudes
 
 def get_analytical_solution(fourier_amplitudes:np.ndarray[float],
-                            num_qbits:np.ndarray[int],
-                            periodic_bc_flags:np.ndarray[bool],
-                            dx:np.ndarray[float],
-                            L:np.ndarray[float],
+                            num_qbits:np.ndarray[int]|int,
+                            periodic_bc_flags:np.ndarray[bool]|bool,
+                            dx:np.ndarray[float]|float,
+                            L:np.ndarray[float]|float,
                             Nt:int,
                             dt:float,
                             alpha:float
                             )->np.ndarray[float]:
+    if isinstance(num_qbits,np.ndarray):
+        ndims = num_qbits.shape[0]
+    else:
+        num_qbits = np.array([num_qbits])
+        ndims = 1
+    if not isinstance(periodic_bc_flags,np.ndarray):
+        periodic_bc_flags = np.array([periodic_bc_flags]*ndims)
+    if not isinstance(dx,np.ndarray):
+        dx = np.array([dx]*ndims)
+    if not isinstance(L,np.ndarray):
+        L = np.array([L]*ndims)
     N = fourier_amplitudes.shape[0]
-    ndims = num_qbits.shape[0]
+    
     analytical_sols = np.zeros((Nt+1,N), dtype=np.float64)
     for i in range(Nt+1):
         t = i*dt
