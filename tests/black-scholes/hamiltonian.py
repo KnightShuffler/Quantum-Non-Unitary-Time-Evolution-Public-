@@ -1,0 +1,3 @@
+from qnute.hamiltonian import Hamiltonian
+from qnute.hamiltonian.examples.finite_difference.first_derivative import generateFirstDerivativeHamiltonian1D
+from qnute.hamiltonian.examples.finite_difference.laplacian import generateLaplaceHamiltonian1D
