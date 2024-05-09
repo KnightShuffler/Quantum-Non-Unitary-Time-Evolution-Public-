@@ -106,6 +106,9 @@ def add_hm_terms(hm1_ind, hm1_amp, hm2_ind, hm2_amp):
     return hm_ind[non_zeros], hm_amp[non_zeros]
             
 def hm_list_add(hm_list1, hm_list2):
+    assert not hm_list1 is None
+    if hm_list2 is None:
+        return hm_list1
     hm_list = []
     terms_added = [set(),set()] # For hm_list2
     for i,hm1 in enumerate(hm_list1):
