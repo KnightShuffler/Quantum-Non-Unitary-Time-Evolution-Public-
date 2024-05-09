@@ -8,6 +8,7 @@ from qnute.helpers import int_to_base
 from qnute.helpers.pauli import ext_domain_pauli
 from qnute.helpers.pauli import get_pauli_prod_matrix
 from qnute.helpers.pauli import odd_y_pauli_strings
+from qnute.helpers.pauli import pauli_string_prod
 
 # Format of the Hamiltonian:
 #   hm_list is a list of terms: [hm]
@@ -130,6 +131,30 @@ def hm_list_add(hm_list1, hm_list2):
             hm_list.append(hm2)
     return hm_list
 
+def hm_list_prod(hm_list1,hm_list2):
+    assert not hm_list1 is None
+    if hm_list2 is None:
+        return hm_list1
+    hm_list = []
+    for hm1 in hm_list1:
+        for hm2 in hm_list2:
+            term_domain = list(set(hm1[2])|set(hm2[2]))
+            num_terms = hm1[0].shape[0] * hm2[0].shape[0]
+            hm = [np.zeros(num_terms,np.uint32), np.zeros(num_terms,np.complex128), term_domain]
+
+            index = 0
+            for i,pi in enumerate(hm1[0]):
+                PI = ext_domain_pauli(pi, hm1[2], term_domain)
+                for j,pj in enumerate(hm2[0]):
+                    PJ = ext_domain_pauli(pj, hm2[2], term_domain)
+                    P,C = pauli_string_prod(PI,PJ,len(term_domain))
+                    hm[0][index] = P
+                    hm[1][index] = hm1[1][i] * hm2[1][j] * C
+                    index += 1
+
+            hm_list.append(hm)
+    return hm_list
+
 def hm_list_sum(*args):
     if len(args) == 1:
         return args[0]
@@ -176,8 +201,12 @@ class Hamiltonian:
                     if dig != 0:
                         new_p += dig*(4**j)
                         j+=1
-                d[term_subdomain][0].append(new_p)
-                d[term_subdomain][1].append(hm[1][i])
+                try:
+                    index = d[term_subdomain][0].index(new_p)
+                    d[term_subdomain][1][index] += hm[1][i]
+                except ValueError:
+                    d[term_subdomain][0].append(new_p)
+                    d[term_subdomain][1].append(hm[1][i])
         
         if identity_amplitude != 0.0j:
             d[tuple(range(nbits))][0].append(0)
@@ -278,6 +307,25 @@ class Hamiltonian:
             return Hamiltonian(hm_list, self.nbits)
         else:
             raise TypeError(f'Type {type(other)} is not supported in the Hamiltonian sum!')
+    
+    def __mul__(self, other):
+        if isinstance(other, Number):
+            H = deepcopy(self)
+            H.multiply_scalar(other)
+            return H
+        elif isinstance(other, Hamiltonian):
+            return Hamiltonian(hm_list_prod(self.hm_list, other.hm_list), self.nbits)
+        else:
+            raise TypeError(f'Type {type(other)} is not supported in the Hamiltonian product!')
+        
+    def __imul__(self, other):
+        if isinstance(other, Number):
+            self.multiply_scalar(other)
+            return self
+        elif isinstance(other, Hamiltonian):
+            return Hamiltonian(hm_list_prod(self.hm_list, other.hm_list), self.nbits)
+        else:
+            raise TypeError(f'Type {type(other)} is not supported in the Hamiltonian product!')
     
     @staticmethod
     def adjoint(H:'Hamiltonian')->'Hamiltonian':
