@@ -1,5 +1,5 @@
 import numpy as np
-from . import Hamiltonian
+from .. import Hamiltonian
 
 ###################################
 # Hamiltonian of Different Models #

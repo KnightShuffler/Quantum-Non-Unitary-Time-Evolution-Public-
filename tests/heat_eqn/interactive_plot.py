@@ -1,5 +1,5 @@
 import numpy as np
-from qnute.hamiltonian.finite_difference.laplacian import generateLaplaceHamiltonian1D, generateGrayCodeLaplacian1D
+from qnute.hamiltonian.examples.finite_difference.laplacian import generateLaplaceHamiltonian1D, generateGrayCodeLaplacian1D
 from qnute.simulation.numerical_sim import qnute
 from qnute.simulation.numerical_sim import get_theoretical_evolution as get_qnute_th_evolution
 from qnute.simulation.parameters import QNUTE_params as Params

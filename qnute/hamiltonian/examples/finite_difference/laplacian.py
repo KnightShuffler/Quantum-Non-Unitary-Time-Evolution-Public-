@@ -2,8 +2,8 @@ import numpy as np
 from functools import lru_cache
 from copy import deepcopy
 
-from ..construction import get_lowerLeft_hm_list, get_lowerRight_hm_list, get_upperLeft_hm_list, get_upperRight_hm_list
-from ..import Hamiltonian, hm_list_sum, hm_list_tensor, get_identity_hm_list
+from ...import Hamiltonian, hm_list_sum, hm_list_tensor, get_identity_hm_list
+from ...construction import get_lowerLeft_hm_list, get_lowerRight_hm_list, get_upperLeft_hm_list, get_upperRight_hm_list
 
 laplaceKernel_hm_list = [[
     np.array([1,0], dtype=np.uint32),
