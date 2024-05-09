@@ -3,6 +3,7 @@ from numba import njit
 from itertools import combinations
 from copy import deepcopy
 from math import isclose
+from numbers import Number
 from qnute.helpers import int_to_base
 from qnute.helpers.pauli import ext_domain_pauli
 from qnute.helpers.pauli import get_pauli_prod_matrix
@@ -139,8 +140,8 @@ def hm_list_sum(*args):
         hm_list = hm_list_add(hm_list, args[i])
     return hm_list
 
-def get_identity_hm_list(num_qbits:int):
-    return [[np.zeros(1,dtype=np.uint32), np.ones(1,dtype=np.complex128), np.arange(num_qbits)]]
+def get_identity_hm_list(num_qbits:int, scalar:Number|np.number=1.0):
+    return [[np.zeros(1,dtype=np.uint32), np.ones(1,dtype=np.complex128)*scalar, np.arange(num_qbits)]]
 
 class Hamiltonian:
     def __init__(self, hm_list, nbits):
@@ -268,9 +269,15 @@ class Hamiltonian:
         return self.pterm_list[self.hm_indices[term]: self.hm_indices[term+1] if term+1 < self.num_terms else None]
     
     def __add__(self, other):
-        hm_list = hm_list_add(self.hm_list, other.hm_list)
-        nbits = np.max([self.nbits, other.nbits])
-        return Hamiltonian(hm_list, nbits)
+        if isinstance(other, Hamiltonian):
+            hm_list = hm_list_add(self.hm_list, other.hm_list)
+            nbits = np.max([self.nbits, other.nbits])
+            return Hamiltonian(hm_list, nbits)
+        elif isinstance(other, Number|np.number):
+            hm_list = hm_list_add(self.hm_list, get_identity_hm_list(self.nbits, other))
+            return Hamiltonian(hm_list, self.nbits)
+        else:
+            raise TypeError(f'Type {type(other)} is not supported in the Hamiltonian sum!')
     
     @staticmethod
     def adjoint(H:'Hamiltonian')->'Hamiltonian':
