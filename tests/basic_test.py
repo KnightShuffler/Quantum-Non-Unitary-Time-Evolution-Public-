@@ -8,7 +8,7 @@ from qnute.simulation.numerical_sim import qnute, get_theoretical_evolution
 from qnute.hamiltonian import Hamiltonian
 from qnute.simulation.parameters import QNUTE_params as Params
 from qnute.simulation.output import QNUTE_output as Output
-from qnute.hamiltonian.laplacian import generateLaplaceHamiltonian1D
+from qnute.hamiltonian.finite_difference.laplacian import generateLaplaceHamiltonian1D
 
 def main():
     logging.getLogger().setLevel(logging.INFO)

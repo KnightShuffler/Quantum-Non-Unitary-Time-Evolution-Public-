@@ -3,7 +3,7 @@ from numba import njit
 
 import logging 
 
-from qnute.hamiltonian.laplacian import generateLaplacianHamiltonianMultiDim
+from qnute.hamiltonian.finite_difference.laplacian import generateLaplacianHamiltonianMultiDim
 from qnute.simulation.numerical_sim import qnute
 from qnute.simulation.parameters import QNUTE_params as Params
 
