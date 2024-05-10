@@ -292,6 +292,8 @@ class Hamiltonian:
         multiplies a scalar value to the Hamiltonian
         '''
         self.pterm_list[:]['amplitude'] *= scalar
+        for hm in self.hm_list:
+            hm[1] *= scalar
     
     def get_hm_pterms(self, term):
         assert term < self.num_terms and term >= 0
