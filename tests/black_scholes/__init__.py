@@ -10,9 +10,10 @@ class Basis(Enum):
 
 class BoundaryConditions(Enum):
     ZERO_AFTER = 0
-    ZERO_AT = 1
+    DIRICHLET_NODE = 1
     LINEAR = 2
     PDE = 3
+    DOUBLE_DIRICHLET_NODE = 4
 
 @dataclass
 class BlackScholesInfo:

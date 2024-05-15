@@ -32,29 +32,30 @@ def generateBlackScholesHamiltonian(bs_data:BlackScholesInfo,
 
     if bs_data.basis == Basis.S:
         BSHam = (
-            (SHam:=generatePositionHamiltonian(num_qbits, 0, dS)) * generateFirstDerivativeHamiltonian1D(num_qbits, dS) * (bs_data.r-bs_data.q) 
-            + SHam*SHam*generateLaplaceHamiltonian1D(num_qbits, dS)*((bs_data.sigma**2)/2) 
-            + Hamiltonian.Identity(num_qbits)*(-bs_data.r)
+            (SHam:=generatePositionHamiltonian(num_qbits, 0, dS)) * generateFirstDerivativeHamiltonian1D(num_qbits, dS) * -(bs_data.r-bs_data.q) 
+            + SHam*SHam*generateLaplaceHamiltonian1D(num_qbits, dS)*(-(bs_data.sigma**2)/2) 
+            + Hamiltonian.Identity(num_qbits)*(bs_data.r)
             )
+        
         match bs_data.BC:
             case BoundaryConditions.ZERO_AFTER:
                 pass
-            case BoundaryConditions.ZERO_AT:
-                BC_Ham = lowerRightHam(num_qbits) * (bs_data.r + (bs_data.sigma*bs_data.Smax/dS)**2)
-                BC_Ham += lowerRight1Ham(num_qbits) * -((bs_data.sigma*bs_data.Smax/dS)**2 / 2 - (bs_data.r-bs_data.q)*bs_data.Smax/(2*dS))
+            case BoundaryConditions.DIRICHLET_NODE:
+                BC_Ham = lowerRightHam(num_qbits) * -(bs_data.r + (bs_data.sigma*bs_data.Smax/dS)**2)
+                BC_Ham += lowerRight1Ham(num_qbits) * ((bs_data.sigma*bs_data.Smax/dS)**2 / 2 - (bs_data.r-bs_data.q)*bs_data.Smax/(2*dS))
                 BSHam += BC_Ham
             case BoundaryConditions.LINEAR:
-                BC_Ham = lowerRightHam(num_qbits) * ((bs_data.sigma*bs_data.Smax/dS)**2 + (bs_data.r-bs_data.q)*bs_data.Smax/dS)
-                BC_Ham += lowerRight1Ham(num_qbits) * -((bs_data.sigma*bs_data.Smax/dS)**2 / 2 + (bs_data.r-bs_data.q)*bs_data.Smax/(2*dS))
+                BC_Ham = lowerRightHam(num_qbits) * -((bs_data.sigma*bs_data.Smax/dS)**2 + (bs_data.r-bs_data.q)*bs_data.Smax/dS)
+                BC_Ham += lowerRight1Ham(num_qbits) * ((bs_data.sigma*bs_data.Smax/dS)**2 / 2 + (bs_data.r-bs_data.q)*bs_data.Smax/(2*dS))
                 BSHam += BC_Ham
             case BoundaryConditions.PDE:
-                BC_Ham = lowerRightHam(num_qbits) * ((bs_data.sigma*bs_data.Smax/dS)**2 + (bs_data.r-bs_data.q)*bs_data.Smax/dS)
-                BC_Ham += lowerRight1Ham(num_qbits) * -((bs_data.sigma*bs_data.Smax/dS)**2 *3/2 + (bs_data.r-bs_data.q)*bs_data.Smax/2*dS)
-                BC_Ham += lowerRight2Ham(num_qbits) * (bs_data.sigma*bs_data.Smax/dS)**2
+                BC_Ham = lowerRightHam(num_qbits) * ((bs_data.sigma*bs_data.Smax/dS)**2*(-5/2) - (bs_data.r-bs_data.q)*bs_data.Smax/dS)
+                BC_Ham += lowerRight1Ham(num_qbits) * ((bs_data.sigma*bs_data.Smax/dS)**2 *(3/2) + (bs_data.r-bs_data.q)*bs_data.Smax/(2*dS))
+                BC_Ham += lowerRight2Ham(num_qbits) * ((bs_data.sigma*bs_data.Smax/dS)**2/2)
                 BSHam += BC_Ham
             case _:
                 raise NotImplementedError('These boundary conditions are not yet implemented!')
     else:
-        raise NotImplementedError('x-Basis hamiltonian not implemented yet!')
+        raise NotImplementedError('x-Basis hamiltonian not implemented yet!') 
     
     return BSHam
