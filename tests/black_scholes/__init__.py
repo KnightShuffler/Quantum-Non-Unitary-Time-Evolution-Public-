@@ -14,6 +14,7 @@ class BoundaryConditions(Enum):
     LINEAR = 2
     PDE = 3
     DOUBLE_DIRICHLET_NODE = 4
+    DOUBLE_LINEAR = 5
 
 @dataclass
 class BlackScholesInfo:
@@ -21,5 +22,6 @@ class BlackScholesInfo:
     q:float
     sigma:float
     basis:Basis
+    Smin:float
     Smax:float
     BC:BoundaryConditions
