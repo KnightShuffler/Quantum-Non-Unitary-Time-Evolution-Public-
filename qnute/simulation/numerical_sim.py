@@ -127,8 +127,8 @@ def update_alist(params:Params, sigma_expectation:dict,
             a_list_term = solve_for_a_list(S,b,params.delta*scale,u_operators)
             break
         except ValueError as e:
-            if di < 10:
-                qnute_logger.info('Least squares did not converge at delta = %f retrying with delta = %f', params.delta, params.delta*delta_scales[di+1])
+            if di < 9:
+                qnute_logger.info('Least squares did not converge at delta = %f retrying with delta = %f', params.delta*delta_scales[di], params.delta*delta_scales[di+1])
             else:
                 qnute_logger.error('Least square failed to converge, populating a_list with 0s')
                 a_list_term = np.zeros(u_operators.shape, dtype=np.float64)
