@@ -169,8 +169,8 @@ def get_identity_hm_list(num_qbits:int, scalar:Number|np.number=1.0):
     return [[np.zeros(1,dtype=np.uint32), np.ones(1,dtype=np.complex128)*scalar, np.arange(num_qbits)]]
 
 class Hamiltonian:
-    def __init__(self, hm_list, nbits):
-        self.hm_list = Hamiltonian.reduce_hm_list(hm_list, nbits)
+    def __init__(self, hm_list, nbits,*,TOLERANCE:float=1e-6):
+        self.hm_list = Hamiltonian.reduce_hm_list(hm_list, nbits, TOLERANCE=TOLERANCE)
         self.pterm_list, self.hm_indices = Hamiltonian.generate_ham_list(self.hm_list, nbits)
         self.num_terms = len(self.hm_list)
         self.nbits = nbits
@@ -178,7 +178,7 @@ class Hamiltonian:
         self.real_term_flags = None
     
     @staticmethod
-    def reduce_hm_list(hm_list, nbits):
+    def reduce_hm_list(hm_list, nbits, *, TOLERANCE:float=1e-6):
         new_list = []
         d = {}
         for r in range(1,nbits+1):
@@ -188,7 +188,7 @@ class Hamiltonian:
         for hm in hm_list:
             term_domain = np.array(hm[2])
             for i,p in enumerate(hm[0]):
-                if hm[1][i] == 0.0j:
+                if np.abs(hm[1][i]) < TOLERANCE:
                     continue
                 if p == 0:
                     identity_amplitude += hm[1][i]
