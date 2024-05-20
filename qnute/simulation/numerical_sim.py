@@ -131,7 +131,7 @@ def update_alist(params:Params, sigma_expectation:dict,
                 qnute_logger.info('Least squares did not converge at delta = %f retrying with delta = %f', params.delta*delta_scales[di], params.delta*delta_scales[di+1])
             else:
                 qnute_logger.error('Least square failed to converge, populating a_list with 0s')
-                a_list_term = np.zeros(u_operators.shape, dtype=np.float64)
+                a_list_term = np.zeros(u_operators.shape, dtype=pauli_pair_dtype)
     
     return a_list_term, c
    
