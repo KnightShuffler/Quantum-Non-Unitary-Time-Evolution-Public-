@@ -78,6 +78,24 @@ def generateBlackScholesHamiltonian(bs_data:BlackScholesInfo,
             case _:
                 raise NotImplementedError('These boundary conditions are not yet implemented!')
     else:
-        raise NotImplementedError('x-Basis hamiltonian not implemented yet!') 
+        assert bs_data.Smin != 0, 'Cannot use zero Stock value for x-basis'
+        xmin = np.log(bs_data.Smin)
+        xmax = np.log(bs_data.Smax)
+        dx = (xmax-xmin)/(N-1)
+
+        BSHam = (generateLaplaceHamiltonian1D(num_qbits,dx,False)*(-bs_data.sigma**2/2) 
+                 + generateFirstDerivativeHamiltonian1D(num_qbits, dx, False)*(bs_data.sigma**2/2 - (bs_data.r-bs_data.q))
+                 + Hamiltonian.Identity(num_qbits)*bs_data.r)
+        match bs_data.BC:
+            case BoundaryConditions.ZERO_AFTER:
+                pass
+            case BoundaryConditions.DOUBLE_LINEAR:
+                BC_Ham =  upperLeftHam(num_qbits)   * (-(bs_data.sigma/dx)**2 +(bs_data.r-bs_data.q)/dx)
+                BC_Ham += upperLeft1Ham(num_qbits)  * ((bs_data.sigma/dx)**2/2 - bs_data.sigma**2/(4*dx) - (bs_data.r-bs_data.q)/(2*dx))
+                BC_Ham += lowerRightHam(num_qbits)  * (-(bs_data.sigma/dx)**2 - (bs_data.r-bs_data.q)/dx)
+                BC_Ham += lowerRight1Ham(num_qbits) * ((bs_data.sigma/dx)**2/2 + bs_data.sigma**2/(4*dx) + (bs_data.r-bs_data.q)/(2*dx))
+                BSHam += BC_Ham
+            case _:
+                raise NotImplementedError('These boundary conditions are not yet implemented')
     
     return BSHam
