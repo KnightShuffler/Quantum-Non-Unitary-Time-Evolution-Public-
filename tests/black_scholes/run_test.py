@@ -23,7 +23,7 @@ if __name__=='__main__':
     Nt = 1000
     dt = T/Nt
     
-    qubit_counts = [2,4,6,8]
+    qubit_counts = [2,3,4,5]
     
     if not os.path.exists(data_path:='data/black_scholes/'):
         os.makedirs(data_path)
