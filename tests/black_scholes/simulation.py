@@ -28,6 +28,7 @@ def run_blackScholes_simulation(maturity_state:np.ndarray[float],
     params.set_run_params(dt,0.1,Nt,0,None,init_sv=psi0,trotter_flag=True)
 
     for Di,D in enumerate(D_list):
+        D = min(num_qbits,D)
         u_domains = [list(range(i,i+D)) for i in range(num_qbits-D+1)]
         params.load_hamiltonian_params(D, u_domains, True, True)
         out = qnute(params, log_frequency=500, c0=c0)
