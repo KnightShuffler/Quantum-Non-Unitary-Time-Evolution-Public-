@@ -170,11 +170,11 @@ def qnute_step(params:Params, output:Output, step:int):
     for term in range(H.num_terms):
         if len(params.u_domains[term]) == 0:
             continue
-        a = np.array([(0,10.0)],dtype=pauli_pair_dtype)
-        while np.linalg.norm(a['value']) > 5.0:
-            sigma_expectation = tomography(params, psi0, a_list, term)
-            (a, c) = update_alist(params, sigma_expectation, term, propagate(params, psi0, a_list), 1.0)
-        
+        # a = np.array([(0,10.0)],dtype=pauli_pair_dtype)
+        # while np.linalg.norm(a['value']) > 5.0:
+        sigma_expectation = tomography(params, psi0, a_list, term)
+        (a, c) = update_alist(params, sigma_expectation, term, propagate(params, psi0, a_list), 1.0)
+        a['value'] = np.mod(a['value']+np.pi, 2.0*np.pi) - np.pi
         a_list.append(a)
         c_list.append(c)
     output.a_list += a_list
