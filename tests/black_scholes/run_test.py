@@ -22,8 +22,9 @@ if __name__=='__main__':
     T = 3
     Nt = 1000
     dt = T/Nt
+    rescale_hamiltonian = True
     
-    qubit_counts = [2,3,4,5]
+    qubit_counts = [7,8]
     
     if not os.path.exists(data_path:='data/black_scholes/'):
         os.makedirs(data_path)
@@ -39,7 +40,7 @@ if __name__=='__main__':
                 analytical_sol = np.array([[EuropeanCallFormula(S,tau,strike,r,sigma) for S in np.linspace(Smin,Smax,N)] for tau in np.linspace(0.0,T,Nt+1)])
         
             bs_logger.info('Running %d qubit simulation for %s options', n, 'Put' if PUT else 'Call')
-            qnute_sols,qnute_norms = run_blackScholes_simulation(VT, bs_data, n, np.arange(2,n+2,2), T, Nt)
+            qnute_sols,qnute_norms = run_blackScholes_simulation(VT, bs_data, n, np.arange(2,n+2,2), T, Nt, normalize_hamiltonian=rescale_hamiltonian)
             rescaled_sols, C_psi = rescale_qnute_bs_sols(VT, bs_data, qnute_sols, qnute_norms, T, rescale_frequency=(rescale_freq:=25))
 
             with h5py.File(data_path+('put' if PUT else 'call')+f'_{n}_qubits.hdf5','w') as file:

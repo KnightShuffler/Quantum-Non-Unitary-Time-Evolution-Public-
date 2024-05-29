@@ -12,6 +12,7 @@ def run_blackScholes_simulation(maturity_state:np.ndarray[float],
                                 D_list:np.ndarray[int],
                                 T:float,
                                 Nt:int,
+                                *,normalize_hamiltonian:bool=False
                                 ) -> tuple[np.ndarray[float],np.ndarray[float]]:
     N = 2**num_qbits
     assert maturity_state.shape[0] == N
@@ -23,6 +24,10 @@ def run_blackScholes_simulation(maturity_state:np.ndarray[float],
     qnute_norms = np.zeros((D_list.shape[0],Nt+1), np.float64)
 
     BSHam = generateBlackScholesHamiltonian(bs_data, num_qbits)
+    if normalize_hamiltonian:
+        scale = np.linalg.norm(BSHam.pterm_list['amplitude'])
+        BSHam *= 1/scale
+        dt *= scale
 
     params = Params(BSHam*(-1), 1, num_qbits)
     params.set_run_params(dt,0.1,Nt,0,None,init_sv=psi0,trotter_flag=True)
