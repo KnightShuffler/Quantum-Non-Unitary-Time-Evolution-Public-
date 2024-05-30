@@ -4,6 +4,7 @@ import h5py
 import os
 from numbers import Number
 from functools import partial
+import multiprocessing as mp
 
 from qnute.simulation.numerical_sim import qnute, qnute_logger
 from qnute.simulation.parameters import QNUTE_params as Params
@@ -89,6 +90,40 @@ def get_analytical_sols(option:Option, bs_data:BlackScholesInfo,
     return np.array([ get_sol(tau=tau, combination_data=comb_data) 
                      for tau in np.linspace(0.0,T,Nt+1)])
 
+def run_option_simulation(option:Option, bs_data:BlackScholesInfo, 
+                          T:float, Nt:int, 
+                          K:float, K1:float, K2:float,
+                          data_path:str) -> None:
+    if option in [Option.BUTTERFLY, Option.CONDOR]:
+        return
+
+    if option in [Option.PUT,Option.CALL,Option.STRADDLE,Option.BUTTERFLY]:
+        strike = np.array([K])
+    else:
+        strike = np.array([K1,K2])
+    
+    for n in np.arange(2,6+1):
+        N = 2**n
+        analytical_sols = get_analytical_sols(option, bs_data, n, T, Nt, strike)
+        VT = analytical_sols[0,:]
+        bs_logger.info('Running %d qubit simulation for %s options', n, option.name)
+        qnute_sols,qnute_norms = run_blackScholes_simulation(VT, bs_data, n, np.arange(2,n+2,2), T, Nt, normalize_hamiltonian=True)
+        rescaled_sols, C_psi = rescale_qnute_bs_sols(VT, bs_data, qnute_sols, qnute_norms, T, rescale_frequency=(rescale_freq:=25))
+
+        with h5py.File(data_path+option.name+f'_{n}_qubits.hdf5','w') as file:
+            file.attrs['strike'] = strike
+            file.attrs['T'] = T
+            file.attrs['Nt'] = Nt
+            file.attrs['Smin'] = bs_data.Smin
+            file.attrs['Smax'] = bs_data.Smax
+            file.attrs['r'] = bs_data.r
+            file.attrs['q'] = bs_data.q
+            file.attrs['sigma'] = bs_data.sigma
+            file.attrs['rescale_freq'] = rescale_freq
+
+            file.create_dataset('rescaled_qnute_sols', qnute_sols.shape, np.float64, data=rescaled_sols)
+            file.create_dataset('analytical_sols', analytical_sols.shape, np.float64, data=analytical_sols)
+
 if __name__=='__main__':
     bs_logger.setLevel(logging.INFO)
     qnute_logger.setLevel(logging.INFO)
@@ -111,35 +146,44 @@ if __name__=='__main__':
     
     if not os.path.exists(data_path:='data/black_scholes/'):
         os.makedirs(data_path)
+
+    num_processes = mp.cpu_count()
+
+    run_sim = partial(run_option_simulation, bs_data=bs_data, T=T, Nt=Nt, K=K, K1=K1, K2=K2,data_path=data_path)
+
+    with mp.Pool(processes=num_processes) as pool:
+        options = list(Option)[:6]
+        pool.map(run_sim, options)
     
     for option in Option:
-        if option in [Option.BUTTERFLY, Option.CONDOR]:
-            continue
+        run_option_simulation(option, bs_data, T, Nt, K, K1, K2)
+        # if option in [Option.BUTTERFLY, Option.CONDOR]:
+        #     continue
 
-        if option in [Option.PUT,Option.CALL,Option.STRADDLE,Option.BUTTERFLY]:
-            strike = np.array([K])
-        else:
-            strike = np.array([K1,K2])
+        # if option in [Option.PUT,Option.CALL,Option.STRADDLE,Option.BUTTERFLY]:
+        #     strike = np.array([K])
+        # else:
+        #     strike = np.array([K1,K2])
         
-        for n in qubit_counts:
-            N = 2**n
-            analytical_sols = get_analytical_sols(option, bs_data, n, T, Nt, strike)
-            VT = analytical_sols[0,:]
-            bs_logger.info('Running %d qubit simulation for %s options', n, option.name)
-            qnute_sols,qnute_norms = run_blackScholes_simulation(VT, bs_data, n, np.arange(2,n+2,2), T, Nt, normalize_hamiltonian=rescale_hamiltonian)
-            rescaled_sols, C_psi = rescale_qnute_bs_sols(VT, bs_data, qnute_sols, qnute_norms, T, rescale_frequency=(rescale_freq:=25))
+        # for n in qubit_counts:
+        #     N = 2**n
+        #     analytical_sols = get_analytical_sols(option, bs_data, n, T, Nt, strike)
+        #     VT = analytical_sols[0,:]
+        #     bs_logger.info('Running %d qubit simulation for %s options', n, option.name)
+        #     qnute_sols,qnute_norms = run_blackScholes_simulation(VT, bs_data, n, np.arange(2,n+2,2), T, Nt, normalize_hamiltonian=rescale_hamiltonian)
+        #     rescaled_sols, C_psi = rescale_qnute_bs_sols(VT, bs_data, qnute_sols, qnute_norms, T, rescale_frequency=(rescale_freq:=25))
 
-            with h5py.File(data_path+option.name+f'_{n}_qubits.hdf5','w') as file:
-                file.attrs['strike'] = strike
-                file.attrs['T'] = T
-                file.attrs['Nt'] = Nt
-                file.attrs['Smin'] = bs_data.Smin
-                file.attrs['Smax'] = bs_data.Smax
-                file.attrs['r'] = bs_data.r
-                file.attrs['q'] = bs_data.q
-                file.attrs['sigma'] = bs_data.sigma
-                file.attrs['rescale_freq'] = rescale_freq
+        #     with h5py.File(data_path+option.name+f'_{n}_qubits.hdf5','w') as file:
+        #         file.attrs['strike'] = strike
+        #         file.attrs['T'] = T
+        #         file.attrs['Nt'] = Nt
+        #         file.attrs['Smin'] = bs_data.Smin
+        #         file.attrs['Smax'] = bs_data.Smax
+        #         file.attrs['r'] = bs_data.r
+        #         file.attrs['q'] = bs_data.q
+        #         file.attrs['sigma'] = bs_data.sigma
+        #         file.attrs['rescale_freq'] = rescale_freq
 
-                file.create_dataset('rescaled_qnute_sols', qnute_sols.shape, np.float64, data=rescaled_sols)
-                file.create_dataset('analytical_sols', analytical_sols.shape, np.float64, data=analytical_sols)
+        #         file.create_dataset('rescaled_qnute_sols', qnute_sols.shape, np.float64, data=rescaled_sols)
+        #         file.create_dataset('analytical_sols', analytical_sols.shape, np.float64, data=analytical_sols)
     
