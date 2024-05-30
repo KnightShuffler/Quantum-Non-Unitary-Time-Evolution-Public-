@@ -73,3 +73,17 @@ def CondorPayoff(Smin:float,Smax:float,
             -EuropeanCallState(Smin,Smax,Kmax,num_qbits),
             EuropeanCallState(Smin,Smax,Kmax+a,num_qbits),
         ],axis=0)
+
+def getEuropeanSolutions(Smin:float,Smax:float,num_qbits:float,
+                         r:float,sigma:float,tau:float, 
+                        combination_data:list[tuple[str,float,float]])->np.ndarray[float]:
+    x = np.linspace(Smin,Smax,2**num_qbits)
+    sol = np.zeros(2**num_qbits,np.float64)
+    for (type,strike,scale) in combination_data:
+        if type.capitalize() == 'C':
+            for i,S in enumerate(x):
+                sol[i] += scale*EuropeanCallFormula(S, tau, strike, r, sigma)
+        else:
+            for i,S in enumerate(x):
+                sol[i] += scale*EuropeanPutFormula(S, tau, strike, r, sigma)
+    return sol
