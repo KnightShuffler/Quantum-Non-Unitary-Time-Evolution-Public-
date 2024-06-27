@@ -33,13 +33,13 @@ def get_CPsis(expt_data:ExperimentData, K:int)->np.ndarray[float]:
     braket_gs_f0 = np.dot(gs, expt_data.f0)/np.linalg.norm(expt_data.f0)
     
     if flag_oneD:
-        lambda0 = (np.pi*gs_freqs[0]/expt_data.L)
+        lambda0 = (np.pi*gs_freqs[0]/expt_data.L)**2
     else:
         lambda0 = 0.0
         for fi,freq in enumerate(gs_freqs):
-            lambda0 += np.pi*freq/expt_data.L[fi]
+            lambda0 += (np.pi*freq/expt_data.L[fi])**2
     
-    lambda0 = expt_data.alpha * (lambda0**2)
+    lambda0 = expt_data.alpha * lambda0
 
     CPsis = np.zeros((expt_data.D_list.shape[0], Nt),np.float64)
     cPrimes = get_cPrimes(expt_data,Nt)
